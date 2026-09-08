@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+backend/models/
+*.pyc
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases & logs
+*.db
+*.sqlite
+*.sqlite3
+backend/reports/*.pdf
+backend/reports/*.csv
+backend/reports/*.png
+uploads/*
+!uploads/.gitkeep
+
+# Build artifacts
+dist/
+dist-ssr/
+*.local
+.env
+.DS_Store
+Thumbs.db
+cookies.txt
+.sudo_as_admin_successful
+*.log

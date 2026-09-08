@@ -1,0 +1,3666 @@
+
+===== PAGE 1 =====
+Software Requirements Specification (SRS) 
+AI-Powered Anomaly Detection System for MPLADS Scheme 
+Project Code: SIH-26102 | Version: 1.0.0-MVP 
+ 
+Document Control 
+Field Value 
+Document ID SRS-MPLADS-AI-26102-v1.0.0 
+Classification Government — Internal Use 
+Author Role Solo Hackathon Participant / Technical Product Manager 
+Target Consumer AI Agentic Development System 
+Standard Compliance IEEE 830-1998 (adapted), MeitY Guidelines, NIC Standards 
+Created 2025-01-01 
+Last Updated 2025-01-01 
+ 
+SECTION 1: DOCUMENT OVERVIEW 
+1.1 Purpose 
+This SRS defines the complete, machine-readable, AI-executable specification for the Minimum Viable Product (MVP) 
+of "MPLADS Sentinel" — an AI-powered monitoring and analytics platform designed to detect anomalies, fraud, and 
+inefficiencies in the Members of Parliament Local Area Development Scheme (MPLADS) implementation. Every 
+requirement in this document is written as an unambiguous, testable instruction that an AI agentic development 
+system can interpret, implement, and verify without human clarification. 
+1.2 Scope 
+1.2.1 In-Scope (MVP Boundary) 
+YAML 
+MVP_SCOPE: 
+  DATA_INGESTION: 
+    - Ingest MPLADS data from public dashboard CSV/API exports 
+    - Parse and normalize sanction, expenditure, work progress, and payment records 
+    - Store in structured relational + vector database schema 
+ 
+  ANOMALY_DETECTION: 
+    - Statistical anomaly detection on cost estimates vs actual expenditure 
+    - Duplicate work detection using NLP similarity on work descriptions 
+    - Delayed project identification based on timeline deviation thresholds 
+    - Cost overrun flagging using z-score and IQR methods 
+    - Fund utilization rate analysis per constituency per fiscal year 
+ 
+===== PAGE 2 =====
+  FRAUD_RISK_SCORING: 
+    - Composite risk score per work item (0-100 scale) 
+    - Rule-based + ML-based hybrid scoring model 
+    - Classification of risk into LOW / MEDIUM / HIGH / CRITICAL tiers 
+ 
+  DASHBOARD: 
+    - Web-based responsive dashboard with role-based views 
+    - National overview heatmap 
+    - Constituency-level drill-down 
+    - Alert feed with severity indicators 
+    - Trend analysis charts (time-series) 
+ 
+  ALERTING: 
+    - Automated alert generation on anomaly detection 
+    - Alert categorization: COST_OVERRUN | DUPLICATE_WORK | DELAYED_PROJECT | FUND_MISUTILIZATION | 
+PATTERN_ANOMALY 
+    - Alert log with audit trail 
+ 
+  REPORTING: 
+    - Exportable PDF/CSV reports per constituency 
+    - Summary analytics for ministry-level review 
+1.2.2 Out-of-Scope (Post-MVP) 
+YAML 
+OUT_OF_SCOPE: 
+  - Real-time API integration with MPLADS live production database 
+  - Mobile native applications (iOS/Android) 
+  - Multi-language NLP (MVP: English only) 
+  - Automated corrective action workflows 
+  - Integration with PFMS (Public Financial Management System) live feeds 
+  - Biometric or identity verification modules 
+  - SMS/WhatsApp notification delivery 
+  - Predictive budget forecasting models (future phase) 
+1.3 Intended Audience 
+Audience Usage 
+AI Agentic Development System Primary consumer — interprets and executes all requirements 
+Hackathon Judges (MoSPI/DIID) Evaluation of completeness, feasibility, and innovation 
+===== PAGE 3 =====
+Audience Usage 
+Solo Developer (Author) Reference guide for manual overrides and debugging 
+1.4 Glossary of Terms 
+YAML 
+GLOSSARY: 
+  MPLADS: 
+    full_form: "Members of Parliament Local Area Development Scheme" 
+    definition: "Central Sector Scheme where MPs recommend developmental works for durable community assets 
+and basic civic amenities" 
+    context: "Primary domain of this system" 
+ 
+  MP: 
+    full_form: "Member of Parliament" 
+    definition: "Elected representative of Lok Sabha or nominated/elected member of Rajya Sabha" 
+    context: "Primary recommending authority in MPLADS" 
+ 
+  MoSPI: 
+    full_form: "Ministry of Statistics and Programme Implementation" 
+    definition: "Central ministry administering MPLADS" 
+    context: "Organization that owns this system" 
+ 
+  DIID: 
+    full_form: "Data Informatics & Innovation Division" 
+    definition: "Division within MoSPI responsible for data analytics and technology innovation" 
+    context: "Department commissioning this project" 
+ 
+  CONSTITUENCY: 
+    definition: "A parliamentary constituency represented by a Lok Sabha MP , or a state assigned to a Rajya Sabha MP" 
+    context: "Primary geographic unit for fund allocation" 
+ 
+  SANCTION: 
+    definition: "Formal approval of a work/project under MPLADS with associated cost estimate" 
+    context: "Marks the beginning of a work's lifecycle" 
+ 
+  DISTRICT_AUTHORITY: 
+    definition: "District Collector/Deputy Commissioner responsible for implementing MPLADS works" 
+    context: "Primary implementing authority" 
+===== PAGE 4 =====
+ 
+  STATE_NODAL_AUTHORITY: 
+    definition: "State-level officer coordinating MPLADS implementation across districts" 
+    context: "Intermediate monitoring authority" 
+ 
+  FUND_UTILIZATION_RATE: 
+    definition: "Ratio of expenditure to funds released, expressed as percentage" 
+    formula: "(total_expenditure / total_funds_released) * 100" 
+    context: "Key efficiency metric" 
+ 
+  COST_OVERRUN: 
+    definition: "When actual expenditure on a work exceeds the sanctioned cost estimate" 
+    formula: "((actual_cost - sanctioned_cost) / sanctioned_cost) * 100" 
+    threshold: ">15% flagged as anomaly in MVP" 
+ 
+  DUPLICATE_WORK: 
+    definition: "Two or more sanctioned works with substantially similar descriptions, locations, and cost estimates 
+within the same constituency" 
+    detection_method: "NLP cosine similarity > 0.85 on work descriptions + geographic proximity" 
+ 
+  ANOMALY: 
+    definition: "A data point or pattern that deviates significantly from expected norms" 
+    detection_methods: ["z-score" , "IQR" , "Isolation Forest" , "text similarity"] 
+ 
+  RISK_SCORE: 
+    definition: "Composite numerical score (0-100) indicating probability and severity of fraud/inefficiency" 
+    tiers: 
+      LOW: "0-25" 
+      MEDIUM: "26-50" 
+      HIGH: "51-75" 
+      CRITICAL: "76-100" 
+ 
+  DURABLE_ASSET: 
+    definition: "Physical infrastructure or community facility created under MPLADS that provides lasting benefit" 
+    examples: ["Community halls" , "Roads" , "School buildings" , "Drinking water facilities"] 
+ 
+  PFMS: 
+===== PAGE 5 =====
+    full_form: "Public Financial Management System" 
+    definition: "Government of India's financial management platform for tracking fund flows" 
+ 
+  WCAG: 
+    full_form: "Web Content Accessibility Guidelines" 
+    version: "2.1 AA" 
+    context: "Accessibility compliance standard required for government websites" 
+ 
+  NIC: 
+    full_form: "National Informatics Centre" 
+    definition: "Government IT infrastructure and services provider" 
+    context: "Potential deployment infrastructure partner" 
+ 
+  GIGW: 
+    full_form: "Guidelines for Indian Government Websites" 
+    definition: "Standards issued by NIC/MeitY for all government web applications" 
+ 
+  API: 
+    full_form: "Application Programming Interface" 
+    definition: "Programmatic interface for data exchange between systems" 
+ 
+  ETL: 
+    full_form: "Extract, Transform, Load" 
+    definition: "Data pipeline process for ingesting raw data into structured storage" 
+ 
+  IQR: 
+    full_form: "Interquartile Range" 
+    definition: "Statistical measure of spread; used here for outlier detection" 
+    formula: "Q3 - Q1; outlier if value < Q1 - 1.5*IQR or > Q3 + 1.5*IQR" 
+ 
+  Z_SCORE: 
+    definition: "Number of standard deviations a data point is from the mean" 
+    formula: "(x - μ) / σ" 
+    threshold: "|z| > 2.5 flagged as anomaly" 
+ 
+  ISOLATION_FOREST: 
+    definition: "Unsupervised ML algorithm for anomaly detection based on random partitioning" 
+===== PAGE 6 =====
+    context: "Used for multivariate anomaly detection on expenditure patterns" 
+ 
+  COSINE_SIMILARITY: 
+    definition: "Measure of similarity between two text vectors; 1.0 = identical, 0.0 = orthogonal" 
+    threshold: ">0.85 flags potential duplicate" 
+ 
+  JWT: 
+    full_form: "JSON Web Token" 
+    definition: "Token-based authentication standard" 
+ 
+  RBAC: 
+    full_form: "Role-Based Access Control" 
+    definition: "Authorization model where permissions are assigned to roles, not individuals" 
+1.5 References 
+YAML 
+REFERENCES: 
+  - id: REF-001 
+    title: "MPLADS Guidelines 2016 (Revised)" 
+    source: "MoSPI" 
+    url: "https://www.mplads.gov.in" 
+    relevance: "Scheme rules, fund allocation norms, work categories" 
+ 
+  - id: REF-002 
+    title: "MPLADS Public Dashboard" 
+    source: "MoSPI" 
+    url: "https://mplads.mospi.gov.in/digigov/dashboard.html" 
+    relevance: "Primary data source for MVP" 
+ 
+  - id: REF-003 
+    title: "GIGW 3.0 Guidelines" 
+    source: "NIC/MeitY" 
+    relevance: "Web application compliance standards" 
+ 
+  - id: REF-004 
+    title: "IT Act 2000 and IT Amendment Act 2008" 
+    source: "Government of India" 
+    relevance: "Legal framework for data handling" 
+===== PAGE 7 =====
+ 
+  - id: REF-005 
+    title: "Digital Personal Data Protection Act 2023" 
+    source: "Government of India" 
+    relevance: "Data privacy compliance" 
+ 
+SECTION 2: PRODUCT PERSPECTIVE 
+2.1 System Context within MoSPI Ecosystem 
+YAML 
+ECOSYSTEM_MAPPING: 
+  CURRENT_STATE: 
+    existing_system: "MPLADS Online Portal (mplads.mospi.gov.in)" 
+    current_capabilities: 
+      - Manual data entry by District Authorities 
+      - Basic dashboard showing fund release and utilization statistics 
+      - Static reports generation 
+      - Public-facing summary dashboard 
+    current_limitations: 
+      - No automated anomaly detection 
+      - No ML-based fraud identification 
+      - No predictive analytics 
+      - No cross-constituency pattern analysis 
+      - Manual compliance monitoring only 
+      - Limited trend analysis capabilities 
+ 
+  PROPOSED_SYSTEM_ROLE: 
+    name: "MPLADS Sentinel" 
+    relationship_to_existing: "Supplementary analytics layer — reads data from existing system, does NOT modify 
+source data" 
+    integration_pattern: "Read-only data consumer" 
+    value_addition: 
+      - Automated anomaly detection on existing data 
+      - AI-powered duplicate work identification 
+      - Risk scoring and prioritization 
+      - Predictive trend analysis 
+      - Visual decision-support dashboards 
+      - Automated alert generation 
+===== PAGE 8 =====
+2.2 System Architecture Overview 
+text 
+┌─────────────────────────────────────────────────────────────────┐ 
+│                     MPLADS SENTINEL - MVP                       │ 
+├─────────────────────────────────────────────────────────────────┤ 
+│                                                                 │ 
+│  ┌──────────────┐   ┌──────────────┐   ┌────────────────────┐  │ 
+│  │  DATA LAYER  │──▶│ ANALYTICS    │──▶│ PRESENTATION LAYER │  │ 
+│  │              │   │ ENGINE       │   │                    │  │ 
+│  │ • ETL        │   │              │   │ • Dashboard UI     │  │ 
+│  │ • Storage    │   │ • Anomaly    │   │ • Alert Feed       │  │ 
+│  │ • Validation │   │   Detection  │   │ • Reports          │  │ 
+│  │              │   │ • Risk       │   │ • Data Explorer    │  │ 
+│  │              │   │   Scoring    │   │                    │  │ 
+│  │              │   │ • NLP        │   │                    │  │ 
+│  │              │   │   Analysis   │   │                    │  │ 
+│  │              │   │ • Trend      │   │                    │  │ 
+│  │              │   │   Analysis   │   │                    │  │ 
+│  └──────┬───────┘   └──────────────┘   └────────────────────┘  │ 
+│         │                                                       │ 
+│         ▼                                                       │ 
+│  ┌──────────────┐                      ┌────────────────────┐  │ 
+│  │ EXTERNAL     │                      │ AUTH & ACCESS       │  │ 
+│  │ DATA SOURCE  │                      │ CONTROL             │  │ 
+│  │              │                      │                    │  │ 
+│  │ • MPLADS     │                      │ • JWT Auth         │  │ 
+│  │   Dashboard  │                      │ • RBAC             │  │ 
+│  │   CSV/JSON   │                      │ • Audit Logging    │  │ 
+│  └──────────────┘                      └────────────────────┘  │ 
+│                                                                 │ 
+└─────────────────────────────────────────────────────────────────┘ 
+2.3 Interface Specifications 
+YAML 
+INTERFACES: 
+  EXTERNAL_DATA_INTERFACE: 
+    id: IF-001 
+    name: "MPLADS Data Ingestion" 
+===== PAGE 9 =====
+    type: "File-based + Web Scraping" 
+    source: "https://mplads.mospi.gov.in/digigov/dashboard.html" 
+    data_formats_accepted: ["CSV" , "JSON" , "XLSX"] 
+    ingestion_methods: 
+      primary: "Manual CSV upload via admin interface" 
+      secondary: "Automated web scraping of public dashboard data" 
+      tertiary: "Synthetic data generator for demo/testing" 
+    refresh_frequency_mvp: "On-demand (manual trigger)" 
+    data_entities: 
+      - constituency_master 
+      - mp_details 
+      - sanctioned_works 
+      - fund_releases 
+      - expenditure_records 
+      - work_progress_status 
+      - payment_details 
+      - asset_creation_records 
+ 
+  USER_INTERFACE: 
+    id: IF-002 
+    name: "Web Dashboard" 
+    type: "Browser-based SPA" 
+    protocol: "HTTPS" 
+    supported_browsers: 
+      - "Chrome >= 90" 
+      - "Firefox >= 88" 
+      - "Edge >= 90" 
+      - "Safari >= 14" 
+    responsive_breakpoints: 
+      mobile: "320px - 767px" 
+      tablet: "768px - 1023px" 
+      desktop: "1024px+" 
+    accessibility: "WCAG 2.1 AA compliant" 
+ 
+  API_INTERFACE: 
+    id: IF-003 
+    name: "REST API" 
+===== PAGE 10 =====
+    type: "RESTful JSON API" 
+    protocol: "HTTPS" 
+    authentication: "JWT Bearer Token" 
+    rate_limiting: "100 requests/minute per authenticated user" 
+    versioning: "URL path versioning (/api/v1/)" 
+    documentation: "OpenAPI 3.0 Swagger specification auto-generated" 
+ 
+  DATABASE_INTERFACE: 
+    id: IF-004 
+    name: "Data Storage" 
+    type: "PostgreSQL 15+ with pgvector extension" 
+    connection: "Internal only, no external access" 
+    encryption: "AES-256 at rest, TLS 1.3 in transit" 
+2.4 Smart Automation Theme Alignment 
+YAML 
+SMART_AUTOMATION_ALIGNMENT: 
+  THEME: "Smart Automation" 
+  ALIGNMENT_POINTS: 
+    - area: "Automated Monitoring" 
+      description: "Replaces manual review of thousands of MPLADS works with AI-driven continuous monitoring" 
+      automation_gain: "Estimated 90% reduction in manual monitoring effort for anomaly identification" 
+ 
+    - area: "Intelligent Alerting" 
+      description: "Proactive alert generation instead of reactive complaint-driven investigation" 
+      automation_gain: "Near-real-time anomaly flagging vs current quarterly manual review cycles" 
+ 
+    - area: "Data-Driven Decision Making" 
+      description: "ML-powered risk scores and trend analysis replace subjective assessment" 
+      automation_gain: "Quantified risk scoring enables objective prioritization of investigations" 
+ 
+    - area: "Pattern Recognition at Scale" 
+      description: "NLP-based duplicate detection across 543+ constituencies simultaneously" 
+      automation_gain: "Cross-constituency pattern detection impossible with manual methods" 
+ 
+    - area: "Predictive Intelligence" 
+      description: "Trend analysis enables early warning before issues become critical" 
+      automation_gain: "Shift from post-hoc auditing to preventive monitoring" 
+===== PAGE 11 =====
+2.5 User Roles and Personas 
+YAML 
+USER_ROLES: 
+  - role_id: ROLE_ADMIN 
+    name: "System Administrator" 
+    description: "MoSPI/DIID technical staff managing the platform" 
+    permissions: 
+      - data_upload 
+      - user_management 
+      - system_configuration 
+      - all_data_access 
+      - alert_management 
+      - report_generation 
+    dashboard_view: "Full system overview + administration panel" 
+ 
+  - role_id: ROLE_MINISTRY 
+    name: "Ministry Official" 
+    description: "MoSPI officials monitoring national MPLADS implementation" 
+    permissions: 
+      - national_dashboard_view 
+      - all_constituency_data_read 
+      - alert_view 
+      - report_generation 
+      - trend_analysis 
+    dashboard_view: "National overview with drill-down capability" 
+ 
+  - role_id: ROLE_STATE_NODAL 
+    name: "State Nodal Authority" 
+    description: "State-level officers coordinating MPLADS within their state" 
+    permissions: 
+      - state_dashboard_view 
+      - state_constituency_data_read 
+      - alert_view_state 
+      - report_generation_state 
+    dashboard_view: "State-filtered view with constituency drill-down" 
+ 
+  - role_id: ROLE_DISTRICT 
+===== PAGE 12 =====
+    name: "District Authority" 
+    description: "District Collector/DC implementing MPLADS works" 
+    permissions: 
+      - district_dashboard_view 
+      - district_data_read 
+      - alert_view_district 
+      - report_generation_district 
+    dashboard_view: "District-specific work and expenditure view" 
+ 
+  - role_id: ROLE_MP 
+    name: "Member of Parliament" 
+    description: "MP viewing their constituency's MPLADS data and insights" 
+    permissions: 
+      - constituency_dashboard_view 
+      - constituency_data_read 
+      - alert_view_constituency 
+    dashboard_view: "Constituency-specific simplified view" 
+ 
+  - role_id: ROLE_PUBLIC 
+    name: "Public Viewer" 
+    description: "Citizens accessing transparency dashboard" 
+    permissions: 
+      - public_dashboard_view 
+      - aggregate_statistics_read 
+    dashboard_view: "Anonymized aggregate statistics only" 
+ 
+SECTION 3: FUNCTIONAL REQUIREMENTS 
+3.1 Feature Module: Data Ingestion & Management (DIM) 
+FR-DIM-001: CSV/XLSX Data Upload 
+YAML 
+REQUIREMENT: 
+  id: FR-DIM-001 
+  title: "Structured Data File Upload" 
+  priority: MUST_HAVE 
+  module: DATA_INGESTION 
+ 
+  USER_STORY: > 
+===== PAGE 13 =====
+    AS a System Administrator, 
+    I WANT to upload CSV/XLSX files containing MPLADS data 
+    (sanctions, expenditures, works, payments, fund releases), 
+    SO THAT the system can ingest and store structured MPLADS data 
+    for analysis. 
+ 
+  INPUT_SPECIFICATION: 
+    file_formats: ["CSV (UTF-8)" , "XLSX"] 
+    max_file_size: "50 MB per file" 
+    required_data_schemas: 
+      - schema_name: "sanctioned_works" 
+        required_columns: 
+          - column: "work_id" 
+            type: "string" 
+            constraints: "unique, not null" 
+          - column: "constituency_name" 
+            type: "string" 
+            constraints: "not null" 
+          - column: "state_name" 
+            type: "string" 
+            constraints: "not null" 
+          - column: "district_name" 
+            type: "string" 
+            constraints: "not null" 
+          - column: "mp_name" 
+            type: "string" 
+            constraints: "not null" 
+          - column: "work_description" 
+            type: "string" 
+            constraints: "not null, min_length=10" 
+          - column: "work_category" 
+            type: "string" 
+            constraints: "not null, enum: [EDUCATION, HEALTH, DRINKING_WATER, SANITATION, ROADS, 
+COMMUNITY_ASSETS, POWER, SPORTS, OTHER]" 
+          - column: "sanctioned_amount" 
+            type: "decimal" 
+            constraints: "not null, > 0, max 2 decimal places, unit: INR" 
+===== PAGE 14 =====
+          - column: "sanction_date" 
+            type: "date" 
+            constraints: "not null, format: YYYY-MM-DD" 
+          - column: "expected_completion_date" 
+            type: "date" 
+            constraints: "format: YYYY-MM-DD" 
+          - column: "actual_expenditure" 
+            type: "decimal" 
+            constraints: ">= 0, unit: INR" 
+          - column: "work_status" 
+            type: "string" 
+            constraints: "enum: [SANCTIONED, IN_PROGRESS, COMPLETED, CANCELLED, ON_HOLD]" 
+          - column: "completion_date" 
+            type: "date" 
+            constraints: "format: YYYY-MM-DD, nullable" 
+          - column: "implementing_agency" 
+            type: "string" 
+            constraints: "not null" 
+          - column: "financial_year" 
+            type: "string" 
+            constraints: "not null, format: YYYY-YY (e.g., 2023-24)" 
+          - column: "latitude" 
+            type: "decimal" 
+            constraints: "nullable, range: 6.0 to 37.0" 
+          - column: "longitude" 
+            type: "decimal" 
+            constraints: "nullable, range: 68.0 to 97.5" 
+ 
+      - schema_name: "fund_releases" 
+        required_columns: 
+          - column: "release_id" 
+            type: "string" 
+            constraints: "unique, not null" 
+          - column: "constituency_name" 
+            type: "string" 
+            constraints: "not null" 
+          - column: "financial_year" 
+===== PAGE 15 =====
+            type: "string" 
+            constraints: "not null" 
+          - column: "installment_number" 
+            type: "integer" 
+            constraints: "not null, enum: [1, 2]" 
+          - column: "amount_released" 
+            type: "decimal" 
+            constraints: "not null, > 0, unit: INR" 
+          - column: "release_date" 
+            type: "date" 
+            constraints: "not null, format: YYYY-MM-DD" 
+          - column: "cumulative_release" 
+            type: "decimal" 
+            constraints: ">= 0, unit: INR" 
+ 
+  OUTPUT_SPECIFICATION: 
+    success_response: 
+      status: 200 
+      body: 
+        upload_id: "string (UUID)" 
+        records_parsed: "integer" 
+        records_valid: "integer" 
+        records_rejected: "integer" 
+        validation_errors: "array of {row_number, column, error_message}" 
+        ingestion_timestamp: "ISO 8601 datetime" 
+    error_response: 
+      status: 400 
+      body: 
+        error_code: "string" 
+        error_message: "string" 
+        details: "array of validation failures" 
+ 
+  PROCESSING_RULES: 
+    - "Validate file format before parsing" 
+    - "Validate each row against schema constraints" 
+    - "Reject individual invalid rows; ingest valid rows" 
+    - "Generate upload audit log entry with user_id, timestamp, file_hash, result_summary" 
+===== PAGE 16 =====
+    - "Deduplicate against existing records using work_id as primary key" 
+    - "On duplicate work_id: update if newer data, log conflict" 
+    - "Trigger anomaly detection pipeline on successful ingestion of >= 1 valid record" 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-DIM-001-01 
+      description: "System accepts CSV file with valid schema and ingests all valid rows" 
+      test: "Upload CSV with 100 valid rows → records_valid == 100, records_rejected == 0" 
+ 
+    - criteria_id: AC-DIM-001-02 
+      description: "System rejects rows with missing required fields" 
+      test: "Upload CSV where row 5 has null work_id → records_rejected >= 1, validation_errors includes {row: 5, 
+column: work_id}" 
+ 
+    - criteria_id: AC-DIM-001-03 
+      description: "System rejects file exceeding 50MB" 
+      test: "Upload 55MB CSV → HTTP 413, error_message contains 'file size exceeds limit'" 
+ 
+    - criteria_id: AC-DIM-001-04 
+      description: "System handles duplicate work_ids by updating existing records" 
+      test: "Upload CSV with work_id='W001' already in DB with different expenditure → DB record updated, audit log 
+entry created" 
+ 
+    - criteria_id: AC-DIM-001-05 
+      description: "Upload creates audit trail entry" 
+      test: "After upload → audit_log table contains entry with upload_id, user_id, timestamp, file_hash" 
+FR-DIM-002: Synthetic Data Generator 
+YAML 
+REQUIREMENT: 
+  id: FR-DIM-002 
+  title: "Synthetic MPLADS Data Generator for Demo/Testing" 
+  priority: MUST_HAVE 
+  module: DATA_INGESTION 
+ 
+  USER_STORY: > 
+    AS an AI development system, 
+    I WANT to generate realistic synthetic MPLADS data including known anomalies, 
+    SO THAT the anomaly detection system can be demonstrated and validated 
+===== PAGE 17 =====
+    without requiring actual government data. 
+ 
+  INPUT_SPECIFICATION: 
+    parameters: 
+      num_constituencies: 
+        type: "integer" 
+        default: 50 
+        range: "10 to 543" 
+      num_works_per_constituency: 
+        type: "integer" 
+        default: 100 
+        range: "20 to 500" 
+      financial_years: 
+        type: "array of string" 
+        default: ["2019-20" , "2020-21" , "2021-22" , "2022-23" , "2023-24"] 
+      anomaly_injection_rate: 
+        type: "decimal" 
+        default: 0.08 
+        description: "Fraction of records with injected anomalies" 
+      anomaly_types: 
+        type: "array" 
+        values: 
+          - type: "COST_OVERRUN" 
+            injection_method: "actual_expenditure = sanctioned_amount * random(1.2, 3.0)" 
+            label: true 
+          - type: "DUPLICATE_WORK" 
+            injection_method: "Copy work_description with minor word substitution, same constituency, similar amount" 
+            label: true 
+          - type: "DELAYED_PROJECT" 
+            injection_method: "completion_date = expected_completion_date + random(180, 730) days; OR status 
+IN_PROGRESS with expected_completion_date > 365 days ago" 
+            label: true 
+          - type: "ABNORMAL_EXPENDITURE_PATTERN" 
+            injection_method: "Single constituency with fund_utilization_rate < 20% or > 150%" 
+            label: true 
+          - type: "SUSPICIOUS_CLUSTERING" 
+            injection_method: "Multiple works with identical amounts in same constituency within same month" 
+===== PAGE 18 =====
+            label: true 
+ 
+  OUTPUT_SPECIFICATION: 
+    files_generated: 
+      - "synthetic_sanctioned_works.csv" 
+      - "synthetic_fund_releases.csv" 
+      - "synthetic_anomaly_labels.csv" 
+    anomaly_labels_schema: 
+      columns: 
+        - "work_id" 
+        - "anomaly_type" 
+        - "anomaly_injected (boolean)" 
+        - "anomaly_description" 
+ 
+  PROCESSING_RULES: 
+    - "Use realistic Indian state/district/constituency names from official list" 
+    - "Generate work descriptions using template-based NLG with category-appropriate vocabulary" 
+    - "Ensure sanctioned amounts follow realistic distribution: median ~₹5 lakhs, range ₹50,000 to ₹50 lakhs" 
+    - "Normal fund utilization rate: 60-95%" 
+    - "Ensure date consistency: sanction_date < expected_completion_date; completion_date >= sanction_date" 
+    - "Generate ground-truth anomaly labels for validation" 
+    - "Set random seed for reproducibility: seed=42" 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-DIM-002-01 
+      description: "Generator produces valid CSV files matching sanctioned_works schema" 
+      test: "Run generator with defaults → output CSV passes schema validation from FR-DIM-001" 
+ 
+    - criteria_id: AC-DIM-002-02 
+      description: "Anomaly injection rate is approximately as specified" 
+      test: "With anomaly_injection_rate=0.08 → |actual_anomaly_count/total_records - 0.08| < 0.02" 
+ 
+    - criteria_id: AC-DIM-002-03 
+      description: "Ground truth labels are accurate" 
+      test: "Every record in synthetic_anomaly_labels.csv with anomaly_injected=true has corresponding anomalous 
+values in the data" 
+ 
+===== PAGE 19 =====
+    - criteria_id: AC-DIM-002-04 
+      description: "Data is reproducible with same seed" 
+      test: "Two runs with seed=42 produce byte-identical CSV output" 
+FR-DIM-003: Data Scraping from MPLADS Dashboard 
+YAML 
+REQUIREMENT: 
+  id: FR-DIM-003 
+  title: "Web Scraping of Public MPLADS Dashboard Data" 
+  priority: SHOULD_HAVE 
+  module: DATA_INGESTION 
+ 
+  USER_STORY: > 
+    AS a System Administrator, 
+    I WANT the system to scrape publicly available MPLADS data from the official dashboard, 
+    SO THAT the analytics engine has access to the latest published data. 
+ 
+  INPUT_SPECIFICATION: 
+    target_url: "https://mplads.mospi.gov.in/digigov/dashboard.html" 
+    scraping_targets: 
+      - "State-wise fund release and utilization summary" 
+      - "Constituency-wise work statistics" 
+      - "Year-wise sanction and expenditure data" 
+      - "Work category distribution" 
+    trigger: "Manual trigger by ROLE_ADMIN via admin panel button" 
+ 
+  OUTPUT_SPECIFICATION: 
+    output_format: "Structured JSON/CSV stored in database" 
+    success_response: 
+      records_scraped: "integer" 
+      scrape_timestamp: "ISO 8601 datetime" 
+      data_freshness: "Date of latest data point scraped" 
+ 
+  PROCESSING_RULES: 
+    - "Respect robots.txt directives" 
+    - "Add 2-second delay between requests to avoid overloading server" 
+    - "Parse HTML tables / JavaScript-rendered content using headless browser if needed" 
+    - "Map scraped fields to internal schema" 
+===== PAGE 20 =====
+    - "Log all scraping activity with timestamp and result" 
+    - "Handle scraping failures gracefully with retry (max 3 attempts)" 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-DIM-003-01 
+      description: "Scraper retrieves at least state-wise summary data" 
+      test: "Trigger scrape → records_scraped > 0 for state-wise fund data" 
+ 
+    - criteria_id: AC-DIM-003-02 
+      description: "Scraped data conforms to internal schema" 
+      test: "All scraped records pass schema validation" 
+ 
+    - criteria_id: AC-DIM-003-03 
+      description: "Scraper handles site unavailability gracefully" 
+      test: "Simulate HTTP 500 → system returns error message, no crash, logged appropriately" 
+3.2 Feature Module: Anomaly Detection Engine (ADE) 
+FR-ADE-001: Cost Overrun Detection 
+YAML 
+REQUIREMENT: 
+  id: FR-ADE-001 
+  title: "Cost Overrun Anomaly Detection" 
+  priority: MUST_HAVE 
+  module: ANOMALY_DETECTION 
+ 
+  USER_STORY: > 
+    AS a Ministry Official, 
+    I WANT the system to automatically detect works where actual expenditure 
+    significantly exceeds the sanctioned cost estimate, 
+    SO THAT I can investigate potential financial irregularities. 
+ 
+  INPUT_SPECIFICATION: 
+    data_source: "sanctioned_works table" 
+    required_fields: 
+      - "work_id" 
+      - "sanctioned_amount" 
+      - "actual_expenditure" 
+      - "work_category" 
+===== PAGE 21 =====
+      - "constituency_name" 
+      - "financial_year" 
+ 
+  DETECTION_ALGORITHM: 
+    method_1_rule_based: 
+      name: "Threshold-based cost overrun" 
+      logic: | 
+        cost_overrun_percentage = ((actual_expenditure - sanctioned_amount) / sanctioned_amount) * 100 
+        IF cost_overrun_percentage > 15% THEN flag as COST_OVERRUN anomaly 
+        severity: 
+          MEDIUM: 15% < cost_overrun_percentage <= 30% 
+          HIGH: 30% < cost_overrun_percentage <= 50% 
+          CRITICAL: cost_overrun_percentage > 50% 
+ 
+    method_2_statistical: 
+      name: "Z-score based outlier detection" 
+      logic: | 
+        Group works by work_category 
+        For each category: 
+          Calculate mean and std_dev of cost_overrun_percentage 
+          z_score = (cost_overrun_percentage - mean) / std_dev 
+          IF |z_score| > 2.5 THEN flag as statistical anomaly 
+        Combine with method_1 for composite detection 
+ 
+    method_3_ml: 
+      name: "Isolation Forest on expenditure features" 
+      logic: | 
+        Features: [sanctioned_amount, actual_expenditure, cost_overrun_percentage,  
+                   days_to_completion, work_category_encoded] 
+        Train Isolation Forest with contamination=0.05 
+        Flag records with anomaly_score < threshold as anomalies 
+      training_trigger: "On each data ingestion with >= 500 records" 
+ 
+  OUTPUT_SPECIFICATION: 
+    anomaly_record: 
+      work_id: "string" 
+      anomaly_type: "COST_OVERRUN" 
+===== PAGE 22 =====
+      severity: "MEDIUM | HIGH | CRITICAL" 
+      cost_overrun_percentage: "decimal" 
+      sanctioned_amount: "decimal" 
+      actual_expenditure: "decimal" 
+      detection_method: "string" 
+      confidence_score: "decimal (0.0 to 1.0)" 
+      detected_at: "ISO 8601 datetime" 
+      constituency: "string" 
+      state: "string" 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-ADE-001-01 
+      description: "System flags works with >15% cost overrun" 
+      test: "Insert work with sanctioned=100000, actual=120000 → flagged with severity MEDIUM" 
+ 
+    - criteria_id: AC-ADE-001-02 
+      description: "System correctly assigns severity tiers" 
+      test: | 
+        sanctioned=100000, actual=140000 → HIGH 
+        sanctioned=100000, actual=160000 → CRITICAL 
+ 
+    - criteria_id: AC-ADE-001-03 
+      description: "Statistical method detects contextual anomalies" 
+      test: "Insert EDUCATION work with 10% overrun where category mean is 2% → flagged by z-score method" 
+ 
+    - criteria_id: AC-ADE-001-04 
+      description: "System does not flag normal works as cost overrun" 
+      test: "Insert work with sanctioned=100000, actual=90000 → NOT flagged" 
+ 
+    - criteria_id: AC-ADE-001-05 
+      description: "On synthetic data with ground truth, precision >= 0.7 and recall >= 0.8 for cost overrun class" 
+      test: "Run detection on synthetic data → compute precision/recall against labels" 
+FR-ADE-002: Duplicate Work Detection 
+YAML 
+REQUIREMENT: 
+  id: FR-ADE-002 
+  title: "Duplicate Work Detection using NLP" 
+===== PAGE 23 =====
+  priority: MUST_HAVE 
+  module: ANOMALY_DETECTION 
+ 
+  USER_STORY: > 
+    AS a District Authority, 
+    I WANT the system to identify potentially duplicate works 
+    (similar descriptions, same area, similar costs), 
+    SO THAT I can prevent double-funding of the same project. 
+ 
+  INPUT_SPECIFICATION: 
+    data_source: "sanctioned_works table" 
+    required_fields: 
+      - "work_id" 
+      - "work_description" 
+      - "constituency_name" 
+      - "district_name" 
+      - "sanctioned_amount" 
+      - "sanction_date" 
+      - "work_category" 
+      - "latitude (optional)" 
+      - "longitude (optional)" 
+ 
+  DETECTION_ALGORITHM: 
+    step_1_text_embedding: 
+      method: "Sentence transformer model (all-MiniLM-L6-v2 or equivalent)" 
+      process: | 
+        For each work_description: 
+          Generate 384-dimensional embedding vector 
+          Store in pgvector column for efficient similarity search 
+ 
+    step_2_similarity_search: 
+      method: "Cosine similarity with ANN (Approximate Nearest Neighbor)" 
+      process: | 
+        For each work in a constituency: 
+          Find all works in SAME constituency with cosine_similarity > 0.85 
+          Filter pairs where: 
+            - |sanctioned_amount_A - sanctioned_amount_B| / max(A, B) < 0.3 (amount within 30%) 
+===== PAGE 24 =====
+            - |sanction_date_A - sanction_date_B| < 365 days 
+            - work_category_A == work_category_B (optional, boosts confidence) 
+          IF geographic coords available: 
+            - haversine_distance(A, B) < 2 km (boosts confidence) 
+ 
+    step_3_scoring: 
+      composite_duplicate_score: | 
+        score = 0 
+        score += text_similarity * 40  (max 40 points) 
+        score += amount_similarity * 20 (max 20 points) 
+        score += temporal_proximity * 15 (max 15 points, linear decay over 365 days) 
+        score += geographic_proximity * 15 (max 15 points, if coords available) 
+        score += category_match * 10 (10 if same category, 0 otherwise) 
+         
+        IF score >= 70: flag as POTENTIAL_DUPLICATE, severity HIGH 
+        IF score >= 50 AND score < 70: flag as POSSIBLE_DUPLICATE, severity MEDIUM 
+        IF score < 50: do not flag 
+ 
+  OUTPUT_SPECIFICATION: 
+    duplicate_pair_record: 
+      pair_id: "string (UUID)" 
+      work_id_a: "string" 
+      work_id_b: "string" 
+      text_similarity: "decimal (0.0 to 1.0)" 
+      amount_similarity: "decimal (0.0 to 1.0)" 
+      composite_score: "integer (0 to 100)" 
+      severity: "MEDIUM | HIGH" 
+      anomaly_type: "DUPLICATE_WORK" 
+      constituency: "string" 
+      detected_at: "ISO 8601 datetime" 
+      work_description_a: "string" 
+      work_description_b: "string" 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-ADE-002-01 
+      description: "System detects near-identical work descriptions" 
+      test: | 
+===== PAGE 25 =====
+        Insert: "Construction of community hall at Village Rampur" and 
+                "Construction of community hall in Village Rampur" 
+        Same constituency, similar amount → flagged as POTENTIAL_DUPLICATE 
+ 
+    - criteria_id: AC-ADE-002-02 
+      description: "System does NOT flag genuinely different works" 
+      test: | 
+        Insert: "Construction of primary school building" and 
+                "Installation of solar street lights" 
+        Same constituency → NOT flagged 
+ 
+    - criteria_id: AC-ADE-002-03 
+      description: "System does NOT flag similar works in different constituencies" 
+      test: | 
+        Insert: identical descriptions in different constituencies → NOT flagged 
+        (cross-constituency duplicates are out of MVP scope) 
+ 
+    - criteria_id: AC-ADE-002-04 
+      description: "Detection runs within 30 seconds for 5000 works in one constituency" 
+      test: "Performance benchmark on synthetic data" 
+ 
+    - criteria_id: AC-ADE-002-05 
+      description: "On synthetic data, precision >= 0.75 and recall >= 0.80 for duplicate class" 
+      test: "Validate against ground truth labels" 
+FR-ADE-003: Delayed Project Detection 
+YAML 
+REQUIREMENT: 
+  id: FR-ADE-003 
+  title: "Delayed Project Identification" 
+  priority: MUST_HAVE 
+  module: ANOMALY_DETECTION 
+ 
+  USER_STORY: > 
+    AS a State Nodal Authority, 
+    I WANT the system to identify projects that are significantly delayed 
+    beyond their expected completion date, 
+    SO THAT I can escalate and take corrective action. 
+===== PAGE 26 =====
+ 
+  INPUT_SPECIFICATION: 
+    data_source: "sanctioned_works table" 
+    required_fields: 
+      - "work_id" 
+      - "sanction_date" 
+      - "expected_completion_date" 
+      - "completion_date (nullable)" 
+      - "work_status" 
+      - "constituency_name" 
+    reference_date: "Current system date (or configurable analysis date)" 
+ 
+  DETECTION_ALGORITHM: 
+    logic: | 
+      FOR each work: 
+        IF work_status IN ['SANCTIONED' , 'IN_PROGRESS' , 'ON_HOLD']: 
+          IF expected_completion_date IS NOT NULL AND reference_date > expected_completion_date: 
+            delay_days = (reference_date - expected_completion_date).days 
+            IF delay_days > 90 AND delay_days <= 180: severity = MEDIUM 
+            IF delay_days > 180 AND delay_days <= 365: severity = HIGH 
+            IF delay_days > 365: severity = CRITICAL 
+            Flag as DELAYED_PROJECT 
+ 
+        IF work_status == 'COMPLETED' AND completion_date IS NOT NULL: 
+          IF completion_date > expected_completion_date: 
+            delay_days = (completion_date - expected_completion_date).days 
+            IF delay_days > 180: flag as DELAYED_PROJECT (completed but was severely delayed) 
+ 
+        IF work_status == 'SANCTIONED' AND (reference_date - sanction_date).days > 365: 
+          Flag as STALLED_PROJECT, severity HIGH 
+          (Sanctioned over a year ago, never started) 
+ 
+  OUTPUT_SPECIFICATION: 
+    anomaly_record: 
+      work_id: "string" 
+      anomaly_type: "DELAYED_PROJECT | STALLED_PROJECT" 
+      severity: "MEDIUM | HIGH | CRITICAL" 
+===== PAGE 27 =====
+      delay_days: "integer" 
+      sanction_date: "date" 
+      expected_completion_date: "date" 
+      current_status: "string" 
+      constituency: "string" 
+      detected_at: "ISO 8601 datetime" 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-ADE-003-01 
+      description: "Work delayed 100 days beyond expected completion is flagged MEDIUM" 
+      test: "expected_completion=2024-01-01, reference_date=2024-04-11, status=IN_PROGRESS → 
+DELAYED_PROJECT, MEDIUM" 
+ 
+    - criteria_id: AC-ADE-003-02 
+      description: "Work delayed 400 days is flagged CRITICAL" 
+      test: "expected_completion=2023-01-01, reference_date=2024-03-06, status=IN_PROGRESS → CRITICAL" 
+ 
+    - criteria_id: AC-ADE-003-03 
+      description: "Completed work is not flagged if completed before deadline" 
+      test: "expected_completion=2024-06-01, completion_date=2024-05-01, status=COMPLETED → NOT flagged" 
+ 
+    - criteria_id: AC-ADE-003-04 
+      description: "Sanctioned work with no progress after 1 year flagged as STALLED" 
+      test: "sanction_date=2023-01-01, status=SANCTIONED, reference_date=2024-06-01 → STALLED_PROJECT, HIGH" 
+FR-ADE-004: Fund Utilization Anomaly Detection 
+YAML 
+REQUIREMENT: 
+  id: FR-ADE-004 
+  title: "Abnormal Fund Utilization Pattern Detection" 
+  priority: MUST_HAVE 
+  module: ANOMALY_DETECTION 
+ 
+  USER_STORY: > 
+    AS a Ministry Official, 
+    I WANT to identify constituencies with abnormally low or high fund utilization rates, 
+    SO THAT I can investigate potential mismanagement or fund diversion. 
+ 
+===== PAGE 28 =====
+  INPUT_SPECIFICATION: 
+    data_sources: 
+      - "fund_releases table" 
+      - "sanctioned_works table (aggregated expenditure)" 
+    required_computed_metrics: 
+      - fund_utilization_rate: "(total_expenditure / total_funds_released) * 100" 
+      - works_per_crore: "total_works_sanctioned / (total_funds_released / 10000000)" 
+      - average_work_cost: "total_sanctioned_amount / total_works_sanctioned" 
+    grouping: "Per constituency per financial_year" 
+ 
+  DETECTION_ALGORITHM: 
+    method_1_threshold: 
+      logic: | 
+        IF fund_utilization_rate < 30%: flag LOW_UTILIZATION, severity HIGH 
+        IF fund_utilization_rate < 50%: flag LOW_UTILIZATION, severity MEDIUM 
+        IF fund_utilization_rate > 110%: flag OVER_UTILIZATION, severity HIGH (spending more than released) 
+ 
+    method_2_statistical: 
+      logic: | 
+        Group all constituencies by state 
+        For each state: 
+          Calculate mean and std of fund_utilization_rate 
+          z_score = (constituency_rate - state_mean) / state_std 
+          IF |z_score| > 2.0: flag as FUND_UTILIZATION_ANOMALY 
+ 
+    method_3_temporal: 
+      logic: | 
+        For each constituency: 
+          Calculate year-over-year change in fund_utilization_rate 
+          IF |change| > 40 percentage points: flag as SUDDEN_UTILIZATION_SHIFT 
+ 
+  OUTPUT_SPECIFICATION: 
+    anomaly_record: 
+      constituency: "string" 
+      financial_year: "string" 
+      anomaly_type: "LOW_UTILIZATION | OVER_UTILIZATION | SUDDEN_UTILIZATION_SHIFT" 
+      severity: "MEDIUM | HIGH | CRITICAL" 
+===== PAGE 29 =====
+      fund_utilization_rate: "decimal" 
+      total_funds_released: "decimal" 
+      total_expenditure: "decimal" 
+      state_average_rate: "decimal" 
+      z_score: "decimal" 
+      detected_at: "ISO 8601 datetime" 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-ADE-004-01 
+      description: "Constituency with 25% utilization rate flagged as LOW_UTILIZATION HIGH" 
+      test: "released=5000000, expenditure=1250000 → LOW_UTILIZATION, HIGH" 
+ 
+    - criteria_id: AC-ADE-004-02 
+      description: "Constituency with 85% utilization NOT flagged" 
+      test: "released=5000000, expenditure=4250000 → NOT flagged by threshold method" 
+ 
+    - criteria_id: AC-ADE-004-03 
+      description: "Sudden drop from 90% to 30% year-over-year flagged" 
+      test: "FY 2022-23: 90%, FY 2023-24: 30% → SUDDEN_UTILIZATION_SHIFT flagged" 
+FR-ADE-005: Suspicious Pattern Detection 
+YAML 
+REQUIREMENT: 
+  id: FR-ADE-005 
+  title: "Suspicious Expenditure Pattern Detection" 
+  priority: SHOULD_HAVE 
+  module: ANOMALY_DETECTION 
+ 
+  USER_STORY: > 
+    AS a Ministry Official, 
+    I WANT the system to detect suspicious patterns such as 
+    clustering of identical amounts, end-of-year spending spikes, 
+    and unusual implementing agency patterns, 
+    SO THAT potential manipulation or gaming of the system can be identified. 
+ 
+  DETECTION_PATTERNS: 
+    pattern_1_amount_clustering: 
+      description: "Multiple works with identical sanctioned amounts in same constituency" 
+===== PAGE 30 =====
+      logic: | 
+        Group works by (constituency, financial_year) 
+        Count occurrences of each unique sanctioned_amount 
+        IF count >= 5 for same amount: flag as AMOUNT_CLUSTERING 
+        severity: MEDIUM if 5-10 occurrences, HIGH if > 10 
+ 
+    pattern_2_end_of_year_rush: 
+      description: "Disproportionate sanctions in last month of financial year" 
+      logic: | 
+        For each constituency per financial_year: 
+          Count works sanctioned in March (last month) 
+          Calculate ratio = march_sanctions / total_annual_sanctions 
+          IF ratio > 0.40: flag as END_OF_YEAR_RUSH, severity MEDIUM 
+          IF ratio > 0.60: severity HIGH 
+ 
+    pattern_3_round_number_bias: 
+      description: "Excessive use of round numbers in sanctioned amounts" 
+      logic: | 
+        For each constituency: 
+          Calculate percentage of works with sanctioned_amount divisible by 100000 
+          IF percentage > 80%: flag as ROUND_NUMBER_BIAS, severity LOW 
+          (Informational flag — not directly fraud but indicates potential estimate padding) 
+ 
+    pattern_4_single_agency_dominance: 
+      description: "One implementing agency receiving disproportionate share of works" 
+      logic: | 
+        For each constituency per financial_year: 
+          Calculate each agency's share of total works and total amount 
+          IF any agency > 80% of total amount: flag as AGENCY_CONCENTRATION, severity MEDIUM 
+ 
+  OUTPUT_SPECIFICATION: 
+    anomaly_record: 
+      constituency: "string" 
+      financial_year: "string" 
+      anomaly_type: "AMOUNT_CLUSTERING | END_OF_YEAR_RUSH | ROUND_NUMBER_BIAS | 
+AGENCY_CONCENTRATION" 
+      severity: "LOW | MEDIUM | HIGH" 
+===== PAGE 31 =====
+      details: "JSON object with pattern-specific details" 
+      detected_at: "ISO 8601 datetime" 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-ADE-005-01 
+      description: "7 works with identical amount ₹5,00,000 in same constituency flagged" 
+      test: "Insert 7 works with sanctioned_amount=500000 → AMOUNT_CLUSTERING, MEDIUM" 
+ 
+    - criteria_id: AC-ADE-005-02 
+      description: "55% of sanctions in March flagged as END_OF_YEAR_RUSH" 
+      test: "Constituency with 20 works, 11 in March → flagged MEDIUM" 
+3.3 Feature Module: Risk Scoring Engine (RSE) 
+FR-RSE-001: Composite Risk Score Calculation 
+YAML 
+REQUIREMENT: 
+  id: FR-RSE-001 
+  title: "Composite Risk Score per Work Item and per Constituency" 
+  priority: MUST_HAVE 
+  module: RISK_SCORING 
+ 
+  USER_STORY: > 
+    AS a Ministry Official, 
+    I WANT each MPLADS work and each constituency to have a composite risk score, 
+    SO THAT I can prioritize investigation efforts on the highest-risk items. 
+ 
+  SCORING_MODEL: 
+    work_level_score: 
+      max_score: 100 
+      components: 
+        - component: "cost_overrun_score" 
+          weight: 25 
+          calculation: | 
+            IF no cost overrun: 0 
+            IF overrun 0-15%: 5 
+            IF overrun 15-30%: 15 
+            IF overrun 30-50%: 20 
+            IF overrun > 50%: 25 
+===== PAGE 32 =====
+ 
+        - component: "delay_score" 
+          weight: 25 
+          calculation: | 
+            IF not delayed: 0 
+            IF delayed 0-90 days: 5 
+            IF delayed 90-180 days: 10 
+            IF delayed 180-365 days: 20 
+            IF delayed > 365 days: 25 
+ 
+        - component: "duplicate_score" 
+          weight: 25 
+          calculation: | 
+            IF no duplicate detected: 0 
+            IF possible duplicate (score 50-70): 15 
+            IF probable duplicate (score > 70): 25 
+ 
+        - component: "pattern_anomaly_score" 
+          weight: 15 
+          calculation: | 
+            Sum of active pattern flags: 
+            AMOUNT_CLUSTERING: +5 
+            END_OF_YEAR_RUSH: +5 
+            ROUND_NUMBER_BIAS: +2 
+            AGENCY_CONCENTRATION: +3 
+            Cap at 15 
+ 
+        - component: "fund_utilization_anomaly_score" 
+          weight: 10 
+          calculation: | 
+            IF constituency fund_utilization_rate anomaly detected: 10 
+            ELSE: 0 
+ 
+    constituency_level_score: 
+      max_score: 100 
+      calculation: | 
+        avg_work_risk = mean(work_level_scores for all works in constituency) 
+===== PAGE 33 =====
+        high_risk_ratio = count(works with score > 50) / total_works 
+        fund_util_anomaly = 1 if any fund utilization anomaly else 0 
+         
+        constituency_score = (avg_work_risk * 0.4) + (high_risk_ratio * 100 * 0.35) + (fund_util_anomaly * 25) 
+        Cap at 100 
+ 
+    risk_tier_mapping: 
+      LOW: "0-25" 
+      MEDIUM: "26-50" 
+      HIGH: "51-75" 
+      CRITICAL: "76-100" 
+ 
+  OUTPUT_SPECIFICATION: 
+    work_risk_record: 
+      work_id: "string" 
+      risk_score: "integer (0-100)" 
+      risk_tier: "LOW | MEDIUM | HIGH | CRITICAL" 
+      component_scores: 
+        cost_overrun: "integer" 
+        delay: "integer" 
+        duplicate: "integer" 
+        pattern: "integer" 
+        fund_utilization: "integer" 
+      last_calculated: "ISO 8601 datetime" 
+ 
+    constituency_risk_record: 
+      constituency: "string" 
+      state: "string" 
+      risk_score: "integer (0-100)" 
+      risk_tier: "LOW | MEDIUM | HIGH | CRITICAL" 
+      total_works: "integer" 
+      high_risk_works_count: "integer" 
+      last_calculated: "ISO 8601 datetime" 
+ 
+  PROCESSING_RULES: 
+    - "Recalculate scores whenever new anomalies are detected" 
+    - "Store historical scores for trend analysis" 
+===== PAGE 34 =====
+    - "Scores must be deterministic given same input data" 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-RSE-001-01 
+      description: "Work with 40% cost overrun + 200 days delay scores > 50" 
+      test: "cost_overrun=40%, delay=200 days, no duplicate, no patterns → score = 20 + 20 + 0 + 0 + 0 = 40. Wait — 
+recalculating: overrun 30-50% → 20, delay 180-365 → 20, total = 40 → MEDIUM. Test passes. " 
+ 
+    - criteria_id: AC-RSE-001-02 
+      description: "Work with no anomalies scores 0" 
+      test: "No overrun, no delay, no duplicate, no pattern → score = 0, tier = LOW" 
+ 
+    - criteria_id: AC-RSE-001-03 
+      description: "Work flagged as duplicate with 60% overrun scores CRITICAL" 
+      test: "overrun >50% → 25, duplicate probable → 25 = 50 minimum → HIGH or above" 
+ 
+    - criteria_id: AC-RSE-001-04 
+      description: "Constituency score correctly aggregates work scores" 
+      test: "Constituency with 10 works, 5 scoring >50 → high_risk_ratio=0.5, constituency_score > 50" 
+3.4 Feature Module: Dashboard & Visualization (DVZ) 
+FR-DVZ-001: National Overview Dashboard 
+YAML 
+REQUIREMENT: 
+  id: FR-DVZ-001 
+  title: "National Overview Dashboard with Heatmap" 
+  priority: MUST_HAVE 
+  module: DASHBOARD 
+ 
+  USER_STORY: > 
+    AS a Ministry Official, 
+    I WANT to see a national overview dashboard showing risk distribution 
+    across all states and constituencies on an interactive map, 
+    SO THAT I can quickly identify geographic clusters of concern. 
+ 
+  UI_SPECIFICATION: 
+    page_route: "/dashboard/national" 
+    layout: 
+===== PAGE 35 =====
+      header: 
+        - "MPLADS Sentinel" logo and title 
+        - User role badge 
+        - Global date range filter (financial year selector) 
+        - Logout button 
+ 
+      section_1_kpi_cards: 
+        position: "Top row, 4 cards equally spaced" 
+        cards: 
+          - id: "kpi_total_works" 
+            label: "Total Works Analyzed" 
+            value_source: "COUNT(sanctioned_works)" 
+            format: "Integer with commas (e.g., 12,345)" 
+            icon: "briefcase" 
+            color: "blue" 
+ 
+          - id: "kpi_total_expenditure" 
+            label: "Total Expenditure" 
+            value_source: "SUM(actual_expenditure)" 
+            format: "₹ X.XX Cr (converted to crores, 2 decimal places)" 
+            icon: "currency-rupee" 
+            color: "green" 
+ 
+          - id: "kpi_anomalies_detected" 
+            label: "Anomalies Detected" 
+            value_source: "COUNT(anomalies WHERE status=ACTIVE)" 
+            format: "Integer with commas" 
+            icon: "alert-triangle" 
+            color: "red" 
+ 
+          - id: "kpi_high_risk_constituencies" 
+            label: "High-Risk Constituencies" 
+            value_source: "COUNT(constituencies WHERE risk_tier IN [HIGH, CRITICAL])" 
+            format: "Integer" 
+            icon: "map-pin" 
+            color: "orange" 
+ 
+===== PAGE 36 =====
+      section_2_map: 
+        position: "Below KPI cards, full width" 
+        height: "500px" 
+        type: "India choropleth map (state-level heatmap)" 
+        implementation: "Leaflet.js or D3.js with India GeoJSON" 
+        data_binding: "State-level average risk score → color gradient" 
+        color_scale: 
+          low: "#4CAF50 (green, risk 0-25)" 
+          medium: "#FFC107 (amber, risk 26-50)" 
+          high: "#FF9800 (orange, risk 51-75)" 
+          critical: "#F44336 (red, risk 76-100)" 
+        interactions: 
+          - "Hover: Tooltip showing state name, avg risk score, total works, anomaly count" 
+          - "Click: Navigate to state drill-down view (/dashboard/state/{state_id})" 
+ 
+      section_3_charts: 
+        position: "Below map, two columns" 
+        chart_left: 
+          type: "Bar chart" 
+          title: "Top 10 High-Risk Constituencies" 
+          data: "Top 10 constituencies by risk_score DESC" 
+          x_axis: "Constituency name" 
+          y_axis: "Risk score (0-100)" 
+          bar_color: "Color-coded by risk tier" 
+          interaction: "Click bar → navigate to constituency detail" 
+ 
+        chart_right: 
+          type: "Donut chart" 
+          title: "Anomaly Type Distribution" 
+          data: "COUNT of anomalies grouped by anomaly_type" 
+          segments: ["COST_OVERRUN" , "DUPLICATE_WORK" , "DELAYED_PROJECT" , "FUND_MISUTILIZATION" , 
+"PATTERN_ANOMALY"] 
+          colors: "Distinct palette per type" 
+          interaction: "Click segment → filter alert feed below" 
+ 
+      section_4_trend: 
+        position: "Below charts, full width" 
+===== PAGE 37 =====
+        type: "Line chart (multi-series)" 
+        title: "Anomaly Trends Over Financial Years" 
+        x_axis: "Financial year" 
+        y_axis: "Number of anomalies detected" 
+        series: "One line per anomaly_type" 
+        interaction: "Toggle series visibility" 
+ 
+      section_5_alert_feed: 
+        position: "Below trend chart" 
+        type: "Scrollable table/list" 
+        title: "Recent Alerts" 
+        columns: 
+          - "Alert ID" 
+          - "Timestamp" 
+          - "Constituency" 
+          - "State" 
+          - "Anomaly Type (with icon)" 
+          - "Severity (color-coded badge)" 
+          - "Work ID (link to detail)" 
+          - "Brief Description" 
+        default_sort: "Timestamp DESC" 
+        pagination: "20 per page" 
+        filters: 
+          - "Severity: ALL | CRITICAL | HIGH | MEDIUM | LOW" 
+          - "Anomaly Type: multi-select" 
+          - "State: dropdown" 
+        interaction: "Click row → expand alert detail panel" 
+ 
+  ACCESSIBILITY_REQUIREMENTS: 
+    - "All charts must have ARIA labels and role='img'" 
+    - "Color-coded elements must also use patterns/icons for color-blind users" 
+    - "Map must be keyboard navigable" 
+    - "KPI cards must be screen-reader friendly with proper heading hierarchy" 
+    - "Minimum contrast ratio 4.5:1 for all text" 
+    - "Focus indicators visible on all interactive elements" 
+ 
+  ACCEPTANCE_CRITERIA: 
+===== PAGE 38 =====
+    - criteria_id: AC-DVZ-001-01 
+      description: "Dashboard loads within 3 seconds with 10,000 works in database" 
+      test: "Measure page load time with 10K records → < 3000ms" 
+ 
+    - criteria_id: AC-DVZ-001-02 
+      description: "All 4 KPI cards display correct aggregated values" 
+      test: "Compare displayed values against SQL COUNT/SUM queries → exact match" 
+ 
+    - criteria_id: AC-DVZ-001-03 
+      description: "Map renders all 28 states + 8 UTs with correct color coding" 
+      test: "Visual verification + programmatic check that all state GeoJSON features are rendered" 
+ 
+    - criteria_id: AC-DVZ-001-04 
+      description: "State click navigates to state drill-down" 
+      test: "Click Maharashtra on map → URL changes to /dashboard/state/maharashtra" 
+ 
+    - criteria_id: AC-DVZ-001-05 
+      description: "Alert feed filters work correctly" 
+      test: "Select severity=CRITICAL → only CRITICAL alerts shown" 
+ 
+    - criteria_id: AC-DVZ-001-06 
+      description: "Dashboard is responsive on tablet (768px width)" 
+      test: "Resize to 768px → layout adjusts, charts readable, no horizontal scroll" 
+FR-DVZ-002: Constituency Detail View 
+YAML 
+REQUIREMENT: 
+  id: FR-DVZ-002 
+  title: "Constituency-Level Detail Dashboard" 
+  priority: MUST_HAVE 
+  module: DASHBOARD 
+ 
+  USER_STORY: > 
+    AS an MP or District Authority, 
+    I WANT to see detailed analytics for a specific constituency, 
+    SO THAT I can understand the risk profile and take corrective action. 
+ 
+  UI_SPECIFICATION: 
+===== PAGE 39 =====
+    page_route: "/dashboard/constituency/{constituency_id}" 
+    layout: 
+      header: 
+        - Breadcrumb: "National > {State} > {Constituency}" 
+        - MP name and photo placeholder 
+        - Financial year selector 
+ 
+      section_1_constituency_kpis: 
+        cards: 
+          - "Total Works Sanctioned" 
+          - "Total Funds Released (₹ Cr)" 
+          - "Fund Utilization Rate (%)" 
+          - "Risk Score (with tier badge)" 
+          - "Active Anomalies Count" 
+ 
+      section_2_risk_breakdown: 
+        type: "Radar/Spider chart" 
+        title: "Risk Component Breakdown" 
+        axes: ["Cost Overrun" , "Delays" , "Duplicates" , "Patterns" , "Fund Utilization"] 
+        data: "Average component scores for constituency" 
+ 
+      section_3_works_table: 
+        type: "Sortable, filterable data table" 
+        title: "All Works in Constituency" 
+        columns: 
+          - "Work ID (link)" 
+          - "Description (truncated, expandable)" 
+          - "Category" 
+          - "Sanctioned Amount" 
+          - "Actual Expenditure" 
+          - "Cost Overrun %" 
+          - "Status" 
+          - "Delay (days)" 
+          - "Risk Score (color badge)" 
+          - "Anomaly Flags (icon list)" 
+        features: 
+          - "Sort by any column" 
+===== PAGE 40 =====
+          - "Filter by status, category, risk tier" 
+          - "Search by work description" 
+          - "Export to CSV" 
+          - "Pagination: 25 per page" 
+ 
+      section_4_expenditure_timeline: 
+        type: "Stacked area chart" 
+        title: "Expenditure Over Time by Category" 
+        x_axis: "Month-Year" 
+        y_axis: "Cumulative expenditure (₹)" 
+        series: "One area per work_category" 
+ 
+      section_5_duplicate_pairs: 
+        type: "List/Card layout" 
+        title: "Potential Duplicate Works" 
+        visible_if: "duplicate anomalies exist for this constituency" 
+        each_card: 
+          - "Work A description vs Work B description" 
+          - "Similarity score" 
+          - "Amount comparison" 
+          - "Sanction date comparison" 
+          - "Severity badge" 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-DVZ-002-01 
+      description: "Constituency page loads with correct data for selected constituency" 
+      test: "Navigate to constituency X → all KPIs match database aggregations for X" 
+ 
+    - criteria_id: AC-DVZ-002-02 
+      description: "Works table supports sorting by risk score" 
+      test: "Click risk score column header → table sorted descending by risk_score" 
+ 
+    - criteria_id: AC-DVZ-002-03 
+      description: "CSV export contains all visible table data" 
+      test: "Click export → downloaded CSV row count matches table total rows" 
+ 
+    - criteria_id: AC-DVZ-002-04 
+===== PAGE 41 =====
+      description: "Duplicate pairs are displayed when they exist" 
+      test: "Constituency with 2 duplicate pairs → both cards rendered with correct data" 
+FR-DVZ-003: Alert Management Interface 
+YAML 
+REQUIREMENT: 
+  id: FR-DVZ-003 
+  title: "Alert Management and Audit Trail" 
+  priority: MUST_HAVE 
+  module: DASHBOARD 
+ 
+  USER_STORY: > 
+    AS a Ministry Official, 
+    I WANT to view, acknowledge, and track all anomaly alerts with a full audit trail, 
+    SO THAT I can ensure every flagged issue is reviewed and addressed. 
+ 
+  UI_SPECIFICATION: 
+    page_route: "/alerts" 
+    features: 
+      alert_list: 
+        columns: 
+          - "Alert ID" 
+          - "Created At" 
+          - "Anomaly Type" 
+          - "Severity" 
+          - "Constituency" 
+          - "State" 
+          - "Work ID" 
+          - "Status: NEW | ACKNOWLEDGED | UNDER_REVIEW | RESOLVED | FALSE_POSITIVE" 
+          - "Assigned To (dropdown of users)" 
+        filters: 
+          - "Status" 
+          - "Severity" 
+          - "Anomaly Type" 
+          - "State" 
+          - "Date Range" 
+        bulk_actions: 
+          - "Mark as Acknowledged" 
+===== PAGE 42 =====
+          - "Mark as False Positive" 
+ 
+      alert_detail_panel: 
+        on_click: "Slide-out panel from right" 
+        content: 
+          - "Full anomaly details" 
+          - "Contextual data (work details, fund data)" 
+          - "Risk score breakdown" 
+          - "Status change history (audit trail)" 
+          - "Notes/comments text area" 
+          - "Action buttons: Acknowledge, Start Review, Resolve, Mark False Positive" 
+ 
+      audit_trail: 
+        stored_fields: 
+          - "alert_id" 
+          - "action (status_change, note_added, assignment_change)" 
+          - "performed_by (user_id)" 
+          - "timestamp" 
+          - "old_value" 
+          - "new_value" 
+          - "note_text (if applicable)" 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-DVZ-003-01 
+      description: "Alert status can be changed and change is logged" 
+      test: "Change alert from NEW to ACKNOWLEDGED → audit_trail has entry with old=NEW, new=ACKNOWLEDGED, 
+user_id, timestamp" 
+ 
+    - criteria_id: AC-DVZ-003-02 
+      description: "False positive marking excludes work from future anomaly counts in KPIs" 
+      test: "Mark alert as FALSE_POSITIVE → KPI anomaly count decreases by 1" 
+ 
+    - criteria_id: AC-DVZ-003-03 
+      description: "Audit trail is immutable" 
+      test: "Attempt to delete/modify audit_trail record via API → HTTP 403 or 405" 
+FR-DVZ-004: Report Generation 
+YAML 
+===== PAGE 43 =====
+REQUIREMENT: 
+  id: FR-DVZ-004 
+  title: "Automated Report Generation" 
+  priority: MUST_HAVE 
+  module: DASHBOARD 
+ 
+  USER_STORY: > 
+    AS a Ministry Official, 
+    I WANT to generate downloadable PDF and CSV reports summarizing 
+    anomalies and risk assessments for any constituency, state, or national level, 
+    SO THAT I can share findings with stakeholders who may not have system access. 
+ 
+  INPUT_SPECIFICATION: 
+    report_parameters: 
+      scope: "NATIONAL | STATE | CONSTITUENCY" 
+      scope_id: "string (state_name or constituency_id, required if scope != NATIONAL)" 
+      financial_year: "string or ALL" 
+      anomaly_types: "array (optional filter, default ALL)" 
+      severity_filter: "array (optional, default ALL)" 
+      output_format: "PDF | CSV" 
+ 
+  OUTPUT_SPECIFICATION: 
+    pdf_report_sections: 
+      - "Cover page with report title, scope, generation date, generated by" 
+      - "Executive summary: key metrics, total works, anomalies, risk distribution" 
+      - "Anomaly summary table: count by type and severity" 
+      - "Top 20 highest-risk works with details" 
+      - "Duplicate work pairs (if any)" 
+      - "Fund utilization analysis" 
+      - "Trend charts (static images)" 
+      - "Methodology note" 
+    csv_report: 
+      - "All works within scope with risk scores and anomaly flags" 
+      - "One row per work, all columns from works_table view" 
+ 
+  PROCESSING_RULES: 
+    - "PDF generation using server-side rendering (e.g., WeasyPrint or ReportLab)" 
+===== PAGE 44 =====
+    - "Charts rendered as static PNG images embedded in PDF" 
+    - "Report file stored temporarily (24 hours) for download" 
+    - "Report generation logged in audit trail" 
+    - "Maximum report generation time: 30 seconds" 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-DVZ-004-01 
+      description: "PDF report generated for constituency with correct data" 
+      test: "Generate PDF for constituency X → PDF contains correct KPIs, top risk works match database" 
+ 
+    - criteria_id: AC-DVZ-004-02 
+      description: "CSV export contains all fields" 
+      test: "Generate CSV → column count matches schema, row count matches scope filter" 
+ 
+    - criteria_id: AC-DVZ-004-03 
+      description: "Report generation completes within 30 seconds" 
+      test: "Generate national report with 10K works → completion time < 30s" 
+3.5 Feature Module: Authentication & Authorization (AAA) 
+FR-AAA-001: User Authentication 
+YAML 
+REQUIREMENT: 
+  id: FR-AAA-001 
+  title: "JWT-based User Authentication" 
+  priority: MUST_HAVE 
+  module: AUTH 
+ 
+  USER_STORY: > 
+    AS any user, 
+    I WANT to log in with credentials and receive a secure session, 
+    SO THAT I can access the system according to my authorized role. 
+ 
+  SPECIFICATION: 
+    auth_method: "Username/password with JWT token" 
+    token_details: 
+      type: "JWT (RS256)" 
+      access_token_expiry: "30 minutes" 
+      refresh_token_expiry: "7 days" 
+===== PAGE 45 =====
+      payload_fields: 
+        - "user_id" 
+        - "role" 
+        - "scope (state/constituency if applicable)" 
+        - "iat (issued at)" 
+        - "exp (expiry)" 
+ 
+    endpoints: 
+      - path: "POST /api/v1/auth/login" 
+        input: { username: "string" , password: "string" } 
+        output_success: { access_token: "string" , refresh_token: "string" , user: { id, name, role } } 
+        output_failure: { error: "INVALID_CREDENTIALS" , status: 401 } 
+ 
+      - path: "POST /api/v1/auth/refresh" 
+        input: { refresh_token: "string" } 
+        output_success: { access_token: "string" } 
+ 
+      - path: "POST /api/v1/auth/logout" 
+        action: "Invalidate refresh token" 
+ 
+    password_policy: 
+      min_length: 8 
+      requires_uppercase: true 
+      requires_lowercase: true 
+      requires_digit: true 
+      requires_special_char: true 
+      hashing: "bcrypt with cost factor 12" 
+ 
+    rate_limiting: 
+      login_attempts: "5 per 15 minutes per IP" 
+      lockout: "Account locked for 30 minutes after 5 failed attempts" 
+ 
+    mvp_seed_users: 
+      - { username: "admin" , role: "ROLE_ADMIN" , password: "Admin@1234" } 
+      - { username: "ministry_user" , role: "ROLE_MINISTRY" , password: "Ministry@1234" } 
+      - { username: "state_user" , role: "ROLE_STATE_NODAL" , scope: "Maharashtra" , password: "State@1234" } 
+      - { username: "district_user" , role: "ROLE_DISTRICT" , scope: "Pune" , password: "District@1234" } 
+===== PAGE 46 =====
+      - { username: "mp_user" , role: "ROLE_MP" , scope: "Pune" , password: "Mp@12345" } 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-AAA-001-01 
+      description: "Valid credentials return JWT tokens" 
+      test: "POST /auth/login with valid credentials → 200, body contains access_token and refresh_token" 
+ 
+    - criteria_id: AC-AAA-001-02 
+      description: "Invalid credentials return 401" 
+      test: "POST /auth/login with wrong password → 401" 
+ 
+    - criteria_id: AC-AAA-001-03 
+      description: "Expired access token returns 401 on protected endpoint" 
+      test: "Use expired JWT → GET /api/v1/dashboard → 401" 
+ 
+    - criteria_id: AC-AAA-001-04 
+      description: "Refresh token generates new access token" 
+      test: "POST /auth/refresh with valid refresh_token → 200, new access_token" 
+ 
+    - criteria_id: AC-AAA-001-05 
+      description: "Account locks after 5 failed attempts" 
+      test: "5 failed logins → 6th attempt returns 429 with lockout message" 
+FR-AAA-002: Role-Based Access Control 
+YAML 
+REQUIREMENT: 
+  id: FR-AAA-002 
+  title: "RBAC Enforcement on All Endpoints and Views" 
+  priority: MUST_HAVE 
+  module: AUTH 
+ 
+  SPECIFICATION: 
+    permission_matrix: 
+      ROLE_ADMIN: 
+        data_scope: "ALL" 
+        can_upload_data: true 
+        can_manage_users: true 
+        can_view_all_dashboards: true 
+===== PAGE 47 =====
+        can_manage_alerts: true 
+        can_generate_reports: true 
+        can_configure_thresholds: true 
+ 
+      ROLE_MINISTRY: 
+        data_scope: "ALL" 
+        can_upload_data: false 
+        can_manage_users: false 
+        can_view_all_dashboards: true 
+        can_manage_alerts: true 
+        can_generate_reports: true 
+        can_configure_thresholds: false 
+ 
+      ROLE_STATE_NODAL: 
+        data_scope: "FILTER BY scope.state" 
+        can_upload_data: false 
+        can_manage_users: false 
+        can_view_all_dashboards: false 
+        can_view_state_dashboard: true 
+        can_manage_alerts: "own state only" 
+        can_generate_reports: "own state only" 
+        can_configure_thresholds: false 
+ 
+      ROLE_DISTRICT: 
+        data_scope: "FILTER BY scope.district" 
+        can_upload_data: false 
+        can_manage_users: false 
+        can_view_district_dashboard: true 
+        can_manage_alerts: "own district only" 
+        can_generate_reports: "own district only" 
+ 
+      ROLE_MP: 
+        data_scope: "FILTER BY scope.constituency" 
+        can_upload_data: false 
+        can_manage_users: false 
+        can_view_constituency_dashboard: true 
+        can_manage_alerts: false 
+===== PAGE 48 =====
+        can_generate_reports: "own constituency only" 
+ 
+      ROLE_PUBLIC: 
+        data_scope: "AGGREGATE ONLY (no work-level detail)" 
+        can_upload_data: false 
+        can_manage_users: false 
+        can_view_public_dashboard: true 
+        can_manage_alerts: false 
+        can_generate_reports: false 
+ 
+    enforcement: 
+      - "Every API endpoint must check JWT role and scope before returning data" 
+      - "Data queries must append WHERE clauses based on user scope" 
+      - "UI must hide/disable features based on role permissions" 
+      - "Unauthorized access attempts return HTTP 403" 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-AAA-002-01 
+      description: "State nodal user can only see their state's data" 
+      test: "Login as state_user (Maharashtra) → GET /api/v1/constituencies → only Maharashtra constituencies returned" 
+ 
+    - criteria_id: AC-AAA-002-02 
+      description: "MP user cannot access another constituency" 
+      test: "Login as mp_user (Pune) → GET /api/v1/constituency/Mumbai → 403" 
+ 
+    - criteria_id: AC-AAA-002-03 
+      description: "Admin can access all data" 
+      test: "Login as admin → GET /api/v1/constituencies → all constituencies returned" 
+ 
+    - criteria_id: AC-AAA-002-04 
+      description: "Public user cannot see work-level details" 
+      test: "Login as public user → GET /api/v1/works → 403" 
+3.6 Feature Module: API Layer (API) 
+FR-API-001: RESTful API Endpoints 
+YAML 
+REQUIREMENT: 
+  id: FR-API-001 
+===== PAGE 49 =====
+  title: "RESTful API for All Data Operations" 
+  priority: MUST_HAVE 
+  module: API 
+ 
+  SPECIFICATION: 
+    base_url: "/api/v1" 
+    content_type: "application/json" 
+    authentication: "Bearer JWT token in Authorization header" 
+ 
+    endpoints: 
+      # Data Endpoints 
+      - method: GET 
+        path: "/works" 
+        description: "List works with pagination, filtering, sorting" 
+        query_params: 
+          - { name: "page" , type: "int" , default: 1 } 
+          - { name: "per_page" , type: "int" , default: 25, max: 100 } 
+          - { name: "constituency" , type: "string" , optional: true } 
+          - { name: "state" , type: "string" , optional: true } 
+          - { name: "financial_year" , type: "string" , optional: true } 
+          - { name: "status" , type: "string" , optional: true } 
+          - { name: "risk_tier" , type: "string" , optional: true } 
+          - { name: "sort_by" , type: "string" , default: "risk_score" , options: ["risk_score" , "sanctioned_amount" , 
+"sanction_date" , "cost_overrun_percentage"] } 
+          - { name: "sort_order" , type: "string" , default: "desc" , options: ["asc" , "desc"] } 
+        response: 
+          status: 200 
+          body: 
+            data: "array of work objects" 
+            pagination: { page, per_page, total_records, total_pages } 
+        roles: ["ROLE_ADMIN" , "ROLE_MINISTRY" , "ROLE_STATE_NODAL" , "ROLE_DISTRICT" , "ROLE_MP"] 
+ 
+      - method: GET 
+        path: "/works/{work_id}" 
+        description: "Get single work detail with risk breakdown and anomalies" 
+        response: 
+          body: 
+===== PAGE 50 =====
+            work: "full work object" 
+            risk_score: "risk score object with component breakdown" 
+            anomalies: "array of anomaly records for this work" 
+            audit_trail: "array of status changes" 
+        roles: ["ROLE_ADMIN" , "ROLE_MINISTRY" , "ROLE_STATE_NODAL" , "ROLE_DISTRICT" , "ROLE_MP"] 
+ 
+      - method: GET 
+        path: "/constituencies" 
+        description: "List constituencies with risk scores" 
+        response: 
+          body: 
+            data: "array of constituency risk summary objects" 
+            pagination: { page, per_page, total_records, total_pages } 
+        roles: ["ROLE_ADMIN" , "ROLE_MINISTRY" , "ROLE_STATE_NODAL"] 
+ 
+      - method: GET 
+        path: "/constituencies/{constituency_id}" 
+        description: "Constituency detail with all analytics" 
+        roles: ["ROLE_ADMIN" , "ROLE_MINISTRY" , "ROLE_STATE_NODAL" , "ROLE_DISTRICT" , "ROLE_MP"] 
+ 
+      # Anomaly Endpoints 
+      - method: GET 
+        path: "/anomalies" 
+        description: "List all detected anomalies" 
+        query_params: 
+          - { name: "type" , type: "string" , optional: true } 
+          - { name: "severity" , type: "string" , optional: true } 
+          - { name: "status" , type: "string" , optional: true } 
+          - { name: "constituency" , type: "string" , optional: true } 
+          - { name: "state" , type: "string" , optional: true } 
+        roles: ["ROLE_ADMIN" , "ROLE_MINISTRY" , "ROLE_STATE_NODAL" , "ROLE_DISTRICT"] 
+ 
+      - method: PATCH 
+        path: "/anomalies/{anomaly_id}" 
+        description: "Update anomaly status" 
+        body: { status: "string" , note: "string (optional)" } 
+        roles: ["ROLE_ADMIN" , "ROLE_MINISTRY"] 
+===== PAGE 51 =====
+ 
+      # Analytics Endpoints 
+      - method: GET 
+        path: "/analytics/national-summary" 
+        description: "National KPIs and summary statistics" 
+        roles: ["ROLE_ADMIN" , "ROLE_MINISTRY"] 
+ 
+      - method: GET 
+        path: "/analytics/state-summary/{state_name}" 
+        description: "State-level summary" 
+        roles: ["ROLE_ADMIN" , "ROLE_MINISTRY" , "ROLE_STATE_NODAL"] 
+ 
+      - method: GET 
+        path: "/analytics/trends" 
+        description: "Time series data for trend charts" 
+        query_params: 
+          - { name: "metric" , type: "string" , options: ["anomaly_count" , "avg_risk_score" , "fund_utilization" , "expenditure"] } 
+          - { name: "group_by" , type: "string" , options: ["financial_year" , "month" , "quarter"] } 
+          - { name: "scope" , type: "string" , optional: true } 
+        roles: ["ROLE_ADMIN" , "ROLE_MINISTRY" , "ROLE_STATE_NODAL"] 
+ 
+      # Admin Endpoints 
+      - method: POST 
+        path: "/admin/upload" 
+        description: "Upload data file" 
+        content_type: "multipart/form-data" 
+        roles: ["ROLE_ADMIN"] 
+ 
+      - method: POST 
+        path: "/admin/generate-synthetic" 
+        description: "Trigger synthetic data generation" 
+        body: { num_constituencies: "int" , num_works_per_constituency: "int" , anomaly_rate: "float" } 
+        roles: ["ROLE_ADMIN"] 
+ 
+      - method: POST 
+        path: "/admin/run-detection" 
+        description: "Trigger anomaly detection pipeline" 
+===== PAGE 52 =====
+        roles: ["ROLE_ADMIN"] 
+ 
+      # Report Endpoints 
+      - method: POST 
+        path: "/reports/generate" 
+        description: "Generate report" 
+        body: { scope: "string" , scope_id: "string" , financial_year: "string" , format: "PDF|CSV" } 
+        response: { report_id: "string" , download_url: "string" } 
+        roles: ["ROLE_ADMIN" , "ROLE_MINISTRY" , "ROLE_STATE_NODAL" , "ROLE_DISTRICT" , "ROLE_MP"] 
+ 
+      - method: GET 
+        path: "/reports/{report_id}/download" 
+        description: "Download generated report" 
+        response: "Binary file (PDF or CSV)" 
+ 
+    error_handling: 
+      standard_error_format: 
+        body: 
+          error: 
+            code: "string (machine-readable)" 
+            message: "string (human-readable)" 
+            details: "object (optional additional context)" 
+      error_codes: 
+        - { code: "AUTH_REQUIRED" , status: 401, message: "Authentication required" } 
+        - { code: "FORBIDDEN" , status: 403, message: "Insufficient permissions" } 
+        - { code: "NOT_FOUND" , status: 404, message: "Resource not found" } 
+        - { code: "VALIDATION_ERROR" , status: 422, message: "Input validation failed" } 
+        - { code: "RATE_LIMITED" , status: 429, message: "Too many requests" } 
+        - { code: "INTERNAL_ERROR" , status: 500, message: "Internal server error" } 
+ 
+  ACCEPTANCE_CRITERIA: 
+    - criteria_id: AC-API-001-01 
+      description: "All listed endpoints are accessible and return correct status codes" 
+      test: "Automated endpoint test suite hitting all endpoints with valid auth → all return expected status" 
+ 
+    - criteria_id: AC-API-001-02 
+      description: "Pagination works correctly" 
+===== PAGE 53 =====
+      test: "GET /works?page=2&per_page=10 with 25 total → returns 10 records, pagination shows total_pages=3" 
+ 
+    - criteria_id: AC-API-001-03 
+      description: "Filtering works correctly" 
+      test: "GET /works?state=Maharashtra → all returned works have state=Maharashtra" 
+ 
+    - criteria_id: AC-API-001-04 
+      description: "Unauthorized endpoint access returns 401" 
+      test: "GET /works without Authorization header → 401" 
+ 
+    - criteria_id: AC-API-001-05 
+      description: "OpenAPI 3.0 spec is auto-generated and accessible at /api/v1/docs" 
+      test: "GET /api/v1/docs → returns valid Swagger UI page" 
+ 
+SECTION 4: NON-FUNCTIONAL REQUIREMENTS 
+4.1 Performance Requirements 
+YAML 
+PERFORMANCE: 
+  - id: NFR-PERF-001 
+    requirement: "Dashboard page load time" 
+    metric: "Time to Interactive (TTI)" 
+    target: "< 3 seconds on 10 Mbps connection" 
+    measurement: "Lighthouse performance audit" 
+    test_data_volume: "10,000 work records, 50 constituencies" 
+ 
+  - id: NFR-PERF-002 
+    requirement: "API response time" 
+    metric: "95th percentile latency" 
+    target: 
+      list_endpoints: "< 500ms" 
+      detail_endpoints: "< 300ms" 
+      analytics_endpoints: "< 1000ms" 
+    measurement: "Load testing with 50 concurrent users" 
+ 
+  - id: NFR-PERF-003 
+    requirement: "Anomaly detection pipeline execution" 
+    metric: "Full pipeline completion time" 
+===== PAGE 54 =====
+    target: "< 120 seconds for 10,000 work records" 
+    measurement: "End-to-end pipeline timing from trigger to completion" 
+ 
+  - id: NFR-PERF-004 
+    requirement: "Data upload processing" 
+    metric: "CSV ingestion throughput" 
+    target: "1000 records/second" 
+    measurement: "Upload 10,000 row CSV , measure ingestion time" 
+ 
+  - id: NFR-PERF-005 
+    requirement: "Concurrent user support" 
+    metric: "Simultaneous active sessions" 
+    target: "50 concurrent users without degradation" 
+    measurement: "Load test with 50 simulated users performing typical workflows" 
+ 
+  - id: NFR-PERF-006 
+    requirement: "Database query performance" 
+    metric: "95th percentile query latency" 
+    target: "< 200ms for indexed queries" 
+    measurement: "pg_stat_statements monitoring" 
+ 
+  - id: NFR-PERF-007 
+    requirement: "Report generation time" 
+    metric: "PDF report creation latency" 
+    target: "< 30 seconds for constituency-level report" 
+    measurement: "Timer on report generation endpoint" 
+4.2 Security Requirements 
+YAML 
+SECURITY: 
+  - id: NFR-SEC-001 
+    requirement: "Data encryption at rest" 
+    standard: "AES-256" 
+    scope: "All database files and uploaded data files" 
+    implementation: "PostgreSQL TDE or filesystem-level encryption" 
+ 
+  - id: NFR-SEC-002 
+    requirement: "Data encryption in transit" 
+===== PAGE 55 =====
+    standard: "TLS 1.3 minimum" 
+    scope: "All HTTP communications" 
+    implementation: "HTTPS with valid SSL certificate; HSTS header" 
+ 
+  - id: NFR-SEC-003 
+    requirement: "Authentication security" 
+    standard: "OWASP Authentication Guidelines" 
+    implementation: 
+      - "bcrypt password hashing (cost factor 12)" 
+      - "JWT with RS256 signing" 
+      - "HttpOnly, Secure, SameSite=Strict cookies for refresh tokens" 
+      - "CSRF protection on state-changing endpoints" 
+ 
+  - id: NFR-SEC-004 
+    requirement: "Input validation and injection prevention" 
+    standard: "OWASP Top 10" 
+    implementation: 
+      - "Parameterized SQL queries (no string concatenation)" 
+      - "Input sanitization on all user-supplied text" 
+      - "XSS prevention with Content-Security-Policy header" 
+      - "File upload type validation (MIME type + extension)" 
+ 
+  - id: NFR-SEC-005 
+    requirement: "Audit logging" 
+    standard: "Government cybersecurity guidelines" 
+    implementation: 
+      - "All authentication events logged (login, logout, failed attempts)" 
+      - "All data modification events logged (upload, anomaly status change)" 
+      - "All report generation events logged" 
+      - "Logs include: timestamp, user_id, IP , action, resource, result" 
+      - "Log retention: 1 year minimum" 
+      - "Logs stored in append-only format (tamper-resistant)" 
+ 
+  - id: NFR-SEC-006 
+    requirement: "API security" 
+    implementation: 
+      - "Rate limiting: 100 requests/minute per user" 
+===== PAGE 56 =====
+      - "Request size limit: 50MB" 
+      - "CORS restricted to allowed origins" 
+      - "API keys for service-to-service communication" 
+ 
+  - id: NFR-SEC-007 
+    requirement: "Session management" 
+    implementation: 
+      - "Access token expiry: 30 minutes" 
+      - "Refresh token expiry: 7 days" 
+      - "Token rotation on refresh" 
+      - "Immediate invalidation on logout" 
+      - "Maximum 3 concurrent sessions per user" 
+ 
+  - id: NFR-SEC-008 
+    requirement: "Dependency security" 
+    implementation: 
+      - "No known CVE vulnerabilities in production dependencies" 
+      - "Automated dependency vulnerability scanning (e.g., pip-audit, npm audit)" 
+      - "Docker base images from trusted sources only" 
+4.3 Accessibility Requirements 
+YAML 
+ACCESSIBILITY: 
+  - id: NFR-ACC-001 
+    standard: "WCAG 2.1 Level AA" 
+    requirements: 
+      perceivable: 
+        - "All images and charts have meaningful alt text" 
+        - "Color is not the sole means of conveying information" 
+        - "Minimum contrast ratio: 4.5:1 for normal text, 3:1 for large text" 
+        - "Text resizable to 200% without loss of content" 
+        - "All form inputs have associated labels" 
+ 
+      operable: 
+        - "All interactive elements are keyboard accessible" 
+        - "Visible focus indicators on all focusable elements" 
+        - "No keyboard traps" 
+        - "Skip navigation link provided" 
+===== PAGE 57 =====
+        - "No content that flashes more than 3 times per second" 
+ 
+      understandable: 
+        - "Page language declared in HTML lang attribute (en)" 
+        - "Form validation errors clearly described and linked to fields" 
+        - "Consistent navigation across pages" 
+        - "Error messages in plain language with correction guidance" 
+ 
+      robust: 
+        - "Valid HTML5 markup" 
+        - "ARIA landmarks for main regions (header, nav, main, footer)" 
+        - "ARIA roles and properties on custom widgets" 
+        - "Compatible with screen readers (NVDA, JAWS, VoiceOver)" 
+ 
+    testing: 
+      - "Automated: axe-core accessibility engine integrated in test suite" 
+      - "Target: 0 critical/serious axe violations" 
+      - "Keyboard navigation test: all features accessible via keyboard only" 
+ 
+  - id: NFR-ACC-002 
+    standard: "GIGW 3.0 Compliance" 
+    requirements: 
+      - "Government of India emblem/logo placement (if applicable)" 
+      - "bilingual support placeholder (Hindi/English — English only for MVP)" 
+      - "Sitemap page" 
+      - "Terms of use and privacy policy pages" 
+      - "Last updated timestamp on all pages" 
+      - "Website policies page (accessibility statement, copyright, privacy)" 
+4.4 Reliability & Availability 
+YAML 
+RELIABILITY: 
+  - id: NFR-REL-001 
+    requirement: "System uptime" 
+    target: "99% uptime during demonstration period" 
+    measurement: "Uptime monitoring (health check endpoint)" 
+ 
+  - id: NFR-REL-002 
+===== PAGE 58 =====
+    requirement: "Error rate" 
+    target: "< 1% of API requests result in 5xx errors" 
+    measurement: "Error rate monitoring from access logs" 
+ 
+  - id: NFR-REL-003 
+    requirement: "Data integrity" 
+    target: "Zero data corruption or loss during normal operation" 
+    implementation: 
+      - "Database transaction isolation level: READ COMMITTED minimum" 
+      - "Foreign key constraints enforced" 
+      - "Application-level data validation before persistence" 
+ 
+  - id: NFR-REL-004 
+    requirement: "Graceful degradation" 
+    target: "Dashboard remains viewable with cached data if analytics engine is temporarily unavailable" 
+    implementation: "Last-computed analytics cached; stale indicator shown if > 1 hour old" 
+ 
+  - id: NFR-REL-005 
+    requirement: "Backup and recovery" 
+    target: "Database backup every 6 hours; recovery within 1 hour" 
+    implementation: "pg_dump scheduled backup; documented restoration procedure" 
+ 
+  - id: NFR-REL-006 
+    requirement: "Health monitoring" 
+    implementation: 
+      - "GET /health endpoint returning system status" 
+      - "Response includes: database_connected, ml_engine_ready, disk_space_ok, last_detection_run" 
+      - "Response time < 100ms" 
+4.5 Scalability 
+YAML 
+SCALABILITY: 
+  - id: NFR-SCL-001 
+    requirement: "Data volume" 
+    current_target: "50,000 work records (MVP)" 
+    future_target: "5,000,000 work records (post-MVP)" 
+    design_implications: 
+      - "Database indexed on frequently queried columns" 
+===== PAGE 59 =====
+      - "Pagination on all list endpoints" 
+      - "Asynchronous processing for heavy computations" 
+ 
+  - id: NFR-SCL-002 
+    requirement: "Horizontal scalability" 
+    design: "Stateless API servers behind load balancer" 
+    implementation: "Docker containerized, ready for Kubernetes deployment post-MVP" 
+4.6 Maintainability 
+YAML 
+MAINTAINABILITY: 
+  - id: NFR-MNT-001 
+    requirement: "Code quality" 
+    standards: 
+      python: "PEP 8, type hints on all functions, docstrings on all public methods" 
+      javascript: "ESLint with recommended config, PropTypes/TypeScript interfaces" 
+    targets: 
+      - "No linting errors in CI" 
+      - "Cyclomatic complexity per function: < 15" 
+ 
+  - id: NFR-MNT-002 
+    requirement: "Test coverage" 
+    target: "Minimum 70% line coverage on backend code" 
+    measurement: "pytest-cov for Python, Jest coverage for frontend" 
+ 
+  - id: NFR-MNT-003 
+    requirement: "Documentation" 
+    deliverables: 
+      - "README.md with setup instructions" 
+      - "API documentation via Swagger/OpenAPI" 
+      - "Database schema documentation (ERD)" 
+      - "Anomaly detection methodology document" 
+      - "Deployment guide" 
+ 
+  - id: NFR-MNT-004 
+    requirement: "Logging" 
+    implementation: 
+      - "Structured JSON logging" 
+===== PAGE 60 =====
+      - "Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL" 
+      - "Request ID tracking across log entries" 
+      - "No sensitive data (passwords, tokens) in logs" 
+ 
+SECTION 5: SYSTEM DESIGN CONSTRAINTS 
+5.1 Technology Stack (Mandatory) 
+YAML 
+TECHNOLOGY_STACK: 
+  backend: 
+    language: "Python 3.11+" 
+    framework: "FastAPI 0.100+" 
+    justification: "High performance async framework, auto-generated OpenAPI docs, type validation" 
+    alternatives_considered: "Django (heavier), Flask (less structured)" 
+ 
+  frontend: 
+    language: "JavaScript/TypeScript" 
+    framework: "React 18+ with Vite build tool" 
+    ui_library: "Ant Design or Material UI (government-style, accessible components)" 
+    charting: "Recharts or Apache ECharts" 
+    mapping: "Leaflet.js with India GeoJSON" 
+    state_management: "React Context API + React Query (TanStack Query)" 
+ 
+  database: 
+    primary: "PostgreSQL 15+" 
+    extensions: 
+      - "pgvector (for text embedding similarity search)" 
+    orm: "SQLAlchemy 2.0+ with Alembic migrations" 
+ 
+  ml_libraries: 
+    - "scikit-learn (Isolation Forest, statistical analysis)" 
+    - "sentence-transformers (all-MiniLM-L6-v2 for text embeddings)" 
+    - "pandas (data manipulation)" 
+    - "numpy (numerical computation)" 
+ 
+  infrastructure: 
+    containerization: "Docker with docker-compose" 
+    reverse_proxy: "Nginx (HTTPS termination, static file serving)" 
+===== PAGE 61 =====
+    task_queue: "Celery with Redis broker (for async ML pipeline execution)" 
+    cache: "Redis 7+" 
+ 
+  testing: 
+    backend: "pytest, pytest-asyncio, httpx (async test client)" 
+    frontend: "Jest, React Testing Library" 
+    e2e: "Playwright (optional for MVP)" 
+    api: "pytest + OpenAPI schema validation" 
+ 
+  documentation: 
+    api: "Auto-generated Swagger/OpenAPI via FastAPI" 
+    code: "Inline docstrings + README" 
+ 
+  version_control: 
+    system: "Git" 
+    branching: "main (production), develop (integration)" 
+5.2 Deployment Environment 
+YAML 
+DEPLOYMENT: 
+  mvp_environment: 
+    type: "Docker Compose on single server" 
+    minimum_specs: 
+      cpu: "4 vCPU" 
+      ram: "8 GB" 
+      storage: "50 GB SSD" 
+      os: "Ubuntu 22.04 LTS" 
+     
+    docker_services: 
+      - service: "api" 
+        image: "python:3.11-slim" 
+        ports: "8000" 
+        resources: "2 vCPU, 3 GB RAM" 
+ 
+      - service: "frontend" 
+        image: "node:20-alpine (build) → nginx:alpine (serve)" 
+        ports: "3000 → 80" 
+        resources: "0.5 vCPU, 512 MB RAM" 
+===== PAGE 62 =====
+ 
+      - service: "postgres" 
+        image: "pgvector/pgvector:pg16" 
+        ports: "5432 (internal only)" 
+        volumes: "persistent data volume" 
+        resources: "1 vCPU, 2 GB RAM" 
+ 
+      - service: "redis" 
+        image: "redis:7-alpine" 
+        ports: "6379 (internal only)" 
+        resources: "0.5 vCPU, 512 MB RAM" 
+ 
+      - service: "celery_worker" 
+        image: "same as api" 
+        resources: "1 vCPU, 2 GB RAM" 
+ 
+      - service: "nginx" 
+        image: "nginx:alpine" 
+        ports: "80, 443" 
+        config: "reverse proxy to api and frontend" 
+ 
+  production_readiness_notes: 
+    - "Docker Compose suitable for MVP demo" 
+    - "Production deployment should use Kubernetes on NIC/Government cloud" 
+    - "Database should use managed PostgreSQL service" 
+    - "SSL certificates from NIC CA or government-approved CA" 
+ 
+  environment_variables: 
+    required: 
+      - "DATABASE_URL: PostgreSQL connection string" 
+      - "REDIS_URL: Redis connection string" 
+      - "JWT_SECRET_KEY: RSA private key path" 
+      - "JWT_PUBLIC_KEY: RSA public key path" 
+      - "CORS_ORIGINS: comma-separated allowed origins" 
+      - "LOG_LEVEL: DEBUG|INFO|WARNING|ERROR" 
+      - "ENVIRONMENT: development|staging|production" 
+    optional: 
+===== PAGE 63 =====
+      - "SENTRY_DSN: error tracking URL" 
+      - "ML_MODEL_PATH: directory for trained model artifacts" 
+5.3 Data Privacy & Regulatory Constraints 
+YAML 
+DATA_PRIVACY: 
+  applicable_regulations: 
+    - name: "Digital Personal Data Protection Act 2023 (DPDPA)" 
+      applicability: "If system processes any personal data of MPs, officers, or citizens" 
+      mvp_compliance: 
+        - "Minimize personal data collection to operational necessity" 
+        - "MP names and constituency data are public information — exempt from consent" 
+        - "No citizen personal data processed in MVP" 
+        - "Implement data access logging" 
+ 
+    - name: "IT Act 2000 / IT Amendment Act 2008" 
+      applicability: "All government IT systems" 
+      mvp_compliance: 
+        - "Reasonable security practices (encryption, access control)" 
+        - "Data integrity protections" 
+ 
+    - name: "Government of India IT Security Policy" 
+      applicability: "All government applications" 
+      mvp_compliance: 
+        - "Role-based access control" 
+        - "Audit logging" 
+        - "No data transmission to external services" 
+        - "All processing on government-controlled infrastructure" 
+ 
+  data_classification: 
+    public_data: 
+      - "Aggregate fund statistics (already on public dashboard)" 
+      - "Constituency-level summaries" 
+      description: "Can be displayed to ROLE_PUBLIC" 
+ 
+    internal_data: 
+      - "Individual work details with risk scores" 
+      - "Anomaly flags and investigations" 
+===== PAGE 64 =====
+      - "Alert audit trails" 
+      description: "Restricted to authenticated government users per RBAC" 
+ 
+    sensitive_data: 
+      - "User credentials (hashed)" 
+      - "System configuration" 
+      - "ML model internals" 
+      description: "Admin access only" 
+ 
+  constraints: 
+    - "ALL data processing must occur within the deployment infrastructure — no external API calls for data processing" 
+    - "ML models must run locally (no cloud ML services like OpenAI, Google ML, etc.)" 
+    - "Sentence transformer model must be downloaded and bundled in container" 
+    - "No analytics or telemetry data sent to external services" 
+    - "Database must not be accessible from public internet" 
+5.4 Integration Constraints 
+YAML 
+INTEGRATION_CONSTRAINTS: 
+  existing_system_integration: 
+    mplads_portal: 
+      integration_type: "Read-only data consumption" 
+      method: "CSV export/import or web scraping of public dashboard" 
+      constraint: "No write access to MPLADS production database" 
+      constraint: "No API available — data must be manually exported or scraped" 
+ 
+  external_service_restrictions: 
+    - "NO external AI/ML API calls (OpenAI, Claude, Google AI, etc.)" 
+    - "NO external database services" 
+    - "NO cloud storage services (S3, GCS, etc.)" 
+    - "ALL dependencies must be self-hosted within Docker deployment" 
+    - "NLP model must be open-source and locally deployable" 
+ 
+  browser_compatibility: 
+    minimum: "Chrome 90+, Firefox 88+, Edge 90+, Safari 14+" 
+    testing: "All features verified on Chrome latest" 
+ 
+  network_assumptions: 
+===== PAGE 65 =====
+    - "System deployed on internal government network or secure VPN" 
+    - "Users access via modern web browsers" 
+    - "Minimum bandwidth: 10 Mbps" 
+5.5 Database Schema 
+YAML 
+DATABASE_SCHEMA: 
+  tables: 
+    - table: "constituencies" 
+      columns: 
+        - { name: "id" , type: "UUID" , pk: true } 
+        - { name: "name" , type: "VARCHAR(255)" , not_null: true, unique: true } 
+        - { name: "state" , type: "VARCHAR(100)" , not_null: true } 
+        - { name: "mp_name" , type: "VARCHAR(255)" } 
+        - { name: "mp_type" , type: "VARCHAR(20)" , enum: ["LOK_SABHA" , "RAJYA_SABHA"] } 
+        - { name: "created_at" , type: "TIMESTAMP" , default: "NOW()" } 
+        - { name: "updated_at" , type: "TIMESTAMP" , default: "NOW()" } 
+      indexes: 
+        - { columns: ["state"], type: "btree" } 
+        - { columns: ["name"], type: "btree" } 
+ 
+    - table: "works" 
+      columns: 
+        - { name: "id" , type: "UUID" , pk: true } 
+        - { name: "work_id" , type: "VARCHAR(50)" , not_null: true, unique: true } 
+        - { name: "constituency_id" , type: "UUID" , fk: "constituencies.id" , not_null: true } 
+        - { name: "work_description" , type: "TEXT" , not_null: true } 
+        - { name: "work_category" , type: "VARCHAR(50)" , not_null: true } 
+        - { name: "sanctioned_amount" , type: "DECIMAL(15,2)" , not_null: true } 
+        - { name: "actual_expenditure" , type: "DECIMAL(15,2)" , default: 0 } 
+        - { name: "cost_overrun_percentage" , type: "DECIMAL(8,2)" , computed: true } 
+        - { name: "sanction_date" , type: "DATE" , not_null: true } 
+        - { name: "expected_completion_date" , type: "DATE" } 
+        - { name: "completion_date" , type: "DATE" } 
+        - { name: "work_status" , type: "VARCHAR(20)" , not_null: true } 
+        - { name: "implementing_agency" , type: "VARCHAR(255)" } 
+        - { name: "financial_year" , type: "VARCHAR(10)" , not_null: true } 
+        - { name: "latitude" , type: "DECIMAL(10,7)" } 
+===== PAGE 66 =====
+        - { name: "longitude" , type: "DECIMAL(10,7)" } 
+        - { name: "description_embedding" , type: "VECTOR(384)" } 
+        - { name: "risk_score" , type: "INTEGER" , default: 0 } 
+        - { name: "risk_tier" , type: "VARCHAR(10)" , default: "LOW" } 
+        - { name: "created_at" , type: "TIMESTAMP" , default: "NOW()" } 
+        - { name: "updated_at" , type: "TIMESTAMP" , default: "NOW()" } 
+      indexes: 
+        - { columns: ["constituency_id"], type: "btree" } 
+        - { columns: ["financial_year"], type: "btree" } 
+        - { columns: ["work_status"], type: "btree" } 
+        - { columns: ["risk_score"], type: "btree" } 
+        - { columns: ["work_category"], type: "btree" } 
+        - { columns: ["description_embedding"], type: "ivfflat" , ops: "vector_cosine_ops" } 
+ 
+    - table: "fund_releases" 
+      columns: 
+        - { name: "id" , type: "UUID" , pk: true } 
+        - { name: "release_id" , type: "VARCHAR(50)" , not_null: true, unique: true } 
+        - { name: "constituency_id" , type: "UUID" , fk: "constituencies.id" , not_null: true } 
+        - { name: "financial_year" , type: "VARCHAR(10)" , not_null: true } 
+        - { name: "installment_number" , type: "INTEGER" , not_null: true } 
+        - { name: "amount_released" , type: "DECIMAL(15,2)" , not_null: true } 
+        - { name: "release_date" , type: "DATE" , not_null: true } 
+        - { name: "cumulative_release" , type: "DECIMAL(15,2)" } 
+        - { name: "created_at" , type: "TIMESTAMP" , default: "NOW()" } 
+      indexes: 
+        - { columns: ["constituency_id" , "financial_year"], type: "btree" } 
+ 
+    - table: "anomalies" 
+      columns: 
+        - { name: "id" , type: "UUID" , pk: true } 
+        - { name: "work_id" , type: "UUID" , fk: "works.id" , nullable: true } 
+        - { name: "constituency_id" , type: "UUID" , fk: "constituencies.id" , not_null: true } 
+        - { name: "anomaly_type" , type: "VARCHAR(50)" , not_null: true } 
+        - { name: "severity" , type: "VARCHAR(10)" , not_null: true } 
+        - { name: "confidence_score" , type: "DECIMAL(5,4)" } 
+        - { name: "detection_method" , type: "VARCHAR(50)" } 
+===== PAGE 67 =====
+        - { name: "details" , type: "JSONB" } 
+        - { name: "status" , type: "VARCHAR(20)" , default: "NEW" } 
+        - { name: "detected_at" , type: "TIMESTAMP" , default: "NOW()" } 
+        - { name: "updated_at" , type: "TIMESTAMP" , default: "NOW()" } 
+      indexes: 
+        - { columns: ["anomaly_type"], type: "btree" } 
+        - { columns: ["severity"], type: "btree" } 
+        - { columns: ["status"], type: "btree" } 
+        - { columns: ["constituency_id"], type: "btree" } 
+        - { columns: ["detected_at"], type: "btree" } 
+ 
+    - table: "duplicate_pairs" 
+      columns: 
+        - { name: "id" , type: "UUID" , pk: true } 
+        - { name: "work_id_a" , type: "UUID" , fk: "works.id" , not_null: true } 
+        - { name: "work_id_b" , type: "UUID" , fk: "works.id" , not_null: true } 
+        - { name: "text_similarity" , type: "DECIMAL(5,4)" , not_null: true } 
+        - { name: "amount_similarity" , type: "DECIMAL(5,4)" } 
+        - { name: "composite_score" , type: "INTEGER" } 
+        - { name: "anomaly_id" , type: "UUID" , fk: "anomalies.id" } 
+        - { name: "detected_at" , type: "TIMESTAMP" , default: "NOW()" } 
+      constraints: 
+        - "UNIQUE(work_id_a, work_id_b)" 
+        - "CHECK(work_id_a < work_id_b) -- prevent reverse duplicates" 
+ 
+    - table: "constituency_risk_scores" 
+      columns: 
+        - { name: "id" , type: "UUID" , pk: true } 
+        - { name: "constituency_id" , type: "UUID" , fk: "constituencies.id" , not_null: true } 
+        - { name: "financial_year" , type: "VARCHAR(10)" , not_null: true } 
+        - { name: "risk_score" , type: "INTEGER" , not_null: true } 
+        - { name: "risk_tier" , type: "VARCHAR(10)" , not_null: true } 
+        - { name: "total_works" , type: "INTEGER" } 
+        - { name: "high_risk_works" , type: "INTEGER" } 
+        - { name: "fund_utilization_rate" , type: "DECIMAL(8,2)" } 
+        - { name: "total_funds_released" , type: "DECIMAL(15,2)" } 
+        - { name: "total_expenditure" , type: "DECIMAL(15,2)" } 
+===== PAGE 68 =====
+        - { name: "calculated_at" , type: "TIMESTAMP" , default: "NOW()" } 
+      indexes: 
+        - { columns: ["constituency_id" , "financial_year"], type: "btree" , unique: true } 
+        - { columns: ["risk_score"], type: "btree" } 
+ 
+    - table: "users" 
+      columns: 
+        - { name: "id" , type: "UUID" , pk: true } 
+        - { name: "username" , type: "VARCHAR(100)" , not_null: true, unique: true } 
+        - { name: "password_hash" , type: "VARCHAR(255)" , not_null: true } 
+        - { name: "full_name" , type: "VARCHAR(255)" } 
+        - { name: "role" , type: "VARCHAR(30)" , not_null: true } 
+        - { name: "scope_type" , type: "VARCHAR(20)" , nullable: true, enum: ["STATE" , "DISTRICT" , "CONSTITUENCY"] } 
+        - { name: "scope_value" , type: "VARCHAR(255)" , nullable: true } 
+        - { name: "is_active" , type: "BOOLEAN" , default: true } 
+        - { name: "failed_login_attempts" , type: "INTEGER" , default: 0 } 
+        - { name: "locked_until" , type: "TIMESTAMP" , nullable: true } 
+        - { name: "created_at" , type: "TIMESTAMP" , default: "NOW()" } 
+        - { name: "last_login" , type: "TIMESTAMP" , nullable: true } 
+ 
+    - table: "audit_log" 
+      columns: 
+        - { name: "id" , type: "UUID" , pk: true } 
+        - { name: "user_id" , type: "UUID" , fk: "users.id" } 
+        - { name: "action" , type: "VARCHAR(50)" , not_null: true } 
+        - { name: "resource_type" , type: "VARCHAR(50)" } 
+        - { name: "resource_id" , type: "VARCHAR(255)" } 
+        - { name: "old_value" , type: "JSONB" } 
+        - { name: "new_value" , type: "JSONB" } 
+        - { name: "ip_address" , type: "INET" } 
+        - { name: "user_agent" , type: "TEXT" } 
+        - { name: "timestamp" , type: "TIMESTAMP" , default: "NOW()" } 
+      indexes: 
+        - { columns: ["user_id"], type: "btree" } 
+        - { columns: ["action"], type: "btree" } 
+        - { columns: ["timestamp"], type: "btree" } 
+      constraints: 
+===== PAGE 69 =====
+        - "Table is INSERT-only; no UPDATE or DELETE allowed (enforced by application and DB trigger)" 
+ 
+    - table: "upload_history" 
+      columns: 
+        - { name: "id" , type: "UUID" , pk: true } 
+        - { name: "user_id" , type: "UUID" , fk: "users.id" , not_null: true } 
+        - { name: "filename" , type: "VARCHAR(255)" , not_null: true } 
+        - { name: "file_hash" , type: "VARCHAR(64)" , not_null: true } 
+        - { name: "file_size_bytes" , type: "INTEGER" } 
+        - { name: "records_total" , type: "INTEGER" } 
+        - { name: "records_valid" , type: "INTEGER" } 
+        - { name: "records_rejected" , type: "INTEGER" } 
+        - { name: "validation_errors" , type: "JSONB" } 
+        - { name: "status" , type: "VARCHAR(20)" , enum: ["PROCESSING" , "COMPLETED" , "FAILED"] } 
+        - { name: "uploaded_at" , type: "TIMESTAMP" , default: "NOW()" } 
+        - { name: "completed_at" , type: "TIMESTAMP" } 
+ 
+    - table: "detection_runs" 
+      columns: 
+        - { name: "id" , type: "UUID" , pk: true } 
+        - { name: "triggered_by" , type: "UUID" , fk: "users.id" } 
+        - { name: "trigger_type" , type: "VARCHAR(20)" , enum: ["MANUAL" , "AUTO_POST_UPLOAD"] } 
+        - { name: "status" , type: "VARCHAR(20)" , enum: ["RUNNING" , "COMPLETED" , "FAILED"] } 
+        - { name: "anomalies_detected" , type: "INTEGER" } 
+        - { name: "works_analyzed" , type: "INTEGER" } 
+        - { name: "started_at" , type: "TIMESTAMP" , default: "NOW()" } 
+        - { name: "completed_at" , type: "TIMESTAMP" } 
+        - { name: "error_message" , type: "TEXT" } 
+ 
+SECTION 6: IMPLEMENTATION ROADMAP 
+6.1 Phased MVP Development Timeline 
+YAML 
+ROADMAP: 
+  total_duration: "36 hours (solo hackathon)" 
+  methodology: "Iterative build with vertical slices" 
+ 
+  PHASE_1: 
+===== PAGE 70 =====
+    name: "Foundation & Data Layer" 
+    duration: "Hours 0-8" 
+    deliverables: 
+      hour_0_to_2: 
+        - "Project scaffolding (FastAPI backend, React frontend, Docker Compose)" 
+        - "PostgreSQL + pgvector database setup" 
+        - "Database schema creation via Alembic migrations" 
+        - "Environment configuration (.env, docker-compose.yml)" 
+        - "Basic health check endpoint" 
+        checkpoint: "Docker Compose up → all services healthy → /health returns 200" 
+ 
+      hour_2_to_4: 
+        - "Synthetic data generator implementation (FR-DIM-002)" 
+        - "Generate 50 constituencies × 100 works = 5000 records" 
+        - "Include ground-truth anomaly labels" 
+        - "Data validation utility functions" 
+        checkpoint: "Synthetic CSV files generated → pass schema validation → load into DB" 
+ 
+      hour_4_to_6: 
+        - "CSV upload endpoint (FR-DIM-001)" 
+        - "Data ingestion pipeline with validation" 
+        - "Upload history logging" 
+        - "Database seed with synthetic data" 
+        checkpoint: "Upload synthetic CSV via API → 5000 records in works table → upload_history entry created" 
+ 
+      hour_6_to_8: 
+        - "User authentication (FR-AAA-001)" 
+        - "JWT token generation and validation" 
+        - "RBAC middleware (FR-AAA-002)" 
+        - "Seed users creation" 
+        - "Login/logout endpoints" 
+        checkpoint: "Login with admin credentials → receive JWT → access protected endpoint → 200" 
+ 
+  PHASE_2: 
+    name: "Anomaly Detection Engine" 
+    duration: "Hours 8-18" 
+    deliverables: 
+===== PAGE 71 =====
+      hour_8_to_10: 
+        - "Cost overrun detection (FR-ADE-001)" 
+        - "Threshold-based rules" 
+        - "Z-score statistical detection" 
+        - "Anomaly records creation in database" 
+        checkpoint: "Run cost overrun detection → anomalies table populated → matches ground truth labels >= 70% 
+precision" 
+ 
+      hour_10_to_12: 
+        - "Delayed project detection (FR-ADE-003)" 
+        - "Stalled project detection" 
+        - "Fund utilization anomaly detection (FR-ADE-004)" 
+        checkpoint: "Run delay + fund detection → additional anomalies in DB → correct severity assignments" 
+ 
+      hour_12_to_15: 
+        - "Duplicate work detection (FR-ADE-002)" 
+        - "Text embedding generation using sentence-transformers" 
+        - "pgvector similarity search" 
+        - "Composite duplicate scoring" 
+        checkpoint: "Run duplicate detection → duplicate_pairs table populated → known synthetic duplicates detected" 
+ 
+      hour_15_to_17: 
+        - "Suspicious pattern detection (FR-ADE-005)" 
+        - "Amount clustering, end-of-year rush, round number bias" 
+        - "Risk scoring engine (FR-RSE-001)" 
+        - "Composite score calculation for all works and constituencies" 
+        checkpoint: "All works have risk_score populated → constituency_risk_scores table populated → distribution 
+matches expected tiers" 
+ 
+      hour_17_to_18: 
+        - "Celery task for async pipeline execution" 
+        - "Pipeline orchestration: trigger all detectors in sequence" 
+        - "Detection run logging" 
+        checkpoint: "POST /admin/run-detection → Celery task executes → detection_runs table shows COMPLETED" 
+ 
+  PHASE_3: 
+    name: "API Layer & Dashboard" 
+    duration: "Hours 18-30" 
+===== PAGE 72 =====
+    deliverables: 
+      hour_18_to_21: 
+        - "REST API endpoints for works, constituencies, anomalies (FR-API-001)" 
+        - "Pagination, filtering, sorting" 
+        - "RBAC enforcement on all endpoints" 
+        - "OpenAPI documentation generation" 
+        checkpoint: "All API endpoints return correct data with proper auth → Swagger docs accessible" 
+ 
+      hour_21_to_24: 
+        - "React frontend scaffolding" 
+        - "Login page" 
+        - "National overview dashboard (FR-DVZ-001)" 
+        - "KPI cards" 
+        - "India heatmap (Leaflet.js)" 
+        - "Alert feed table" 
+        checkpoint: "Login → dashboard loads → KPIs show correct numbers → map renders with colors" 
+ 
+      hour_24_to_27: 
+        - "Constituency detail page (FR-DVZ-002)" 
+        - "Works data table with sorting/filtering" 
+        - "Risk breakdown chart" 
+        - "Expenditure timeline chart" 
+        - "Duplicate pairs display" 
+        checkpoint: "Click constituency → detail page loads → all sections render with correct data" 
+ 
+      hour_27_to_29: 
+        - "Alert management interface (FR-DVZ-003)" 
+        - "Alert status workflow" 
+        - "Audit trail display" 
+        - "Bar chart (top risk constituencies)" 
+        - "Donut chart (anomaly distribution)" 
+        - "Trend line chart" 
+        checkpoint: "Alert status change → audit trail entry created → UI updates" 
+ 
+      hour_29_to_30: 
+        - "Report generation (FR-DVZ-004)" 
+        - "CSV export from works table" 
+===== PAGE 73 =====
+        - "PDF report generation (basic template)" 
+        checkpoint: "Generate PDF report → downloads correctly → contains expected sections" 
+ 
+  PHASE_4: 
+    name: "Testing, Polish & Submission" 
+    duration: "Hours 30-36" 
+    deliverables: 
+      hour_30_to_32: 
+        - "Backend unit tests (pytest)" 
+        - "API integration tests" 
+        - "Anomaly detection validation against ground truth" 
+        - "Fix critical bugs found during testing" 
+        checkpoint: "pytest passes with >= 70% coverage → all API tests pass" 
+ 
+      hour_32_to_34: 
+        - "Frontend polish: responsive layout, accessibility checks" 
+        - "Error handling and loading states" 
+        - "WCAG accessibility audit (axe-core)" 
+        - "Cross-browser check (Chrome, Firefox)" 
+        checkpoint: "axe-core reports 0 critical violations → responsive layout works on 768px" 
+ 
+      hour_34_to_35: 
+        - "End-to-end demo flow verification" 
+        - "Documentation: README, setup guide, demo script" 
+        - "Docker Compose cleanup and optimization" 
+        - "Environment variable documentation" 
+        checkpoint: "Fresh docker-compose up → follow demo script → all features work end-to-end" 
+ 
+      hour_35_to_36: 
+        - "Final demo recording (optional)" 
+        - "Code cleanup and final commit" 
+        - "Submission package preparation" 
+        checkpoint: "Git repository clean → docker-compose up works from scratch → README complete" 
+6.2 Critical Path Dependencies 
+YAML 
+DEPENDENCIES: 
+  - task: "Anomaly Detection" 
+===== PAGE 74 =====
+    depends_on: ["Database Schema" , "Synthetic Data Generator" , "Data Ingestion"] 
+ 
+  - task: "Risk Scoring" 
+    depends_on: ["All Anomaly Detectors"] 
+ 
+  - task: "Dashboard" 
+    depends_on: ["API Endpoints" , "Anomaly Detection (for data to display)"] 
+ 
+  - task: "Report Generation" 
+    depends_on: ["API Endpoints" , "Risk Scoring"] 
+ 
+  - task: "Alert Management" 
+    depends_on: ["Anomaly Detection" , "API Endpoints"] 
+6.3 Risk Mitigation 
+YAML 
+RISKS: 
+  - risk: "MPLADS dashboard scraping fails (site structure changes or blocking)" 
+    probability: MEDIUM 
+    impact: HIGH 
+    mitigation: "Synthetic data generator serves as primary data source for MVP demo; scraping is SHOULD_HAVE, not 
+MUST_HAVE" 
+ 
+  - risk: "Sentence transformer model too large / slow for hackathon compute" 
+    probability: LOW 
+    impact: MEDIUM 
+    mitigation: "Use all-MiniLM-L6-v2 (80MB, fast inference); fallback to TF-IDF + cosine similarity if needed" 
+ 
+  - risk: "Time overrun on frontend development" 
+    probability: MEDIUM 
+    impact: MEDIUM 
+    mitigation: "Use Ant Design pre-built components; prioritize national dashboard over detail views" 
+ 
+  - risk: "Docker resource constraints" 
+    probability: LOW 
+    impact: HIGH 
+    mitigation: "Optimize container images; use slim base images; limit concurrent services if needed" 
+ 
+===== PAGE 75 =====
+SECTION 7: VERIFICATION & VALIDATION CRITERIA 
+7.1 Automated Test Suite 
+YAML 
+TEST_SUITE: 
+  backend_unit_tests: 
+    framework: "pytest" 
+    location: "tests/" 
+    categories: 
+      - category: "Data Validation Tests" 
+        test_file: "tests/test_data_validation.py" 
+        tests: 
+          - test_id: T-DV-001 
+            name: "test_valid_csv_schema_accepted" 
+            action: "Submit CSV with all valid columns and data types" 
+            expected: "Validation returns no errors, all records accepted" 
+ 
+          - test_id: T-DV-002 
+            name: "test_missing_required_column_rejected" 
+            action: "Submit CSV missing 'work_id' column" 
+            expected: "Validation returns error specifying missing column" 
+ 
+          - test_id: T-DV-003 
+            name: "test_invalid_date_format_rejected" 
+            action: "Submit CSV with sanction_date in DD/MM/YYYY format" 
+            expected: "Row rejected with error specifying expected YYYY-MM-DD format" 
+ 
+          - test_id: T-DV-004 
+            name: "test_negative_amount_rejected" 
+            action: "Submit CSV with sanctioned_amount = -5000" 
+            expected: "Row rejected with constraint violation error" 
+ 
+          - test_id: T-DV-005 
+            name: "test_duplicate_work_id_handled" 
+            action: "Upload two CSVs with overlapping work_ids" 
+            expected: "Second upload updates existing records, audit log entry created" 
+ 
+      - category: "Anomaly Detection Tests" 
+===== PAGE 76 =====
+        test_file: "tests/test_anomaly_detection.py" 
+        tests: 
+          - test_id: T-AD-001 
+            name: "test_cost_overrun_threshold_detection" 
+            action: "Insert work with sanctioned=100000, actual=125000" 
+            expected: "Anomaly detected: type=COST_OVERRUN, severity=MEDIUM" 
+ 
+          - test_id: T-AD-002 
+            name: "test_cost_overrun_not_flagged_below_threshold" 
+            action: "Insert work with sanctioned=100000, actual=110000" 
+            expected: "No COST_OVERRUN anomaly created for this work" 
+ 
+          - test_id: T-AD-003 
+            name: "test_cost_overrun_critical_severity" 
+            action: "Insert work with sanctioned=100000, actual=200000" 
+            expected: "Anomaly detected: type=COST_OVERRUN, severity=CRITICAL" 
+ 
+          - test_id: T-AD-004 
+            name: "test_delay_detection_medium" 
+            action: "Insert work with expected_completion 100 days ago, status=IN_PROGRESS" 
+            expected: "Anomaly detected: type=DELAYED_PROJECT, severity=MEDIUM, delay_days=100" 
+ 
+          - test_id: T-AD-005 
+            name: "test_delay_detection_critical" 
+            action: "Insert work with expected_completion 400 days ago, status=IN_PROGRESS" 
+            expected: "Anomaly detected: type=DELAYED_PROJECT, severity=CRITICAL" 
+ 
+          - test_id: T-AD-006 
+            name: "test_completed_work_not_flagged_as_delayed" 
+            action: "Insert work completed before expected_completion_date" 
+            expected: "No DELAYED_PROJECT anomaly" 
+ 
+          - test_id: T-AD-007 
+            name: "test_stalled_project_detection" 
+            action: "Insert work sanctioned 400 days ago, status=SANCTIONED" 
+            expected: "Anomaly detected: type=STALLED_PROJECT, severity=HIGH" 
+ 
+===== PAGE 77 =====
+          - test_id: T-AD-008 
+            name: "test_duplicate_detection_similar_descriptions" 
+            action: | 
+              Insert two works in same constituency: 
+              A: "Construction of community hall at Village Rampur" 
+              B: "Construction of community hall in Village Rampur" 
+              Similar amounts, dates within 6 months 
+            expected: "Duplicate pair detected with text_similarity > 0.85" 
+ 
+          - test_id: T-AD-009 
+            name: "test_duplicate_not_flagged_different_descriptions" 
+            action: | 
+              Insert two works in same constituency: 
+              A: "Construction of primary school building" 
+              B: "Installation of solar street lights in market area" 
+            expected: "No duplicate pair created" 
+ 
+          - test_id: T-AD-010 
+            name: "test_low_fund_utilization_detection" 
+            action: "Create constituency with released=5000000, expenditure=1000000 (20%)" 
+            expected: "Anomaly detected: type=LOW_UTILIZATION, severity=HIGH" 
+ 
+          - test_id: T-AD-011 
+            name: "test_normal_fund_utilization_not_flagged" 
+            action: "Create constituency with released=5000000, expenditure=4000000 (80%)" 
+            expected: "No fund utilization anomaly" 
+ 
+          - test_id: T-AD-012 
+            name: "test_amount_clustering_detection" 
+            action: "Insert 7 works in same constituency with identical sanctioned_amount=500000" 
+            expected: "Anomaly detected: type=AMOUNT_CLUSTERING" 
+ 
+      - category: "Risk Scoring Tests" 
+        test_file: "tests/test_risk_scoring.py" 
+        tests: 
+          - test_id: T-RS-001 
+            name: "test_zero_risk_score_for_clean_work" 
+===== PAGE 78 =====
+            action: "Work with no anomalies" 
+            expected: "risk_score=0, risk_tier=LOW" 
+ 
+          - test_id: T-RS-002 
+            name: "test_high_risk_score_for_multiple_anomalies" 
+            action: "Work with 40% cost overrun + 200 day delay + possible duplicate" 
+            expected: "risk_score >= 50, risk_tier IN [HIGH, CRITICAL]" 
+ 
+          - test_id: T-RS-003 
+            name: "test_constituency_score_aggregation" 
+            action: "Constituency with 10 works, 5 having score > 50" 
+            expected: "constituency_risk_score reflects high proportion of risky works" 
+ 
+      - category: "Authentication Tests" 
+        test_file: "tests/test_auth.py" 
+        tests: 
+          - test_id: T-AU-001 
+            name: "test_login_valid_credentials" 
+            action: "POST /api/v1/auth/login with valid admin credentials" 
+            expected: "200, response contains access_token and refresh_token" 
+ 
+          - test_id: T-AU-002 
+            name: "test_login_invalid_password" 
+            action: "POST /api/v1/auth/login with wrong password" 
+            expected: "401, error=INVALID_CREDENTIALS" 
+ 
+          - test_id: T-AU-003 
+            name: "test_protected_endpoint_without_token" 
+            action: "GET /api/v1/works without Authorization header" 
+            expected: "401" 
+ 
+          - test_id: T-AU-004 
+            name: "test_protected_endpoint_with_valid_token" 
+            action: "GET /api/v1/works with valid JWT" 
+            expected: "200" 
+ 
+          - test_id: T-AU-005 
+===== PAGE 79 =====
+            name: "test_rbac_state_user_scope" 
+            action: "Login as state_user (Maharashtra), GET /api/v1/constituencies" 
+            expected: "Only Maharashtra constituencies returned" 
+ 
+          - test_id: T-AU-006 
+            name: "test_rbac_mp_cannot_access_other_constituency" 
+            action: "Login as mp_user (Pune), GET /api/v1/constituency/Mumbai" 
+            expected: "403" 
+ 
+          - test_id: T-AU-007 
+            name: "test_account_lockout_after_5_failures" 
+            action: "5 failed login attempts for same user" 
+            expected: "6th attempt returns 429" 
+ 
+      - category: "API Integration Tests" 
+        test_file: "tests/test_api.py" 
+        tests: 
+          - test_id: T-API-001 
+            name: "test_works_list_pagination" 
+            action: "GET /api/v1/works?page=1&per_page=10" 
+            expected: "Returns exactly 10 records, pagination.total_pages correct" 
+ 
+          - test_id: T-API-002 
+            name: "test_works_filter_by_state" 
+            action: "GET /api/v1/works?state=Maharashtra" 
+            expected: "All returned works belong to Maharashtra constituencies" 
+ 
+          - test_id: T-API-003 
+            name: "test_works_sort_by_risk_score" 
+            action: "GET /api/v1/works?sort_by=risk_score&sort_order=desc" 
+            expected: "Records sorted by risk_score descending" 
+ 
+          - test_id: T-API-004 
+            name: "test_anomalies_list" 
+            action: "GET /api/v1/anomalies" 
+            expected: "Returns list of anomalies with correct schema" 
+ 
+===== PAGE 80 =====
+          - test_id: T-API-005 
+            name: "test_anomaly_status_update" 
+            action: "PATCH /api/v1/anomalies/{id} with {status: ACKNOWLEDGED}" 
+            expected: "200, anomaly status updated, audit_log entry created" 
+ 
+          - test_id: T-API-006 
+            name: "test_analytics_national_summary" 
+            action: "GET /api/v1/analytics/national-summary" 
+            expected: "Returns total_works, total_expenditure, total_anomalies, risk_distribution" 
+ 
+          - test_id: T-API-007 
+            name: "test_report_generation" 
+            action: "POST /api/v1/reports/generate with {scope: CONSTITUENCY , scope_id: X, format: CSV}" 
+            expected: "Returns report_id and download_url; download returns valid CSV" 
+ 
+          - test_id: T-API-008 
+            name: "test_data_upload_endpoint" 
+            action: "POST /api/v1/admin/upload with valid CSV file" 
+            expected: "Returns upload_id, records_valid > 0" 
+ 
+          - test_id: T-API-009 
+            name: "test_synthetic_data_generation_endpoint" 
+            action: "POST /api/v1/admin/generate-synthetic with {num_constituencies: 5, num_works_per_constituency: 
+20}" 
+            expected: "200, database populated with 100 works" 
+ 
+          - test_id: T-API-010 
+            name: "test_health_endpoint" 
+            action: "GET /health" 
+            expected: "200, body contains database_connected=true" 
+7.2 Anomaly Detection Validation Metrics 
+YAML 
+ML_VALIDATION: 
+  dataset: "Synthetic data with ground truth labels (from FR-DIM-002)" 
+   
+  metrics: 
+    cost_overrun_detection: 
+===== PAGE 81 =====
+      precision_target: ">= 0.70" 
+      recall_target: ">= 0.80" 
+      f1_target: ">= 0.75" 
+      evaluation: | 
+        predicted = anomalies WHERE anomaly_type = 'COST_OVERRUN' 
+        actual = synthetic_anomaly_labels WHERE anomaly_type = 'COST_OVERRUN' AND anomaly_injected = true 
+        precision = TP / (TP + FP) 
+        recall = TP / (TP + FN) 
+        f1 = 2 * (precision * recall) / (precision + recall) 
+ 
+    duplicate_detection: 
+      precision_target: ">= 0.75" 
+      recall_target: ">= 0.80" 
+      evaluation: | 
+        predicted = duplicate_pairs 
+        actual = synthetic_anomaly_labels WHERE anomaly_type = 'DUPLICATE_WORK' 
+        Match based on work_id involvement in pairs 
+ 
+    delayed_project_detection: 
+      precision_target: ">= 0.90" 
+      recall_target: ">= 0.95" 
+      note: "Higher targets because delay detection is rule-based with clear thresholds" 
+ 
+    fund_utilization_detection: 
+      precision_target: ">= 0.80" 
+      recall_target: ">= 0.85" 
+ 
+    overall_anomaly_detection: 
+      precision_target: ">= 0.70" 
+      recall_target: ">= 0.80" 
+      note: "Across all anomaly types combined" 
+ 
+  validation_script: 
+    location: "scripts/validate_detection.py" 
+    execution: "python scripts/validate_detection.py" 
+    output: | 
+      ================================================ 
+===== PAGE 82 =====
+      MPLADS Sentinel - Anomaly Detection Validation 
+      ================================================ 
+      Dataset: 5000 works, 400 injected anomalies 
+       
+      COST_OVERRUN: 
+        Precision: 0.XX  (target: >= 0.70) [PASS/FAIL] 
+        Recall:    0.XX  (target: >= 0.80) [PASS/FAIL] 
+        F1:        0.XX  (target: >= 0.75) [PASS/FAIL] 
+       
+      DUPLICATE_WORK: 
+        Precision: 0.XX  (target: >= 0.75) [PASS/FAIL] 
+        Recall:    0.XX  (target: >= 0.80) [PASS/FAIL] 
+       
+      DELAYED_PROJECT: 
+        Precision: 0.XX  (target: >= 0.90) [PASS/FAIL] 
+        Recall:    0.XX  (target: >= 0.95) [PASS/FAIL] 
+       
+      FUND_UTILIZATION: 
+        Precision: 0.XX  (target: >= 0.80) [PASS/FAIL] 
+        Recall:    0.XX  (target: >= 0.85) [PASS/FAIL] 
+       
+      OVERALL: 
+        Precision: 0.XX  (target: >= 0.70) [PASS/FAIL] 
+        Recall:    0.XX  (target: >= 0.80) [PASS/FAIL] 
+       
+      VALIDATION RESULT: [ALL PASS / X FAILURES] 
+      ================================================ 
+7.3 Frontend Validation Checklist 
+YAML 
+FRONTEND_VALIDATION: 
+  accessibility: 
+    tool: "axe-core (via @axe-core/react or browser extension)" 
+    targets: 
+      critical_violations: 0 
+      serious_violations: 0 
+      moderate_violations: "<= 5" 
+    pages_to_test: 
+===== PAGE 83 =====
+      - "/login" 
+      - "/dashboard/national" 
+      - "/dashboard/constituency/{id}" 
+      - "/alerts" 
+ 
+  responsiveness: 
+    breakpoints_to_verify: 
+      - width: 1920 
+        label: "Full HD desktop" 
+        expected: "All elements visible, map full width" 
+      - width: 1024 
+        label: "Small desktop/tablet landscape" 
+        expected: "Layout adjusts, charts may stack" 
+      - width: 768 
+        label: "Tablet portrait" 
+        expected: "Single column layout, all content accessible" 
+      - width: 375 
+        label: "Mobile" 
+        expected: "Navigation collapses to hamburger, charts scrollable" 
+ 
+  cross_browser: 
+    browsers: 
+      - "Chrome latest (primary)" 
+      - "Firefox latest" 
+    verification: "All pages render correctly, all interactions work" 
+ 
+  functional_ui_checklist: 
+    - check: "Login form submits and redirects to dashboard" 
+      page: "/login" 
+    - check: "KPI cards show non-zero values after data load" 
+      page: "/dashboard/national" 
+    - check: "Map renders with colored states" 
+      page: "/dashboard/national" 
+    - check: "Map click navigates to state view" 
+      page: "/dashboard/national" 
+    - check: "Alert table shows data with severity badges" 
+      page: "/dashboard/national" 
+===== PAGE 84 =====
+    - check: "Alert severity filter works" 
+      page: "/alerts" 
+    - check: "Constituency detail page loads with works table" 
+      page: "/dashboard/constituency/{id}" 
+    - check: "Works table sorting works on risk_score column" 
+      page: "/dashboard/constituency/{id}" 
+    - check: "CSV export downloads file" 
+      page: "/dashboard/constituency/{id}" 
+    - check: "Charts render without errors (no blank spaces)" 
+      page: "all dashboard pages" 
+    - check: "Logout clears session and redirects to login" 
+      page: "any page" 
+7.4 End-to-End Demo Validation Script 
+YAML 
+E2E_DEMO_SCRIPT: 
+  title: "MPLADS Sentinel - Complete Demo Flow" 
+  prerequisites: 
+    - "Docker Compose running with all services healthy" 
+    - "No pre-existing data (fresh deployment)" 
+   
+  steps: 
+    - step: 1 
+      action: "Navigate to https://localhost (or configured URL)" 
+      expected: "Login page displayed" 
+      verification: "Login form visible with username/password fields" 
+ 
+    - step: 2 
+      action: "Login with admin/Admin@1234" 
+      expected: "Redirect to national dashboard" 
+      verification: "Dashboard loads, KPI cards show 0 (no data yet)" 
+ 
+    - step: 3 
+      action: "Navigate to Admin panel → Generate Synthetic Data" 
+      expected: "Synthetic data generator form" 
+      action_detail: "Click 'Generate' with defaults (50 constituencies, 100 works each)" 
+      expected_result: "Success message: 5000 works generated" 
+      verification: "KPI 'Total Works Analyzed' now shows 5,000" 
+===== PAGE 85 =====
+ 
+    - step: 4 
+      action: "Navigate to Admin panel → Run Anomaly Detection" 
+      expected: "Pipeline starts executing" 
+      action_detail: "Click 'Run Detection Pipeline'" 
+      expected_result: "Success: Pipeline completed, X anomalies detected" 
+      verification: "KPI 'Anomalies Detected' shows non-zero value" 
+ 
+    - step: 5 
+      action: "View national dashboard" 
+      expected: | 
+        - KPI cards populated with correct values 
+        - India map shows colored states based on risk 
+        - Top 10 risk constituencies bar chart visible 
+        - Anomaly type distribution donut chart visible 
+        - Alert feed shows recent alerts sorted by severity 
+      verification: "All dashboard sections render with data" 
+ 
+    - step: 6 
+      action: "Click on a HIGH/CRITICAL state on the map" 
+      expected: "Navigate to state view showing that state's constituencies" 
+      verification: "Only constituencies from clicked state shown" 
+ 
+    - step: 7 
+      action: "Click on a high-risk constituency" 
+      expected: "Constituency detail page loads" 
+      verification: | 
+        - KPIs specific to constituency 
+        - Works table with risk scores 
+        - Duplicate pairs displayed (if any) 
+        - Risk breakdown radar chart 
+ 
+    - step: 8 
+      action: "In works table, sort by risk score descending" 
+      expected: "Highest risk works appear first" 
+      verification: "First work has higher risk_score than second" 
+ 
+===== PAGE 86 =====
+    - step: 9 
+      action: "Click on a work with COST_OVERRUN anomaly" 
+      expected: "Work detail shows cost overrun percentage, severity, detection method" 
+      verification: "actual_expenditure > sanctioned_amount * 1.15" 
+ 
+    - step: 10 
+      action: "Navigate to Alerts page" 
+      expected: "Full list of alerts with filters" 
+      action_detail: "Filter by severity=CRITICAL" 
+      expected_result: "Only CRITICAL alerts shown" 
+      verification: "All visible alerts have CRITICAL severity badge" 
+ 
+    - step: 11 
+      action: "Click on a CRITICAL alert → Change status to ACKNOWLEDGED" 
+      expected: "Status updates, audit trail shows entry" 
+      verification: "Audit trail shows: OLD=NEW, NEW=ACKNOWLEDGED, user=admin, timestamp" 
+ 
+    - step: 12 
+      action: "Generate PDF report for a constituency" 
+      expected: "Report generates and downloads" 
+      verification: "PDF opens, contains executive summary, top risk works, charts" 
+ 
+    - step: 13 
+      action: "Generate CSV export from works table" 
+      expected: "CSV downloads with all work data" 
+      verification: "CSV has correct number of rows and columns" 
+ 
+    - step: 14 
+      action: "Logout" 
+      expected: "Redirect to login page, previous session token invalid" 
+      verification: "Attempt to access /dashboard → redirected to /login" 
+ 
+    - step: 15 
+      action: "Login as state_user (Maharashtra)" 
+      expected: "Dashboard shows only Maharashtra data" 
+      verification: "KPIs reflect Maharashtra-only data, map highlighted only for Maharashtra" 
+ 
+===== PAGE 87 =====
+    - step: 16 
+      action: "As state_user, attempt to access another state's constituency" 
+      expected: "403 Forbidden" 
+      verification: "Error page or redirect indicating insufficient permissions" 
+ 
+  overall_pass_criteria: 
+    - "All 16 steps execute successfully" 
+    - "No JavaScript console errors" 
+    - "No server 500 errors in logs" 
+    - "Page transitions take < 3 seconds" 
+    - "All data displayed is consistent with database records" 
+7.5 Submission Readiness Checklist 
+YAML 
+SUBMISSION_CHECKLIST: 
+  code_quality: 
+    - item: "No linting errors (flake8 for Python, ESLint for JS)" 
+      command: "flake8 . && cd frontend && npx eslint src/" 
+      status: "PASS required" 
+ 
+    - item: "All imports used, no dead code" 
+      command: "Manual review + flake8 --select F401" 
+      status: "PASS required" 
+ 
+    - item: "Environment variables documented" 
+      file: " .env.example" 
+      status: "PASS required" 
+ 
+    - item: "No hardcoded secrets in code" 
+      command: "grep -r 'password\\|secret\\|key' --include='* .py' --include='* .js' --include='* .ts'" 
+      status: "PASS required (only .env references)" 
+ 
+  documentation: 
+    - item: "README.md with project overview" 
+      sections: ["Project Description" , "Architecture" , "Tech Stack" , "Setup Instructions" , "Demo Guide" , "API Docs"] 
+      status: "PASS required" 
+ 
+    - item: "Docker Compose setup instructions" 
+===== PAGE 88 =====
+      content: "Step-by-step from git clone to running system" 
+      status: "PASS required" 
+ 
+    - item: "API documentation accessible" 
+      url: "/api/v1/docs" 
+      status: "PASS required" 
+ 
+  deployment: 
+    - item: "docker-compose up works from clean state" 
+      command: "docker-compose down -v && docker-compose up --build -d" 
+      verification: "All services healthy within 60 seconds" 
+      status: "PASS required" 
+ 
+    - item: "Database migrations run automatically on startup" 
+      verification: "All tables created after fresh docker-compose up" 
+      status: "PASS required" 
+ 
+    - item: "Seed users created automatically" 
+      verification: "Login with admin/Admin@1234 works on fresh deployment" 
+      status: "PASS required" 
+ 
+  testing: 
+    - item: "Backend tests pass" 
+      command: "docker-compose exec api pytest tests/ -v" 
+      target: ">= 70% pass rate, 0 critical failures" 
+      status: "PASS required" 
+ 
+    - item: "Anomaly detection validation passes" 
+      command: "docker-compose exec api python scripts/validate_detection.py" 
+      target: "All precision/recall targets met" 
+      status: "PASS required" 
+ 
+    - item: "Accessibility audit passes" 
+      tool: "axe-core" 
+      target: "0 critical/serious violations" 
+      status: "PASS required" 
+ 
+===== PAGE 89 =====
+  functional_completeness: 
+    - item: "Data ingestion (CSV upload) works" 
+      status: "MUST" 
+    - item: "Synthetic data generation works" 
+      status: "MUST" 
+    - item: "Cost overrun detection works" 
+      status: "MUST" 
+    - item: "Duplicate work detection works" 
+      status: "MUST" 
+    - item: "Delayed project detection works" 
+      status: "MUST" 
+    - item: "Fund utilization anomaly detection works" 
+      status: "MUST" 
+    - item: "Risk scoring works" 
+      status: "MUST" 
+    - item: "National dashboard renders" 
+      status: "MUST" 
+    - item: "Constituency detail page renders" 
+      status: "MUST" 
+    - item: "Alert management works" 
+      status: "MUST" 
+    - item: "Authentication and RBAC works" 
+      status: "MUST" 
+    - item: "Report generation works" 
+      status: "MUST" 
+    - item: "Suspicious pattern detection works" 
+      status: "SHOULD" 
+    - item: "Web scraping works" 
+      status: "SHOULD" 
+7.6 Success Metrics 
+YAML 
+SUCCESS_METRICS: 
+  quantitative: 
+    - metric: "Anomaly Detection Accuracy" 
+      measurement: "F1 score on synthetic data with ground truth" 
+      target: ">= 0.75 overall" 
+      weight: "30%" 
+===== PAGE 90 =====
+ 
+    - metric: "System Response Time" 
+      measurement: "95th percentile API latency" 
+      target: "< 500ms" 
+      weight: "15%" 
+ 
+    - metric: "Dashboard Load Time" 
+      measurement: "Time to Interactive" 
+      target: "< 3 seconds" 
+      weight: "10%" 
+ 
+    - metric: "Feature Completeness" 
+      measurement: "MUST_HAVE features implemented / total MUST_HAVE features" 
+      target: ">= 90% (11/12 MUST_HAVE features)" 
+      weight: "25%" 
+ 
+    - metric: "Test Coverage" 
+      measurement: "Backend line coverage" 
+      target: ">= 70%" 
+      weight: "10%" 
+ 
+    - metric: "Accessibility Score" 
+      measurement: "axe-core violations" 
+      target: "0 critical, 0 serious" 
+      weight: "10%" 
+ 
+  qualitative: 
+    - metric: "Innovation" 
+      criteria: "Novel application of NLP for duplicate detection, multi-method anomaly detection ensemble" 
+ 
+    - metric: "Relevance" 
+      criteria: "Directly addresses MPLADS monitoring challenges with practical, deployable solution" 
+ 
+    - metric: "Scalability Potential" 
+      criteria: "Architecture supports 100x data growth with minimal changes" 
+ 
+    - metric: "User Experience" 
+===== PAGE 91 =====
+      criteria: "Intuitive dashboard, clear risk communication, actionable alerts" 
+ 
+APPENDIX A: FILE STRUCTURE 
+text 
+mplads-sentinel/ 
+├── docker-compose.yml 
+├── .env.example 
+├── README.md 
+├── docs/ 
+│   ├── SRS.md 
+│   ├── architecture.md 
+│   ├── demo-script.md 
+│   └── erd.png 
+├── backend/ 
+│   ├── Dockerfile 
+│   ├── requirements.txt 
+│   ├── alembic/ 
+│   │   ├── alembic.ini 
+│   │   └── versions/ 
+│   ├── app/ 
+│   │   ├── __init__.py 
+│   │   ├── main.py              # FastAPI application entry 
+│   │   ├── config.py            # Settings and environment 
+│   │   ├── database.py          # Database connection 
+│   │   ├── models/              # SQLAlchemy models 
+│   │   │   ├── __init__.py 
+│   │   │   ├── work.py 
+│   │   │   ├── constituency.py 
+│   │   │   ├── fund_release.py 
+│   │   │   ├── anomaly.py 
+│   │   │   ├── user.py 
+│   │   │   └── audit_log.py 
+│   │   ├── schemas/             # Pydantic schemas 
+│   │   │   ├── __init__.py 
+│   │   │   ├── work.py 
+│   │   │   ├── anomaly.py 
+===== PAGE 92 =====
+│   │   │   ├── auth.py 
+│   │   │   └── analytics.py 
+│   │   ├── api/                 # API routes 
+│   │   │   ├── __init__.py 
+│   │   │   ├── auth.py 
+│   │   │   ├── works.py 
+│   │   │   ├── constituencies.py 
+│   │   │   ├── anomalies.py 
+│   │   │   ├── analytics.py 
+│   │   │   ├── admin.py 
+│   │   │   └── reports.py 
+│   │   ├── services/            # Business logic 
+│   │   │   ├── __init__.py 
+│   │   │   ├── data_ingestion.py 
+│   │   │   ├── synthetic_generator.py 
+│   │   │   ├── anomaly_detection/ 
+│   │   │   │   ├── __init__.py 
+│   │   │   │   ├── cost_overrun.py 
+│   │   │   │   ├── duplicate_detection.py 
+│   │   │   │   ├── delay_detection.py 
+│   │   │   │   ├── fund_utilization.py 
+│   │   │   │   ├── pattern_detection.py 
+│   │   │   │   └── pipeline.py 
+│   │   │   ├── risk_scoring.py 
+│   │   │   └── report_generator.py 
+│   │   ├── auth/                # Auth utilities 
+│   │   │   ├── __init__.py 
+│   │   │   ├── jwt_handler.py 
+│   │   │   ├── rbac.py 
+│   │   │   └── password.py 
+│   │   └── utils/ 
+│   │       ├── __init__.py 
+│   │       └── audit.py 
+│   ├── scripts/ 
+│   │   ├── seed_users.py 
+│   │   ├── validate_detection.py 
+===== PAGE 93 =====
+│   │   └── generate_synthetic.py 
+│   └── tests/ 
+│       ├── __init__.py 
+│       ├── conftest.py 
+│       ├── test_data_validation.py 
+│       ├── test_anomaly_detection.py 
+│       ├── test_risk_scoring.py 
+│       ├── test_auth.py 
+│       └── test_api.py 
+├── frontend/ 
+│   ├── Dockerfile 
+│   ├── package.json 
+│   ├── vite.config.ts 
+│   ├── tsconfig.json 
+│   ├── public/ 
+│   │   ├── india-states.geojson 
+│   │   └── favicon.ico 
+│   └── src/ 
+│       ├── App.tsx 
+│       ├── main.tsx 
+│       ├── api/                 # API client 
+│       │   ├── client.ts 
+│       │   ├── auth.ts 
+│       │   ├── works.ts 
+│       │   ├── anomalies.ts 
+│       │   └── analytics.ts 
+│       ├── components/ 
+│       │   ├── Layout/ 
+│       │   ├── Dashboard/ 
+│       │   │   ├── KPICards.tsx 
+│       │   │   ├── IndiaMap.tsx 
+│       │   │   ├── RiskBarChart.tsx 
+│       │   │   ├── AnomalyDonut.tsx 
+│       │   │   ├── TrendChart.tsx 
+│       │   │   └── AlertFeed.tsx 
+│       │   ├── Constituency/ 
+===== PAGE 94 =====
+│       │   │   ├── ConstituencyDetail.tsx 
+│       │   │   ├── WorksTable.tsx 
+│       │   │   ├── RiskRadar.tsx 
+│       │   │   └── DuplicatePairs.tsx 
+│       │   ├── Alerts/ 
+│       │   │   ├── AlertList.tsx 
+│       │   │   └── AlertDetail.tsx 
+│       │   ├── Admin/ 
+│       │   │   ├── DataUpload.tsx 
+│       │   │   ├── SyntheticGenerator.tsx 
+│       │   │   └── DetectionTrigger.tsx 
+│       │   └── Auth/ 
+│       │       └── LoginForm.tsx 
+│       ├── contexts/ 
+│       │   └── AuthContext.tsx 
+│       ├── hooks/ 
+│       │   ├── useAuth.ts 
+│       │   └── useApi.ts 
+│       ├── pages/ 
+│       │   ├── LoginPage.tsx 
+│       │   ├── NationalDashboard.tsx 
+│       │   ├── StateDashboard.tsx 
+│       │   ├── ConstituencyPage.tsx 
+│       │   ├── AlertsPage.tsx 
+│       │   └── AdminPage.tsx 
+│       ├── types/ 
+│       │   └── index.ts 
+│       └── utils/ 
+│           ├── formatters.ts 
+│           └── constants.ts 
+└── nginx/ 
+    └── nginx.conf 
+ 
+APPENDIX B: DOCKER COMPOSE CONFIGURATION 
+YAML 
+# docker-compose.yml 
+===== PAGE 95 =====
+version: '3.8' 
+ 
+services: 
+  postgres: 
+    image: pgvector/pgvector:pg16 
+    environment: 
+      POSTGRES_DB: mplads_sentinel 
+      POSTGRES_USER: mplads 
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-mplads_secure_password} 
+    volumes: 
+      - postgres_data:/var/lib/postgresql/data 
+    ports: 
+      - "5432:5432" 
+    healthcheck: 
+      test: ["CMD-SHELL" , "pg_isready -U mplads -d mplads_sentinel"] 
+      interval: 10s 
+      timeout: 5s 
+      retries: 5 
+ 
+  redis: 
+    image: redis:7-alpine 
+    ports: 
+      - "6379:6379" 
+    healthcheck: 
+      test: ["CMD" , "redis-cli" , "ping"] 
+      interval: 10s 
+      timeout: 5s 
+      retries: 5 
+ 
+  api: 
+    build: 
+      context: ./backend 
+      dockerfile: Dockerfile 
+    environment: 
+      - DATABASE_URL=postgresql+asyncpg://mplads:${DB_PASSWORD:-
+mplads_secure_password}@postgres:5432/mplads_sentinel 
+      - REDIS_URL=redis://redis:6379/0 
+===== PAGE 96 =====
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change_me_in_production} 
+      - ENVIRONMENT=development 
+      - LOG_LEVEL=INFO 
+    ports: 
+      - "8000:8000" 
+    depends_on: 
+      postgres: 
+        condition: service_healthy 
+      redis: 
+        condition: service_healthy 
+    command: > 
+      sh -c "alembic upgrade head && 
+             python scripts/seed_users.py && 
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload" 
+ 
+  celery_worker: 
+    build: 
+      context: ./backend 
+      dockerfile: Dockerfile 
+    environment: 
+      - DATABASE_URL=postgresql+asyncpg://mplads:${DB_PASSWORD:-
+mplads_secure_password}@postgres:5432/mplads_sentinel 
+      - REDIS_URL=redis://redis:6379/0 
+    depends_on: 
+      postgres: 
+        condition: service_healthy 
+      redis: 
+        condition: service_healthy 
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=2 
+ 
+  frontend: 
+    build: 
+      context: ./frontend 
+      dockerfile: Dockerfile 
+    ports: 
+      - "3000:80" 
+    depends_on: 
+===== PAGE 97 =====
+      - api 
+ 
+  nginx: 
+    image: nginx:alpine 
+    ports: 
+      - "80:80" 
+    volumes: 
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf 
+    depends_on: 
+      - api 
+      - frontend 
+ 
+volumes: 
+  postgres_data: 
+ 
+END OF SOFTWARE REQUIREMENTS SPECIFICATION 
+Document Status: COMPLETE — Ready for AI Agentic Development System Execution 
+Version: 1.0.0-MVP | Classification: Government Internal Use | Standard: IEEE 830 Adapted 
+ 

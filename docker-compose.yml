@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: mplads_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-mplads}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mplads_secure_password}
+      POSTGRES_DB: ${POSTGRES_DB:-mplads_sentinel}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mplads -d mplads_sentinel"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: mplads_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mplads_backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://mplads:mplads_secure_password@db:5432/mplads_sentinel
+      SYNC_DATABASE_URL: postgresql://mplads:mplads_secure_password@db:5432/mplads_sentinel
+      REDIS_URL: redis://redis:6379/0
+      JWT_PRIVATE_KEY_PATH: keys/jwtRS256.key
+      JWT_PUBLIC_KEY_PATH: keys/jwtRS256.key.pub
+      ENVIRONMENT: production
+      API_RATE_LIMIT: 500
+      LOGIN_RATE_LIMIT: 10
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend/reports:/app/reports
+      - ./backend/data:/app/data
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mplads_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
