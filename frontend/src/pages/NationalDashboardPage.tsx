@@ -110,14 +110,19 @@ export const NationalDashboardPage: React.FC = () => {
   const expRatePct = totalAllocatedCr > 0 ? ((totalExpCr / totalAllocatedCr) * 100).toFixed(1) : '0.0'
   const completionRatePct = totalWorks > 0 ? ((worksCompleted / totalWorks) * 100).toFixed(1) : '0.0'
 
-  // Top 10 bar chart data
-  const barData = (data.top_risky_constituencies || []).slice(0, 10).map((c) => ({
-    id: c.id,
-    name: c.name,
-    state: c.state,
-    risk: c.risk_score,
-    tier: c.risk_tier,
-  }))
+  // Top 10 bar chart data: strictly arranged from highest risk score to lowest
+  const barData = [...(data.top_risky_constituencies || [])]
+    .sort((a, b) => (Number(b.risk_score) || 0) - (Number(a.risk_score) || 0))
+    .slice(0, 10)
+    .map((c, index) => ({
+      rank: index + 1,
+      id: c.id,
+      name: `#${index + 1} ${c.name}`,
+      rawName: c.name,
+      state: c.state,
+      risk: Number(c.risk_score) || 0,
+      tier: c.risk_tier,
+    }))
 
   // Category donut data
   const pieData = Object.entries(data.anomaly_distribution || {}).map(([name, value]) => ({
@@ -196,9 +201,6 @@ export const NationalDashboardPage: React.FC = () => {
             >
               National Risk & Anomaly Overview
             </Title>
-            <Tag color="blue" style={{ fontSize: 12, padding: '3px 10px', borderRadius: 6, fontWeight: 600 }}>
-              MPLADS ACTIVE
-            </Tag>
           </div>
           <Text style={{ color: '#64748b', fontSize: '13.5px' }}>
             Multi-detector intelligence console across Parliamentary Constituencies
@@ -385,15 +387,15 @@ export const NationalDashboardPage: React.FC = () => {
             <div style={{ height: 490, width: '100%' }}>
               {barData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 30, left: 80, bottom: 10 }}>
+                  <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 45, left: 80, bottom: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                     <XAxis type="number" domain={[0, 100]} stroke="#64748b" tick={{ fill: '#64748b', fontSize: 11 }} />
                     <YAxis
                       dataKey="name"
                       type="category"
                       stroke="#64748b"
-                      tick={{ fill: '#334155', fontSize: 12, fontWeight: 500 }}
-                      width={100}
+                      tick={{ fill: '#334155', fontSize: 11, fontWeight: 500 }}
+                      width={120}
                     />
                     <RechartsTooltip
                       contentStyle={{
@@ -410,6 +412,13 @@ export const NationalDashboardPage: React.FC = () => {
                     <Bar
                       dataKey="risk"
                       radius={[0, 6, 6, 0]}
+                      label={{
+                        position: 'right',
+                        formatter: (v: any) => `${v}`,
+                        fill: '#1e293b',
+                        fontSize: 12,
+                        fontWeight: 700,
+                      }}
                       onClick={(entry: any) => {
                         if (entry && (entry.id || entry.payload?.id)) {
                           const targetId = entry.id || entry.payload?.id

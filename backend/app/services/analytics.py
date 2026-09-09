@@ -223,14 +223,13 @@ async def national_summary(db: AsyncSession, user: User) -> dict:
                 max_r = s["max_risk"]
                 crit_pct = s["critical_cnt"] / n
                 high_pct = s["high_cnt"] / n
-                # Anomaly factor reflecting detector findings (0 - 15 points)
-                anom_factor = min(15.0, (anom_cnt / max(10, s["works"])) * 30.0) if s["works"] > 0 else 0.0
-                comp_risk = (
-                    (raw_avg * 0.45)
-                    + (max_r * 0.25)
-                    + ((crit_pct * 70.0 + high_pct * 30.0) * 0.20)
-                    + anom_factor
-                )
+                total_state_works = max(1, s["works"])
+                state_anom_rate = min(1.0, anom_cnt / total_state_works)
+
+                # Controlled, bounded anomaly impact
+                anomaly_impact = state_anom_rate * 22.0
+                baseline_state_risk = (raw_avg * 0.75) + (max_r * 0.15) + (high_pct * 8.0) + (crit_pct * 12.0)
+                comp_risk = baseline_state_risk + anomaly_impact
                 s["avg_risk"] = round(min(100.0, max(5.0, comp_risk)), 1)
             else:
                 s["avg_risk"] = 0.0

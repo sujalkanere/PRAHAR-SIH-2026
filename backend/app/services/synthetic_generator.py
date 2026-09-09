@@ -369,13 +369,13 @@ def generate_synthetic(params: GeneratorParams | None = None) -> dict[str, pd.Da
         if air <= 0:
             p_anom = 0.0
         elif st_tier == 1:
-            p_anom = min(0.95, air * 2.2 + 0.10)
+            p_anom = min(0.95, air * 1.70)
         elif st_tier == 2:
-            p_anom = min(0.85, air * 1.7 + 0.05)
+            p_anom = min(0.90, air * 1.30)
         elif st_tier == 3:
-            p_anom = min(0.70, air * 1.2)
+            p_anom = min(0.85, air * 0.90)
         else:
-            p_anom = min(0.40, air * 0.5)
+            p_anom = max(0.0, air * 0.58)
 
         works_per_fy = max(10, params.num_works_per_constituency // len(fys))
 
@@ -413,36 +413,39 @@ def generate_synthetic(params: GeneratorParams | None = None) -> dict[str, pd.Da
                 has_anomaly = rng.random() < p_anom
 
                 if has_anomaly:
-                    # 1. Cost & Delay Risk
-                    mult = rng.uniform(1.30, 1.75)
+                    mult = rng.uniform(0.95, 1.00)
                     act_exp = round(sanc_amount * mult, 2)
-                    delay_days = rng.randint(190, 480)
-                    comp_date = exp_comp_date + timedelta(days=delay_days)
-                    injected_anomalies.extend(["COST_OVERRUN", "DELAYED_PROJECT"])
-
-                    # 2. Payment Risk (Premature or overflow payment)
-                    if rng.random() < 0.25:
+                    roll = rng.random()
+                    if roll < 0.38:
+                        # 1. Cost overrun (15% to 45% overrun)
+                        mult = rng.uniform(1.15, 1.45)
+                        act_exp = round(sanc_amount * mult, 2)
+                        injected_anomalies.append("COST_OVERRUN")
+                    elif roll < 0.70:
+                        # 2. Delay (60 to 220 days)
+                        delay_days = rng.randint(60, 220)
+                        comp_date = exp_comp_date + timedelta(days=delay_days)
+                        injected_anomalies.append("DELAYED_PROJECT")
+                    elif roll < 0.84:
+                        # 3. Payment Risk (Premature payment on in-progress work)
                         status = "IN_PROGRESS"
                         comp_date = None
-                        act_exp = round(sanc_amount * rng.uniform(1.35, 1.60), 2)
+                        act_exp = round(sanc_amount * rng.uniform(1.10, 1.30), 2)
                         injected_anomalies.append("PAYMENT_RISK")
-
-                    # 3. Compliance Risk (Generic agency or premature completion)
-                    if rng.random() < 0.20:
+                    elif roll < 0.93:
+                        # 4. Compliance Risk (Generic agency)
                         agency = "Department"  # Triggers CMP-002
                         injected_anomalies.append("COMPLIANCE_RISK")
-
-                    # 4. Durability Risk (Repeat repair within 180 days)
-                    if cat in prior_work_by_cat and rng.random() < 0.25:
-                        prior_sdate = prior_work_by_cat[cat]["sanc_date"]
-                        sanc_date = prior_sdate + timedelta(days=rng.randint(30, 150))
-                        desc = f"Repair and patch work of {desc.lower()}"
-                        injected_anomalies.append("DURABILITY_RISK")
-
-                    # 5. Pattern Risk (Amount clustering & round number bias)
-                    if rng.random() < 0.35:
-                        sanc_amount = 1000000.0  # Cluster at 10 Lakhs
-                        injected_anomalies.append("AMOUNT_CLUSTERING")
+                    else:
+                        # 5. Durability or Pattern Risk
+                        if cat in prior_work_by_cat and rng.random() < 0.5:
+                            prior_sdate = prior_work_by_cat[cat]["sanc_date"]
+                            sanc_date = prior_sdate + timedelta(days=rng.randint(30, 150))
+                            desc = f"Repair and patch work of {desc.lower()}"
+                            injected_anomalies.append("DURABILITY_RISK")
+                        else:
+                            sanc_amount = 1000000.0  # Cluster at 10 Lakhs
+                            injected_anomalies.append("AMOUNT_CLUSTERING")
 
                 else:
                     # Clean work
@@ -488,7 +491,7 @@ def generate_synthetic(params: GeneratorParams | None = None) -> dict[str, pd.Da
                     })
 
                 # Duplicate Work injection (Twin work pair)
-                if has_anomaly and rng.random() < 0.15:
+                if has_anomaly and rng.random() < 0.05:
                     work_id_counter += 1
                     twin_wid = f"WRK{work_id_counter:06d}"
                     twin_desc = desc.replace(" at ", " in ", 1) if " at " in desc else f"Modern {desc.lower()}"
@@ -511,16 +514,11 @@ def generate_synthetic(params: GeneratorParams | None = None) -> dict[str, pd.Da
                     })
 
             # Fund releases for this constituency-FY
-            # Utilization rate scales cleanly with anomaly rate
-            if p_anom > 0.45:
-                # Severe over-utilization (rate > 200%)
-                total_release = round(fy_sanc_total * 0.55, 2)
-            elif p_anom > 0.25:
-                # Moderate over-utilization (rate ~140-160%)
-                total_release = round(fy_sanc_total * 0.80, 2)
-            else:
-                # Healthy utilization (rate = 78%)
-                total_release = round(fy_exp_total / 0.78, 2)
+            # Grounded in actual expenditure with controlled realistic variance
+            total_release = round(fy_exp_total / rng.uniform(0.74, 0.86), 2)
+            if p_anom > 0.40 and st_tier == 1 and rng.random() < 0.25:
+                # Occasional over-utilization under severe anomaly stress in Tier 1
+                total_release = round(fy_exp_total * 0.70, 2)
 
             total_release = max(total_release, 100000.0)
             inst1 = round(total_release * 0.5, 2)

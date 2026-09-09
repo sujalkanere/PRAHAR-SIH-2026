@@ -93,12 +93,14 @@ export const StateDashboardPage: React.FC = () => {
     setSearchParams({ state: val })
   }
 
-  const filteredConstituencies = constituencies.filter(
-    (c) =>
-      c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (c.district && c.district.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (c.mp_name && c.mp_name.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
+  const filteredConstituencies = constituencies
+    .filter(
+      (c) =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.district && c.district.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (c.mp_name && c.mp_name.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
+    .sort((a, b) => (Number(b.risk_score) || 0) - (Number(a.risk_score) || 0))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>

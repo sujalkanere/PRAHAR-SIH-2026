@@ -216,7 +216,11 @@ def run_risk_scoring(session: Session) -> dict:
         if dur_risk > 0:
             addon += int(round(dur_risk * 0.15))
 
-        total = min(100, base_total + addon)
+        max_dim = max(c_risk, d_risk, dup_risk, p_risk, cmp_risk, dur_risk)
+        if max_dim > 0:
+            total = min(100, int(round(max_dim * 0.60 + base_total * 0.40 + addon)))
+        else:
+            total = min(100, base_total + addon)
         tier = tier_for(total)
         if w.risk_score != total or w.risk_tier != tier or total > 0:
             w.risk_score = total
@@ -265,15 +269,19 @@ def run_risk_scoring(session: Session) -> dict:
             max_s = max(scores) if scores else 0
             high_ratio = (sum(1 for s in scores if s >= 50) / len(scores)) if scores else 0.0
             critical_ratio = (sum(1 for s in scores if s >= 75) / len(scores)) if scores else 0.0
-            fu_flag = 1 if cid in fund_util_consts else 0
-            c_anom_cnt = sum(len(work_anomalies.get(str(w.id), [])) for w in fy_works)
-            anom_factor = min(20.0, (c_anom_cnt / max(10, len(fy_works))) * 40.0)
+            fu_flag = 1.0 if cid in fund_util_consts else 0.0
+            anom_works_count = sum(1 for w in fy_works if len(work_anomalies.get(str(w.id), [])) > 0)
+            anom_rate = anom_works_count / max(1, len(fy_works))
+
+            # Baseline is work average risk + slight outlier sensitivity
+            baseline_const_risk = (avg * 0.65) + (max_s * 0.20)
+            # Normalized anomaly impact bounded to 18 points
+            anom_impact = anom_rate * 18.0
+            # Fund utilization impact bounded to 6 points
+            fu_impact = fu_flag * 6.0
 
             cscore = min(100, max(5, int(round(
-                (avg * 0.6 + max_s * 0.4) * 0.45
-                + (high_ratio * 70.0 + critical_ratio * 30.0) * 0.30
-                + (fu_flag * 15.0)
-                + anom_factor
+                baseline_const_risk + anom_impact + fu_impact
             ))))
             u = util.get((cid, fy), {})
             session.add(ConstituencyRiskScore(

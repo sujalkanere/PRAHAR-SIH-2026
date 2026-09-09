@@ -35,7 +35,7 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
     {
       role: 'assistant',
       content:
-        'Hello! I am the **PRAHAR AI Assistant** powered by OpenRouter. I have complete access to the official 2026-09-09 dataset across all 231 Rajya Sabha MPs, ₹3,363.8 Cr allocations, and the 8 anomaly detection models. How can I assist you with audit intelligence today?',
+        'Hello! I am the PRAHAR AI Assistant powered by Fable5. I have complete access to the portal across all 231 Rajya Sabha MPs and the 8 Anomaly detection models. How can I assist you today?',
     },
   ])
   const [input, setInput] = useState('')
@@ -142,7 +142,7 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
                   PRAHAR AI Assistant
                 </span>
                 <Tag color="success" style={{ borderRadius: 12, fontSize: '11px', fontWeight: 600, margin: 0 }}>
-                  OpenRouter Free Tier
+                  Anthropic/Fable5
                 </Tag>
               </div>
               <div style={{ fontSize: '12px', color: '#64748b' }}>
@@ -306,7 +306,7 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
                 }}
               >
                 <span className="dot-flashing" />
-                <span>Consulting official datasets & OpenRouter free model...</span>
+                <span>Consulting official datasets & Claude API...</span>
               </div>
             </div>
           )}
