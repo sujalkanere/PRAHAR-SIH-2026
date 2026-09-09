@@ -232,27 +232,68 @@ def seed_official_datasets_sync(session: Session) -> dict:
             )
         )
 
-        # Baseline constituency risk score based on official metrics
-        c_risk = 0
-        if util_pct < 40:
-            c_risk += 40
-        elif util_pct < 70:
-            c_risk += 20
-        elif util_pct > 98:
-            c_risk += 5
+        # Strict Multi-Factor Risk Scoring Engine for Official Dataset Baseline
+        c_risk = 0.0
 
+        # 1. Project Delivery & Stall Factor (0 - 38 points)
         comp_rate = float(row.get("Completion Rate %", 0.0))
-        if rec_works_cnt > 0 and comp_rate < 20:
-            c_risk += 35
-        elif comp_rate < 50:
-            c_risk += 15
+        if rec_works_cnt > 0:
+            if comp_rate < 5.0:
+                c_risk += 38.0  # Near-zero completion / severe backlog
+            elif comp_rate < 20.0:
+                c_risk += 28.0  # Acute delivery stall
+            elif comp_rate < 40.0:
+                c_risk += 16.0  # Below schedule
+            elif comp_rate < 60.0:
+                c_risk += 8.0
+            elif comp_rate >= 80.0:
+                c_risk -= 12.0  # Efficient execution reward
+        else:
+            c_risk += 15.0
+
+        # 2. Fund Utilization & Fiscal Inertia (0 - 32 points)
+        if util_pct < 20.0:
+            c_risk += 32.0  # Severely idle funds
+        elif util_pct < 45.0:
+            c_risk += 22.0  # Lagging absorption
+        elif util_pct < 70.0:
+            c_risk += 10.0  # Sub-optimal utilization
+        elif util_pct > 99.0 and comp_rate < 30.0:
+            c_risk += 18.0  # Funds drained but physical works incomplete (overrun signal)
+
+        # 3. Vendor Payment Distress & Backlog (0 - 25 points)
+        unpaid_balance = float(row.get("Balance Not Yet Paid to Vendors (₹)", 0.0))
+        pending_payments = int(row.get("Pending Payments", 0))
+
+        if unpaid_balance > 100_000_000:  # > 10 Cr unpaid
+            c_risk += 18.0
+        elif unpaid_balance > 50_000_000:  # > 5 Cr unpaid
+            c_risk += 12.0
+        elif unpaid_balance > 20_000_000:  # > 2 Cr unpaid
+            c_risk += 6.0
+
+        if pending_payments >= 8:
+            c_risk += 12.0
+        elif pending_payments >= 3:
+            c_risk += 6.0
+        elif pending_payments >= 1:
+            c_risk += 2.0
+
+        # 4. Expenditure Absorption Ratio (0 - 15 points)
+        exp_ratio = (total_exp / allocated * 100) if allocated > 0 else 0.0
+        if exp_ratio < 20.0:
+            c_risk += 15.0
+        elif exp_ratio < 40.0:
+            c_risk += 8.0
+
+        final_c_risk = int(round(min(100.0, max(5.0, c_risk))))
 
         tier = "LOW"
-        if c_risk >= 75:
+        if final_c_risk >= 75:
             tier = "CRITICAL"
-        elif c_risk >= 50:
+        elif final_c_risk >= 50:
             tier = "HIGH"
-        elif c_risk >= 25:
+        elif final_c_risk >= 25:
             tier = "MEDIUM"
 
         risk_scores_to_add.append(
@@ -260,10 +301,10 @@ def seed_official_datasets_sync(session: Session) -> dict:
                 id=uuid.uuid4(),
                 constituency_id=cid,
                 financial_year="2024-25",
-                risk_score=min(100, c_risk),
+                risk_score=final_c_risk,
                 risk_tier=tier,
                 total_works=rec_works_cnt,
-                high_risk_works=0,
+                high_risk_works=1 if final_c_risk >= 50 else 0,
                 fund_utilization_rate=util_pct,
                 total_funds_released=allocated,
                 total_expenditure=total_exp,

@@ -261,16 +261,26 @@ def run_risk_scoring(session: Session) -> dict:
             if not fy_works:
                 continue
             scores = [w.risk_score for w in fy_works]
-            avg = sum(scores) / len(scores)
-            high_ratio = sum(1 for s in scores if s > 50) / len(scores)
+            avg = sum(scores) / len(scores) if scores else 0.0
+            max_s = max(scores) if scores else 0
+            high_ratio = (sum(1 for s in scores if s >= 50) / len(scores)) if scores else 0.0
+            critical_ratio = (sum(1 for s in scores if s >= 75) / len(scores)) if scores else 0.0
             fu_flag = 1 if cid in fund_util_consts else 0
-            cscore = min(100, int(round(avg * 0.4 + high_ratio * 100 * 0.35 + fu_flag * 25)))
+            c_anom_cnt = sum(len(work_anomalies.get(str(w.id), [])) for w in fy_works)
+            anom_factor = min(20.0, (c_anom_cnt / max(10, len(fy_works))) * 40.0)
+
+            cscore = min(100, max(5, int(round(
+                (avg * 0.6 + max_s * 0.4) * 0.45
+                + (high_ratio * 70.0 + critical_ratio * 30.0) * 0.30
+                + (fu_flag * 15.0)
+                + anom_factor
+            ))))
             u = util.get((cid, fy), {})
             session.add(ConstituencyRiskScore(
                 id=uuid.uuid4(), constituency_id=const.id, financial_year=fy,
                 risk_score=cscore, risk_tier=tier_for(cscore),
                 total_works=len(fy_works),
-                high_risk_works=sum(1 for s in scores if s > 50),
+                high_risk_works=sum(1 for s in scores if s >= 50),
                 fund_utilization_rate=round(u.get("rate", 0), 2) if u.get("rate") is not None else None,
                 total_funds_released=round(u.get("released", 0), 2),
                 total_expenditure=round(u.get("expenditure", 0), 2),

@@ -187,15 +187,20 @@ async def national_summary(db: AsyncSession, user: User) -> dict:
     if risk_rows:
         for r in risk_rows:
             s = state_map.setdefault(r["state"], {
-                "state": r["state"], "avg_risk": 0, "constituencies": 0, "works": 0,
-                "expenditure_cr": 0.0, "released_cr": 0.0, "high_risk": 0, "anomalies": 0,
+                "state": r["state"], "avg_risk": 0.0, "max_risk": 0.0, "constituencies": 0, "works": 0,
+                "expenditure_cr": 0.0, "released_cr": 0.0, "high_risk": 0, "critical_cnt": 0, "high_cnt": 0, "anomalies": 0,
             })
             s["constituencies"] += 1
             s["works"] += r["total_works"]
             s["expenditure_cr"] += r["total_expenditure"] / 1e7
             s["released_cr"] += r["total_funds_released"] / 1e7
             s["avg_risk"] += r["risk_score"]
-            s["high_risk"] += 1 if r["risk_tier"] in ("HIGH", "CRITICAL") else 0
+            s["max_risk"] = max(s["max_risk"], float(r["risk_score"]))
+            if r["risk_tier"] == "CRITICAL":
+                s["critical_cnt"] += 1
+            if r["risk_tier"] in ("HIGH", "CRITICAL"):
+                s["high_cnt"] += 1
+                s["high_risk"] += 1
         # count anomalies per state via SQL
         state_anomalies_q = select(Constituency.state, func.count(Anomaly.id)).join(
             Constituency, Constituency.id == Anomaly.constituency_id
@@ -210,8 +215,25 @@ async def national_summary(db: AsyncSession, user: User) -> dict:
         state_anom_counts = dict((await db.execute(state_anomalies_q)).all())
         
         for s in state_map.values():
-            s["avg_risk"] = round(s["avg_risk"] / s["constituencies"], 1) if s["constituencies"] else 0
-            s["anomalies"] = state_anom_counts.get(s["state"], 0)
+            n = s["constituencies"]
+            anom_cnt = state_anom_counts.get(s["state"], 0)
+            s["anomalies"] = anom_cnt
+            if n > 0:
+                raw_avg = s["avg_risk"] / n
+                max_r = s["max_risk"]
+                crit_pct = s["critical_cnt"] / n
+                high_pct = s["high_cnt"] / n
+                # Anomaly factor reflecting detector findings (0 - 15 points)
+                anom_factor = min(15.0, (anom_cnt / max(10, s["works"])) * 30.0) if s["works"] > 0 else 0.0
+                comp_risk = (
+                    (raw_avg * 0.45)
+                    + (max_r * 0.25)
+                    + ((crit_pct * 70.0 + high_pct * 30.0) * 0.20)
+                    + anom_factor
+                )
+                s["avg_risk"] = round(min(100.0, max(5.0, comp_risk)), 1)
+            else:
+                s["avg_risk"] = 0.0
     else:
         cq = select(Constituency)
         if uids is not None:
