@@ -32,6 +32,13 @@ export const adminApi = {
     return data
   },
 
+  cancelDetection: async () => {
+    const { data } = await apiClient.post<{ message: string; cleared_count: number }>(
+      '/admin/cancel-detection'
+    )
+    return data
+  },
+
   getDetectionHistory: async (): Promise<DetectionRun[]> => {
     const { data } = await apiClient.get<any>('/admin/detection-runs')
     return Array.isArray(data) ? data : (data?.data || [])

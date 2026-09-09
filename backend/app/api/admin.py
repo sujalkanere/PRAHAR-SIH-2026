@@ -23,11 +23,27 @@ settings = get_settings()
 _PIPELINE_LOCK = threading.Lock()
 
 
-def _run_sync_pipeline(triggered_by: str | None, trigger_type: str) -> dict:
+def _run_sync_pipeline(triggered_by: str | None, trigger_type: str, run_id: str | uuid.UUID | None = None) -> dict:
     """Runs the detection pipeline in a worker thread (serialized globally)."""
     from app.services.anomaly_detection.pipeline import run_detection_pipeline
     with _PIPELINE_LOCK:
-        return run_detection_pipeline(triggered_by=triggered_by, trigger_type=trigger_type)
+        try:
+            return run_detection_pipeline(triggered_by=triggered_by, trigger_type=trigger_type, run_id=run_id)
+        except Exception as exc:
+            if run_id:
+                try:
+                    from app.database import SyncSessionLocal
+                    with SyncSessionLocal() as s:
+                        r_uid = uuid.UUID(str(run_id)) if not isinstance(run_id, uuid.UUID) else run_id
+                        r = s.get(DetectionRun, r_uid)
+                        if r and r.status == "RUNNING":
+                            r.status = "FAILED"
+                            r.error_message = f"Pipeline execution error: {exc}"
+                            r.completed_at = datetime.now(timezone.utc)
+                            s.commit()
+                except Exception:
+                    pass
+            raise
 
 
 @router.post("/upload", response_model=UploadResponse)
@@ -112,6 +128,7 @@ async def reset_database(
         ConstituencyRiskScore,
         DetectionRun,
         DuplicatePair,
+        Expenditure,
         FundRelease,
         UploadHistory,
         Work,
@@ -121,6 +138,7 @@ async def reset_database(
     await db.execute(DuplicatePair.__table__.delete())
     await db.execute(Anomaly.__table__.delete())
     await db.execute(ConstituencyRiskScore.__table__.delete())
+    await db.execute(Expenditure.__table__.delete())
     await db.execute(Work.__table__.delete())
     await db.execute(FundRelease.__table__.delete())
     await db.execute(DetectionRun.__table__.delete())
@@ -147,6 +165,32 @@ async def reset_database(
     }
 
 
+@router.post("/seed-official-baseline")
+@router.post("/reload-official-data")
+async def seed_official(
+    request: Request,
+    background: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_roles(ROLE_ADMIN)),
+):
+    """Loads all 5 official MPLADS datasets into the database."""
+    from app.services.official_dataset_seeder import seed_official_baseline
+    from app.utils.audit import write_audit
+
+    result = await seed_official_baseline(db)
+    await write_audit(
+        db,
+        user_id=str(user.id),
+        action="SEED_OFFICIAL_DATASETS",
+        resource_type="dataset",
+        new_value=result,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("user-agent"),
+    )
+    background.add_task(_run_sync_pipeline, str(user.id), "MANUAL")
+    return {"message": "Official datasets seeded successfully", **result}
+
+
 async def _load_dfs_to_db(db: AsyncSession, dfs: dict) -> dict:
     """Inserts synthetic dataframes into the DB (works + releases + labels stored as CSV)."""
     from app.models import Constituency, FundRelease, Work
@@ -157,10 +201,11 @@ async def _load_dfs_to_db(db: AsyncSession, dfs: dict) -> dict:
     releases_df: pd.DataFrame = dfs["fund_releases"]
 
     # clear existing demo data (fresh dataset) — FK-safe order
-    from app.models import Anomaly, ConstituencyRiskScore, DuplicatePair
+    from app.models import Anomaly, ConstituencyRiskScore, DuplicatePair, Expenditure
     await db.execute(DuplicatePair.__table__.delete())
     await db.execute(Anomaly.__table__.delete())
     await db.execute(ConstituencyRiskScore.__table__.delete())
+    await db.execute(Expenditure.__table__.delete())
     await db.execute(Work.__table__.delete())
     await db.execute(FundRelease.__table__.delete())
     await db.execute(Constituency.__table__.delete())
@@ -237,26 +282,77 @@ def __to_date(v):
 async def run_detection(background: BackgroundTasks,
                         db: AsyncSession = Depends(get_db),
                         user: User = Depends(require_roles(ROLE_ADMIN))):
+    now = datetime.now(timezone.utc)
+    # If the thread lock is free, any run left in RUNNING status is an abandoned zombie run
+    if not _PIPELINE_LOCK.locked():
+        stale_runs = (await db.execute(
+            select(DetectionRun).where(DetectionRun.status == "RUNNING"))).scalars().all()
+        for sr in stale_runs:
+            sr.status = "FAILED"
+            sr.error_message = "Interrupted or orphaned detection run"
+            sr.completed_at = now
+        if stale_runs:
+            await db.commit()
+
     running = (await db.execute(
         select(DetectionRun).where(DetectionRun.status == "RUNNING").limit(1))).scalars().first()
-    if running is not None:
+    if running is not None and _PIPELINE_LOCK.locked():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={
             "code": "DETECTION_RUNNING",
             "message": "a detection run is already in progress",
             "run_id": str(running.id),
         })
+
     run = DetectionRun(id=uuid.uuid4(), triggered_by=user.id, trigger_type="MANUAL",
-                       status="RUNNING", started_at=datetime.now(timezone.utc))
+                       status="RUNNING", started_at=now)
     db.add(run)
     await db.commit()
-    background.add_task(_run_sync_pipeline, str(user.id), "MANUAL")
+    background.add_task(_run_sync_pipeline, str(user.id), "MANUAL", run.id)
     return DetectionRunOut(id=str(run.id), status="RUNNING", anomalies_detected=0, works_analyzed=0,
                            started_at=run.started_at)
+
+
+@router.post("/cancel-detection")
+@router.post("/reset-stuck-runs")
+async def cancel_detection(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_roles(ROLE_ADMIN)),
+):
+    """Cancels/clears any stuck or running detection runs."""
+    now = datetime.now(timezone.utc)
+    stale_runs = (await db.execute(
+        select(DetectionRun).where(DetectionRun.status == "RUNNING"))).scalars().all()
+    count = len(stale_runs)
+    for sr in stale_runs:
+        sr.status = "FAILED"
+        sr.error_message = "Cancelled or reset by administrator"
+        sr.completed_at = now
+    if count > 0:
+        await db.commit()
+    return {"message": f"Cleared {count} stuck detection run(s)", "cleared_count": count}
 
 
 @router.get("/detection-runs")
 async def detection_runs(db: AsyncSession = Depends(get_db),
                          user: User = Depends(require_roles(ROLE_ADMIN))):
+    now = datetime.now(timezone.utc)
+    if not _PIPELINE_LOCK.locked():
+        # Auto-clean any zombie runs so frontend never stays stuck
+        stale_runs = (await db.execute(
+            select(DetectionRun).where(DetectionRun.status == "RUNNING"))).scalars().all()
+        cleaned = False
+        for sr in stale_runs:
+            sr_time = sr.started_at
+            if sr_time and sr_time.tzinfo is None:
+                sr_time = sr_time.replace(tzinfo=timezone.utc)
+            if not sr_time or (now - sr_time).total_seconds() > 300:
+                sr.status = "FAILED"
+                sr.error_message = "Interrupted or timed out"
+                sr.completed_at = now
+                cleaned = True
+        if cleaned:
+            await db.commit()
+
     rows = (await db.execute(
         select(DetectionRun).order_by(DetectionRun.started_at.desc()).limit(20))).scalars().all()
     return {"data": [DetectionRunOut(

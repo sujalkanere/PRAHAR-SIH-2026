@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import {
   Card,
   Row,
@@ -77,6 +77,15 @@ export const AdminPage: React.FC = () => {
     })
   }
 
+  const pollIntervalRef = useRef<any>(null)
+
+  const stopPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current)
+      pollIntervalRef.current = null
+    }
+  }
+
   const handleResetSynthetic = () => {
     synthForm.resetFields()
     message.info('Synthetic generator form reset to defaults.')
@@ -84,18 +93,18 @@ export const AdminPage: React.FC = () => {
 
   useEffect(() => {
     loadHistory()
+    return () => {
+      stopPolling()
+    }
   }, [])
 
   // Timer for active detection run
   useEffect(() => {
     let timer: any = null
     if (detectLoading) {
-      setElapsedSeconds(0)
       timer = setInterval(() => {
         setElapsedSeconds((prev) => prev + 1)
       }, 1000)
-    } else {
-      setElapsedSeconds(0)
     }
     return () => {
       if (timer) clearInterval(timer)
@@ -118,7 +127,7 @@ export const AdminPage: React.FC = () => {
   }
 
   const estimatedTotalSeconds = getEstimatedTotalSeconds()
-  const estimatedRemaining = Math.max(1, estimatedTotalSeconds - elapsedSeconds)
+  const estimatedRemaining = Math.max(0, estimatedTotalSeconds - elapsedSeconds)
   const progressPercent = Math.min(95, Math.max(5, Math.round((elapsedSeconds / Math.max(estimatedTotalSeconds, 1)) * 90)))
 
   const getStageDescription = () => {
@@ -141,12 +150,25 @@ export const AdminPage: React.FC = () => {
       setRuns(runsList)
       setUploads(uploadsList)
 
-      // Check if any run is active
+      // Check if any run is genuinely active
       const running = runsList.find((r: any) => r.status === 'RUNNING')
       if (running) {
+        if (running.started_at) {
+          const diff = Math.max(0, Math.floor((Date.now() - new Date(running.started_at).getTime()) / 1000))
+          if (diff > 180) {
+            // Started more than 3 minutes ago, stale run
+            setDetectLoading(false)
+            stopPolling()
+            return
+          }
+          setElapsedSeconds(diff)
+        }
         setActiveRun(running)
         setDetectLoading(true)
         pollActiveRun()
+      } else {
+        setDetectLoading(false)
+        stopPolling()
       }
     } catch (err) {
       console.error('Failed to load admin history', err)
@@ -154,27 +176,54 @@ export const AdminPage: React.FC = () => {
   }
 
   const pollActiveRun = () => {
-    const interval = setInterval(async () => {
+    stopPolling()
+    let pollCount = 0
+    pollIntervalRef.current = setInterval(async () => {
+      pollCount++
       try {
         const historyRes = await adminApi.getDetectionHistory()
         const history = Array.isArray(historyRes) ? historyRes : (historyRes as any)?.data || []
         setRuns(history)
-        const current = history[0]
-        if (current && current.status !== 'RUNNING') {
-          setActiveRun(current)
+
+        const stillRunning = history.find((r: any) => r.status === 'RUNNING')
+        if (!stillRunning) {
+          stopPolling()
           setDetectLoading(false)
-          clearInterval(interval)
-          if (current.status === 'COMPLETED') {
-            message.success(`Pipeline completed! ${current.anomalies_detected} anomalies detected.`)
-          } else {
-            message.error(`Pipeline failed: ${current.error_message}`)
+          const current = history[0]
+          if (current) {
+            setActiveRun(current)
+            if (current.status === 'COMPLETED') {
+              message.success(`Pipeline completed! ${current.anomalies_detected} anomalies detected.`)
+            } else if (current.status === 'FAILED') {
+              message.error(`Pipeline failed: ${current.error_message || 'An error occurred'}`)
+            }
+          }
+        } else {
+          // Timeout safety: if polling has continued for > 90 seconds (60 * 1.5s = 90s)
+          if (pollCount > 60) {
+            stopPolling()
+            setDetectLoading(false)
+            message.warning('Detection pipeline is taking longer than expected. You can check history or reset.')
           }
         }
       } catch {
-        clearInterval(interval)
+        stopPolling()
         setDetectLoading(false)
       }
     }, 1500)
+  }
+
+  const handleCancelDetection = async () => {
+    stopPolling()
+    setDetectLoading(false)
+    try {
+      await adminApi.cancelDetection()
+      message.info('Detection run reset.')
+      await loadHistory()
+    } catch {
+      message.info('Dismissed in-progress status.')
+      loadHistory()
+    }
   }
 
   const handleGenerateSynthetic = async (values: any) => {
@@ -203,14 +252,16 @@ export const AdminPage: React.FC = () => {
   const handleTriggerDetection = async () => {
     try {
       setDetectLoading(true)
+      setElapsedSeconds(0)
       const res = await adminApi.triggerDetection()
       message.info(res.message || 'Detection pipeline started in background.')
-      loadHistory()
+      await loadHistory()
       pollActiveRun()
     } catch (err: any) {
       console.error(err)
       message.error(err.response?.data?.detail?.message || 'Failed to start detection pipeline')
       setDetectLoading(false)
+      stopPolling()
     }
   }
 
@@ -344,13 +395,23 @@ export const AdminPage: React.FC = () => {
                   marginBottom: 16,
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#166534' }}>
                     <SyncOutlined spin />
                     <span style={{ fontWeight: 600, fontSize: '13px' }}>AI Detection Pipeline In Progress...</span>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#15803d', fontWeight: 600 }}>
-                    Elapsed: {elapsedSeconds}s | Est. Remaining: ~{estimatedRemaining}s
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ fontSize: '12px', color: '#15803d', fontWeight: 600 }}>
+                      Elapsed: {elapsedSeconds}s | Est. Remaining: {estimatedRemaining > 0 ? `~${estimatedRemaining}s` : 'Finalizing...'}
+                    </div>
+                    <Button
+                      size="small"
+                      danger
+                      onClick={handleCancelDetection}
+                      style={{ fontSize: '11px', height: '22px', padding: '0 8px', borderRadius: 4 }}
+                    >
+                      Reset / Dismiss
+                    </Button>
                   </div>
                 </div>
                 <Progress

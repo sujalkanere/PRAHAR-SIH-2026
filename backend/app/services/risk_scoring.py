@@ -217,23 +217,25 @@ def run_risk_scoring(session: Session) -> dict:
             addon += int(round(dur_risk * 0.15))
 
         total = min(100, base_total + addon)
-        w.risk_score = total
-        w.risk_tier = tier_for(total)
-        w.risk_components = {
-            # 6 Target Dimensions
-            "cost_risk": c_risk,
-            "delay_risk": d_risk,
-            "payment_risk": p_risk,
-            "duplicate_risk": dup_risk,
-            "compliance_risk": cmp_risk,
-            "durability_risk": dur_risk,
-            # Legacy component breakdown preserved for compatibility
-            "cost_overrun": co,
-            "delay": dl,
-            "duplicate": dp,
-            "pattern": pat,
-            "fund_utilization": fu,
-        }
+        tier = tier_for(total)
+        if w.risk_score != total or w.risk_tier != tier or total > 0:
+            w.risk_score = total
+            w.risk_tier = tier
+            w.risk_components = {
+                # 6 Target Dimensions
+                "cost_risk": c_risk,
+                "delay_risk": d_risk,
+                "payment_risk": p_risk,
+                "duplicate_risk": dup_risk,
+                "compliance_risk": cmp_risk,
+                "durability_risk": dur_risk,
+                # Legacy component breakdown preserved for compatibility
+                "cost_overrun": co,
+                "delay": dl,
+                "duplicate": dp,
+                "pattern": pat,
+                "fund_utilization": fu,
+            }
 
     session.flush()
 

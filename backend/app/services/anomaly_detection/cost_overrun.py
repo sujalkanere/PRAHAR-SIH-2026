@@ -118,7 +118,7 @@ def _isolation_forest_scores(works: list[Work], now: datetime) -> dict[str, floa
         ids.append(str(w.id))
     X = np.array(X, dtype=float)
     X = np.nan_to_num(X)
-    model = IsolationForest(contamination=0.05, random_state=42, n_jobs=-1)
+    model = IsolationForest(contamination=0.05, random_state=42, n_jobs=1)
     model.fit(X)
     scores = model.decision_function(X)  # negative => anomaly
     return {wid: float(s) for wid, s in zip(ids, scores)}

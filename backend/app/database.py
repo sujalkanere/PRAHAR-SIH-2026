@@ -4,7 +4,7 @@ Async engine (asyncpg) is used by the FastAPI request path.
 A synchronous engine (psycopg2) is used by the detection pipeline,
 scripts and Alembic migrations (heavy compute runs in worker threads).
 """
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -23,6 +23,7 @@ is_sqlite_sync = "sqlite" in settings.sync_database_url
 async_engine = create_async_engine(
     settings.database_url,
     echo=False,
+    connect_args={"timeout": 60} if is_sqlite_async else {},
     **({} if is_sqlite_async else {"pool_size": 10})
 )
 AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
@@ -30,9 +31,22 @@ AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire
 sync_engine = create_engine(
     settings.sync_database_url,
     echo=False,
+    connect_args={"timeout": 60} if is_sqlite_sync else {},
     **({} if is_sqlite_sync else {"pool_size": 5})
 )
 SyncSessionLocal = sessionmaker(bind=sync_engine, expire_on_commit=False)
+
+if is_sqlite_sync:
+    @event.listens_for(sync_engine, "connect")
+    def set_sqlite_pragma(dbapi_connection, connection_record):
+        try:
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA synchronous=NORMAL")
+            cursor.execute("PRAGMA busy_timeout=60000")
+            cursor.close()
+        except Exception:
+            pass
 
 
 async def get_db():

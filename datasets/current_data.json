@@ -1,0 +1,24 @@
+{
+  "success": true,
+  "data": {
+    "totalAllocated": 33638482301.82,
+    "totalExpenditure": 12379235852.69,
+    "totalRecommendedAmount": 22239715197.21,
+    "utilizationPercentage": 66.11390786797395,
+    "recommendationUtilizationPercentage": 66.11390786797395,
+    "utilizationDefinition": "recommended_amount",
+    "expenditurePercentage": 36.8008156301993,
+    "totalMPs": 231,
+    "totalWorksCompleted": 9927,
+    "totalWorksRecommended": 25144,
+    "completionRate": 39.480591791282215,
+    "totalTransactions": 25051,
+    "avgAllocation": 145621135.5057143,
+    "pendingWorks": 15217,
+    "paymentGap": 38.64530875256279,
+    "completedWorksValue": 7595696429.21,
+    "inProgressPayments": 4783993916.48
+  },
+  "cached": true,
+  "cache_timestamp": "2026-09-09T14:59:23.603Z"
+}

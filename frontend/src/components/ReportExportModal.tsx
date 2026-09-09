@@ -33,7 +33,7 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
 
       const res = await reportsApi.generateReport(payload)
       const ext = values.format.toLowerCase()
-      const fname = `MPLADS_Sentinel_${values.scope}_Report_${Date.now()}.${ext}`
+      const fname = `PRAHAR_${values.scope}_Report_${Date.now()}.${ext}`
       await reportsApi.downloadReport(res.download_url, fname)
 
       message.success(`Report downloaded successfully: ${fname}`)

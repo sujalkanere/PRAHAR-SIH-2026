@@ -9,6 +9,7 @@ import {
   EyeOutlined,
 } from '@ant-design/icons'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { analyticsApi } from '../api/analytics'
 import { constituenciesApi } from '../api/constituencies'
 import { ConstituencySummary } from '../types'
@@ -58,6 +59,7 @@ const INDIAN_STATES = [
 export const StateDashboardPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { hasRole } = useAuth()
   const currentState = searchParams.get('state') || 'Maharashtra'
 
   const [summary, setSummary] = useState<any>(null)
@@ -72,12 +74,14 @@ export const StateDashboardPage: React.FC = () => {
   const loadStateData = async (stateName: string) => {
     try {
       setLoading(true)
-      const [summaryRes, constsRes] = await Promise.all([
-        analyticsApi.getStateSummary(stateName),
-        constituenciesApi.list({ state: stateName }),
-      ])
+      const summaryRes = await analyticsApi.getStateSummary(stateName)
       setSummary(summaryRes)
-      setConstituencies(constsRes.data || [])
+      try {
+        const constsRes = await constituenciesApi.list({ state: stateName })
+        setConstituencies(constsRes.data && constsRes.data.length > 0 ? constsRes.data : summaryRes.constituencies || [])
+      } catch {
+        setConstituencies(summaryRes.constituencies || [])
+      }
     } catch (err) {
       console.error('Failed to load state data', err)
     } finally {
@@ -191,8 +195,11 @@ export const StateDashboardPage: React.FC = () => {
               rowKey="id"
               pagination={{ pageSize: 10 }}
               onRow={(record) => ({
-                onClick: () => navigate(`/constituency/${record.id}`),
-                style: { cursor: 'pointer' },
+                onClick: () => {
+                  if (hasRole('ROLE_PUBLIC')) return
+                  navigate(`/constituency/${record.id}`)
+                },
+                style: { cursor: hasRole('ROLE_PUBLIC') ? 'default' : 'pointer' },
               })}
               columns={[
                 {
@@ -243,14 +250,18 @@ export const StateDashboardPage: React.FC = () => {
                     <Tag color={val > 0 ? 'red' : 'green'}>{val || 0}</Tag>
                   ),
                 },
-                {
-                  title: 'Action',
-                  render: () => (
-                    <span style={{ color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <EyeOutlined /> View Detail
-                    </span>
-                  ),
-                },
+                ...(!hasRole('ROLE_PUBLIC')
+                  ? [
+                      {
+                        title: 'Action',
+                        render: () => (
+                          <span style={{ color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <EyeOutlined /> View Detail
+                          </span>
+                        ),
+                      },
+                    ]
+                  : []),
               ]}
             />
           </Card>

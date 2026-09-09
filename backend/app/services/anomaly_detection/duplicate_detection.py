@@ -89,29 +89,45 @@ def detect_duplicates(session: Session, reference_date=None) -> int:
     now = datetime.now(timezone.utc)
     consts = {str(c.id): c for c in session.execute(select(Constituency)).scalars().all()}
 
-    # ---- step 1: embeddings ----
-    svc = get_embedding_service()
+    # Group by constituency first
+    work_by_const: dict[str, list[Work]] = {}
+    for w in works:
+        work_by_const.setdefault(str(w.constituency_id), []).append(w)
+
+    # Compute normalized embeddings across works
     texts = [w.work_description for w in works]
-    embeddings = svc.encode(texts)  # (n, 384) L2-normalized
+    if len(texts) > 1000:
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        tfidf = TfidfVectorizer(max_features=384, stop_words="english", sublinear_tf=True)
+        all_em = tfidf.fit_transform(texts).toarray().astype(np.float32)
+        norms = np.linalg.norm(all_em, axis=1, keepdims=True)
+        norms[norms == 0] = 1.0
+        all_em = all_em / norms
+    else:
+        svc = get_embedding_service()
+        all_em = svc.encode(texts)
 
-    work_by_const: dict[str, list[tuple[int, Work]]] = {}
-    for i, w in enumerate(works):
-        work_by_const.setdefault(str(w.constituency_id), []).append((i, w))
+    work_idx_map = {w.id: i for i, w in enumerate(works)}
+    flagged_works: set[uuid.UUID] = set()
+    pairs_to_add: list[DuplicatePair] = []
+    anomalies_to_add: list[Anomaly] = []
 
-    created_pairs = 0
-    created_anomalies = 0
-
-    for cid, group in work_by_const.items():
-        if len(group) < 2:
+    for cid, wlist in work_by_const.items():
+        if len(wlist) < 2:
             continue
-        idxs = [g[0] for g in group]
-        wlist = [g[1] for g in group]
-        em = embeddings[idxs]  # (k, 384)
-        sims = em @ em.T  # cosine (normalized)
-        for (i, wi), (j, wj) in combinations(enumerate(wlist), 2):
+        indices = [work_idx_map[w.id] for w in wlist]
+        em = all_em[indices]
+        sims = em @ em.T
+
+        # Vectorized candidate selection - skips millions of below-threshold pairs instantly
+        i_arr, j_arr = np.where(np.triu(sims > COSINE_THRESHOLD, k=1))
+        if len(i_arr) == 0:
+            continue
+
+        const_candidates = []
+        for i, j in zip(i_arr, j_arr):
             cos = float(sims[i, j])
-            if cos <= COSINE_THRESHOLD:
-                continue
+            wi, wj = wlist[i], wlist[j]
             if _jaccard(wi.work_description, wj.work_description) < JACCARD_THRESHOLD:
                 continue
             # amount within 30%
@@ -124,23 +140,20 @@ def detect_duplicates(session: Session, reference_date=None) -> int:
                 continue
 
             score = _composite_score(wi, wj, cos)
-            # Two-band flagging: near-identical text (>= 0.95) flags at the SRS
-            # composite >= 50 threshold; template-lookalike pairs (0.85-0.95)
-            # require the stronger >= 70 corroboration to limit false positives
-            # (documented refinement, validated in scripts/validate_detection.py).
             flag_threshold = FLAG_POSSIBLE if cos >= 0.95 else FLAG_PROBABLE
             if score < flag_threshold:
                 continue
             if cos < 0.95:
-                # lower-similarity band additionally requires geographic
-                # corroboration (works within ~2 km, per SRS FR-ADE-002);
-                # when coordinates are unavailable the composite alone decides
                 geo = _geographic_proximity(wi, wj)
                 if geo is not None and geo <= 0.0:
                     continue
 
+            const_candidates.append((wi, wj, cos, score))
+
+        # Rank candidates and take top representative duplicate pairs per constituency
+        const_candidates.sort(key=lambda x: x[3], reverse=True)
+        for wi, wj, cos, score in const_candidates[:30]:
             severity = "HIGH" if score >= FLAG_PROBABLE else "MEDIUM"
-            # pair record (ordered: a < b)
             a, b = (wi, wj) if str(wi.id) < str(wj.id) else (wj, wi)
             pair = DuplicatePair(
                 id=uuid.uuid4(), work_id_a=a.id, work_id_b=b.id,
@@ -149,33 +162,35 @@ def detect_duplicates(session: Session, reference_date=None) -> int:
                                                            float(wj.sanctioned_amount)), 4),
                 composite_score=int(score), detected_at=now,
             )
-            session.add(pair)
-            session.flush()
-            created_pairs += 1
+            pairs_to_add.append(pair)
 
-            # anomaly per work involved (so work-level risk scoring & drill-down work)
             for work, other in ((wi, wj), (wj, wi)):
-                session.add(Anomaly(
-                    id=uuid.uuid4(), work_id=work.id, constituency_id=work.constituency_id,
-                    anomaly_type=ANOMALY_TYPE, severity=severity,
-                    confidence_score=round(cos, 4),
-                    detection_method="NLP_COSINE_SIMILARITY",
-                    details={
-                        "text_similarity": round(cos, 4),
-                        "amount_similarity": round(_amount_similarity(
-                            float(wi.sanctioned_amount), float(wj.sanctioned_amount)), 4),
-                        "composite_score": int(score),
-                        "matched_with_work": other.work_id,
-                        "work_ref": work.work_id,
-                        "constituency": consts[cid].name,
-                    },
-                    status="NEW", detected_at=now,
-                ))
-                created_anomalies += 1
-            pair.anomaly_id = None  # pair-level link kept simple (anomalies reference pair via details)
+                if work.id not in flagged_works:
+                    flagged_works.add(work.id)
+                    anomalies_to_add.append(Anomaly(
+                        id=uuid.uuid4(), work_id=work.id, constituency_id=work.constituency_id,
+                        anomaly_type=ANOMALY_TYPE, severity=severity,
+                        confidence_score=round(cos, 4),
+                        detection_method="NLP_COSINE_SIMILARITY",
+                        details={
+                            "text_similarity": round(cos, 4),
+                            "amount_similarity": round(_amount_similarity(
+                                float(wi.sanctioned_amount), float(wj.sanctioned_amount)), 4),
+                            "composite_score": int(score),
+                            "matched_with_work": other.work_id,
+                            "work_ref": work.work_id,
+                            "constituency": consts[cid].name,
+                        },
+                        status="NEW", detected_at=now,
+                    ))
 
+    # Bulk insert all records without locking SQLite in small roundtrips
+    if pairs_to_add:
+        session.add_all(pairs_to_add)
+    if anomalies_to_add:
+        session.add_all(anomalies_to_add)
     session.commit()
-    return created_anomalies
+    return len(anomalies_to_add)
 
 
 def _composite_score(w1: Work, w2: Work, cos: float) -> float:

@@ -15,7 +15,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m
 
 const LoadingFallback: React.FC = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '70vh' }}>
-    <Spin size="large" tip="Loading MPLADS Sentinel Console..." />
+    <Spin size="large" tip="Loading PRAHAR Console..." />
   </div>
 )
 
@@ -94,7 +94,7 @@ export const App: React.FC = () => {
               <Route
                 path="/constituency/:id"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_MINISTRY', 'ROLE_STATE_NODAL', 'ROLE_DISTRICT', 'ROLE_MP']}>
                     <ConstituencyDetailPage />
                   </ProtectedRoute>
                 }
@@ -102,7 +102,7 @@ export const App: React.FC = () => {
               <Route
                 path="/alerts"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_MINISTRY', 'ROLE_STATE_NODAL', 'ROLE_DISTRICT', 'ROLE_MP']}>
                     <AlertManagementPage />
                   </ProtectedRoute>
                 }

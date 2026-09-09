@@ -54,27 +54,24 @@ export const LoginPage: React.FC = () => {
       <div style={{ maxWidth: 440, width: '100%' }}>
         {/* Portal Header */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div
+          <img
+            src="/prahar-logo.jpg"
+            alt="PRAHAR Logo"
             style={{
-              width: 56,
-              height: 56,
-              borderRadius: 14,
-              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#fff',
-              fontSize: '26px',
-              fontWeight: 800,
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)',
+              width: 88,
+              height: 88,
+              objectFit: 'contain',
+              borderRadius: 16,
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
               marginBottom: 16,
+              background: '#ffffff',
+              padding: 4,
+              border: '1px solid #e2e8f0',
             }}
-          >
-            <SafetyCertificateOutlined />
-          </div>
+          />
 
-          <Title level={2} style={{ color: '#0f172a', marginBottom: 4, fontFamily: 'Outfit, sans-serif' }}>
-            MPLADS <span style={{ color: '#1d4ed8' }}>Sentinel</span>
+          <Title level={2} style={{ color: '#0f2744', marginBottom: 4, fontFamily: 'Outfit, sans-serif', fontWeight: 800, letterSpacing: '0.04em' }}>
+            PRAHAR
           </Title>
           <Paragraph style={{ color: '#475569', fontSize: '13px', margin: 0 }}>
             Automated Audit & Anomaly Detection for MPLADS Projects
@@ -105,12 +102,11 @@ export const LoginPage: React.FC = () => {
           <Form form={form} layout="vertical" onFinish={handleSubmit} requiredMark={false}>
             <Form.Item
               name="username"
-              label={<span style={{ color: '#334155', fontWeight: 500 }}>Username</span>}
               rules={[{ required: true, message: 'Please enter your username' }]}
             >
               <Input
                 prefix={<UserOutlined style={{ color: '#94a3b8' }} />}
-                placeholder="Enter username"
+                placeholder="Username (e.g. admin)"
                 size="large"
                 style={{ borderRadius: 8 }}
               />
@@ -118,18 +114,17 @@ export const LoginPage: React.FC = () => {
 
             <Form.Item
               name="password"
-              label={<span style={{ color: '#334155', fontWeight: 500 }}>Password</span>}
               rules={[{ required: true, message: 'Please enter your password' }]}
             >
               <Input.Password
                 prefix={<LockOutlined style={{ color: '#94a3b8' }} />}
-                placeholder="Enter password"
+                placeholder="Password"
                 size="large"
                 style={{ borderRadius: 8 }}
               />
             </Form.Item>
 
-            <Form.Item style={{ marginTop: 24, marginBottom: 0 }}>
+            <Form.Item style={{ marginBottom: 0 }}>
               <Button
                 type="primary"
                 htmlType="submit"
@@ -144,7 +139,7 @@ export const LoginPage: React.FC = () => {
                   borderRadius: 8,
                 }}
               >
-                Sign In to Sentinel
+                Sign In to PRAHAR
               </Button>
             </Form.Item>
           </Form>

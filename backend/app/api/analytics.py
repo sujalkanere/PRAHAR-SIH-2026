@@ -18,11 +18,31 @@ async def national_summary(db: AsyncSession = Depends(get_db),
     return await ns(db, user)
 
 
+@router.get("/official-metrics")
+@router.get("/current-data")
+async def official_metrics(db: AsyncSession = Depends(get_db),
+                           user: User = Depends(require_roles(ROLE_ADMIN, ROLE_MINISTRY,
+                                                              ROLE_STATE_NODAL, ROLE_DISTRICT,
+                                                              ROLE_MP, ROLE_PUBLIC))):
+    from app.services.official_dataset_seeder import load_all_datasets
+    try:
+        ds = load_all_datasets()
+        cd = ds.get("current_data", {})
+        if cd:
+            return {"success": True, "data": cd}
+    except Exception:
+        pass
+    from app.services.analytics import national_summary as ns
+    ns_data = await ns(db, user)
+    return {"success": True, "data": ns_data.get("official_metrics", {})}
+
+
 @router.get("/state-summary/{state_name}")
 @router.get("/state/{state_name}")
 async def state_summary(state_name: str, db: AsyncSession = Depends(get_db),
                         user: User = Depends(require_roles(ROLE_ADMIN, ROLE_MINISTRY,
-                                                           ROLE_STATE_NODAL))):
+                                                           ROLE_STATE_NODAL, ROLE_DISTRICT,
+                                                           ROLE_MP, ROLE_PUBLIC))):
     from app.services.analytics import state_summary as ss
     return await ss(db, user, state_name)
 
@@ -42,13 +62,14 @@ async def trends(
     group_by: str = Query("financial_year", pattern="^(financial_year|month|quarter)$"),
     scope: str | None = None,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_roles(ROLE_ADMIN, ROLE_MINISTRY, ROLE_STATE_NODAL)),
+    user: User = Depends(require_roles(ROLE_ADMIN, ROLE_MINISTRY, ROLE_STATE_NODAL,
+                                       ROLE_DISTRICT, ROLE_MP, ROLE_PUBLIC)),
 ):
     from app.auth.rbac import scope_constituency_filter
     from app.models import ConstituencyRiskScore, FundRelease, Work
     from sqlalchemy import func, select
 
-    ids = await scope_constituency_filter(db, user)
+    ids = None if user.role == ROLE_PUBLIC else await scope_constituency_filter(db, user)
     base = select(ConstituencyRiskScore)
     if ids is not None:
         if not ids:

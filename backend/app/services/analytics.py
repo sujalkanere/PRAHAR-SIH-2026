@@ -12,6 +12,7 @@ from app.models import (
     Anomaly,
     Constituency,
     ConstituencyRiskScore,
+    Expenditure,
     FundRelease,
     User,
     Work,
@@ -39,6 +40,8 @@ def _to_uuids(ids: list | None) -> list | None:
 
 
 async def _visible_constituency_ids(db: AsyncSession, user: User) -> list | None:
+    if user.role == "ROLE_PUBLIC":
+        return None  # Public viewer has aggregate data access across all constituencies
     return await scope_constituency_filter(db, user)
 
 
@@ -95,18 +98,52 @@ async def national_summary(db: AsyncSession, user: User) -> dict:
 
     total_works = 0
     total_expenditure = 0.0
+    total_allocated = 0.0
+    total_recommended = 0.0
+    completed_works_cnt = 0
+    completed_works_val = 0.0
+    pending_works_cnt = 0
+    total_mps = 0
+
     exp_expr = func.coalesce(func.sum(Work.actual_expenditure), 0)
+    tx_expr = func.coalesce(func.sum(Expenditure.amount), 0)
+    sanc_expr = func.coalesce(func.sum(Work.sanctioned_amount), 0)
+    rel_expr = func.coalesce(func.sum(FundRelease.amount_released), 0)
+
     if uids is None:
         total_works = (await db.execute(select(func.count(Work.id)))).scalar() or 0
-        total_expenditure = float((await db.execute(select(exp_expr))).scalar() or 0)
-    else:
-        q = select(func.count(Work.id), exp_expr)
-        if uids:
-            q = q.where(Work.constituency_id.in_(uids))
+        tx_cnt = (await db.execute(select(func.count(Expenditure.id)))).scalar() or 0
+        if tx_cnt > 0:
+            total_expenditure = float((await db.execute(select(tx_expr))).scalar() or 0)
         else:
-            q = q.where(False)
-        total_works, total_expenditure = (await db.execute(q)).one()
-        total_expenditure = float(total_expenditure)
+            total_expenditure = float((await db.execute(select(exp_expr))).scalar() or 0)
+        total_allocated = float((await db.execute(select(rel_expr))).scalar() or 0)
+        total_recommended = float((await db.execute(select(sanc_expr))).scalar() or 0)
+        total_mps = (await db.execute(select(func.count(Constituency.id)))).scalar() or 0
+        completed_works_cnt = (await db.execute(select(func.count(Work.id)).where(Work.work_status == "COMPLETED"))).scalar() or 0
+        completed_works_val = float((await db.execute(select(exp_expr).where(Work.work_status == "COMPLETED"))).scalar() or 0)
+        pending_works_cnt = (await db.execute(select(func.count(Work.id)).where(Work.work_status != "COMPLETED"))).scalar() or 0
+    else:
+        if uids:
+            q = select(func.count(Work.id), exp_expr, sanc_expr).where(Work.constituency_id.in_(uids))
+            total_works, total_exp_work, total_recommended = (await db.execute(q)).one()
+            total_recommended = float(total_recommended)
+            tx_cnt = (await db.execute(select(func.count(Expenditure.id)).where(Expenditure.constituency_id.in_(uids)))).scalar() or 0
+            if tx_cnt > 0:
+                total_expenditure = float((await db.execute(select(tx_expr).where(Expenditure.constituency_id.in_(uids)))).scalar() or 0)
+            else:
+                total_expenditure = float(total_exp_work)
+            total_allocated = float((await db.execute(select(rel_expr).where(FundRelease.constituency_id.in_(uids)))).scalar() or 0)
+            total_mps = len(uids)
+            completed_works_cnt = (await db.execute(select(func.count(Work.id)).where(Work.constituency_id.in_(uids), Work.work_status == "COMPLETED"))).scalar() or 0
+            completed_works_val = float((await db.execute(select(exp_expr).where(Work.constituency_id.in_(uids), Work.work_status == "COMPLETED"))).scalar() or 0)
+            pending_works_cnt = (await db.execute(select(func.count(Work.id)).where(Work.constituency_id.in_(uids), Work.work_status != "COMPLETED"))).scalar() or 0
+        else:
+            total_works, total_expenditure, total_allocated, total_recommended = 0, 0.0, 0.0, 0.0
+
+    utilization_pct = (total_recommended / total_allocated * 100) if total_allocated > 0 else 0.0
+    expenditure_pct = (total_expenditure / total_allocated * 100) if total_allocated > 0 else 0.0
+    ongoing_payments_val = max(0.0, total_expenditure - completed_works_val)
 
     risk_rows = await _risk_rows(db, ids, fy)
 
@@ -201,10 +238,31 @@ async def national_summary(db: AsyncSession, user: User) -> dict:
     return {
         "kpis": [
             {"key": "total_works", "label": "Total Works Analyzed", "value": total_works, "format": "int"},
-            {"key": "total_expenditure", "label": "Total Expenditure", "value": round(total_expenditure / 1e7, 2), "format": "cr"},
-            {"key": "anomalies_detected", "label": "Active Anomalies", "value": active_total, "format": "int"},
+            {"key": "total_expenditure", "label": "Total Expenditure", "value": round(total_expenditure / 1e7, 1), "format": "cr"},
+            {"key": "total_allocated", "label": "Total Allocated", "value": round(total_allocated / 1e7, 1), "format": "cr"},
+            {"key": "fund_utilization", "label": "Fund Utilization", "value": round(utilization_pct, 1), "format": "percent"},
+            {"key": "expenditure_rate", "label": "Expenditure Rate", "value": round(expenditure_pct, 1), "format": "percent"},
+            {"key": "total_mps", "label": "Total MPs", "value": total_mps, "format": "int"},
+            {"key": "works_completed", "label": "Works Completed", "value": completed_works_cnt, "format": "int"},
+            {"key": "works_completed_value", "label": "Works Completed Value", "value": round(completed_works_val / 1e7, 1), "format": "cr"},
+            {"key": "works_pending", "label": "Works Pending", "value": pending_works_cnt, "format": "int"},
+            {"key": "ongoing_work_payments", "label": "Ongoing-Work Payments", "value": round(ongoing_payments_val / 1e7, 1), "format": "cr"},
             {"key": "high_risk_constituencies", "label": "High-Risk Constituencies", "value": len(high_risk), "format": "int"},
+            {"key": "anomalies_detected", "label": "Active Anomalies", "value": active_total, "format": "int"},
         ],
+        "official_metrics": {
+            "total_allocated": total_allocated,
+            "total_allocated_cr": round(total_allocated / 1e7, 1),
+            "total_expenditure": total_expenditure,
+            "total_expenditure_cr": round(total_expenditure / 1e7, 1),
+            "fund_utilization_pct": round(utilization_pct, 1),
+            "expenditure_rate_pct": round(expenditure_pct, 1),
+            "total_mps": total_mps,
+            "works_completed": completed_works_cnt,
+            "works_completed_value_cr": round(completed_works_val / 1e7, 1),
+            "works_pending": pending_works_cnt,
+            "ongoing_work_payments_cr": round(ongoing_payments_val / 1e7, 1),
+        },
         "risk_distribution": risk_dist,
         "anomaly_distribution": {k: v for k, v in cat_dist.items()},
         "anomaly_type_distribution": dict(type_counts),

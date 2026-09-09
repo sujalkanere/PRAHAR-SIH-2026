@@ -32,12 +32,15 @@ def reference_date() -> date:
     return date.today()
 
 
-def run_detection_pipeline(triggered_by: str | None = None, trigger_type: str = "MANUAL") -> dict:
+def run_detection_pipeline(
+    triggered_by: str | None = None,
+    trigger_type: str = "MANUAL",
+    run_id: str | uuid.UUID | None = None,
+) -> dict:
     """Synchronous pipeline execution (worker thread)."""
     from app.services.risk_scoring import run_risk_scoring
 
     settings = get_settings()
-    run_id = uuid.uuid4()
     started = datetime.now(timezone.utc)
     session = SyncSessionLocal()
     triggered_uid = None
@@ -46,10 +49,26 @@ def run_detection_pipeline(triggered_by: str | None = None, trigger_type: str = 
             triggered_uid = uuid.UUID(str(triggered_by))
         except (ValueError, TypeError):
             triggered_uid = None
+
+    run_uid = None
+    if run_id:
+        try:
+            run_uid = uuid.UUID(str(run_id)) if not isinstance(run_id, uuid.UUID) else run_id
+        except (ValueError, TypeError):
+            run_uid = None
+
     try:
-        session.add(DetectionRun(id=run_id, triggered_by=triggered_uid, trigger_type=trigger_type,
-                                 status="RUNNING", started_at=started))
-        session.commit()
+        if run_uid:
+            existing_run = session.get(DetectionRun, run_uid)
+            if not existing_run:
+                session.add(DetectionRun(id=run_uid, triggered_by=triggered_uid, trigger_type=trigger_type,
+                                         status="RUNNING", started_at=started))
+                session.commit()
+        else:
+            run_uid = uuid.uuid4()
+            session.add(DetectionRun(id=run_uid, triggered_by=triggered_uid, trigger_type=trigger_type,
+                                     status="RUNNING", started_at=started))
+            session.commit()
         t0 = time.time()
         ref = reference_date()
 
@@ -75,20 +94,21 @@ def run_detection_pipeline(triggered_by: str | None = None, trigger_type: str = 
         total = session.execute(
             select(func.count(Anomaly.id)).where(Anomaly.status == "NEW")).scalar() or 0
 
-        run = session.get(DetectionRun, run_id)
-        run.status = "COMPLETED"
-        run.anomalies_detected = total
-        run.works_analyzed = works_analyzed
-        run.completed_at = datetime.now(timezone.utc)
-        session.commit()
+        run = session.get(DetectionRun, run_uid)
+        if run:
+            run.status = "COMPLETED"
+            run.anomalies_detected = total
+            run.works_analyzed = works_analyzed
+            run.completed_at = datetime.now(timezone.utc)
+            session.commit()
         return {
-            "run_id": str(run_id), "status": "COMPLETED", "anomalies_detected": total,
+            "run_id": str(run_uid), "status": "COMPLETED", "anomalies_detected": total,
             "works_analyzed": works_analyzed, "detector_counts": counts,
             "duration_seconds": round(time.time() - t0, 2),
         }
     except Exception as exc:  # pragma: no cover - failure path
         session.rollback()
-        run = session.get(DetectionRun, run_id)
+        run = session.get(DetectionRun, run_uid)
         if run:
             run.status = "FAILED"
             run.error_message = str(exc)

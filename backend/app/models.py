@@ -99,6 +99,27 @@ class FundRelease(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class Expenditure(Base):
+    __tablename__ = "expenditures"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=_uuid)
+    constituency_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("constituencies.id"), nullable=False
+    )
+    work_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("works.id"), nullable=True
+    )
+    mp_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    state: Mapped[str] = mapped_column(String(100), nullable=False)
+    work_description: Mapped[str] = mapped_column(Text, nullable=False)
+    vendor: Mapped[str] = mapped_column(String(255), nullable=True)
+    ida: Mapped[str] = mapped_column(String(255), nullable=True)
+    amount: Mapped[float] = mapped_column(Numeric(15, 2), nullable=False)
+    expenditure_date: Mapped[date] = mapped_column(Date, nullable=True)
+    payment_status: Mapped[str] = mapped_column(String(50), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class Anomaly(Base):
     __tablename__ = "anomalies"
 
