@@ -55,4 +55,11 @@ export const adminApi = {
     )
     return data
   },
+
+  seedOfficial: async () => {
+    const { data } = await apiClient.post<{ message: string; works_count: number; total_allocated_cr: number }>(
+      '/admin/seed-official-baseline'
+    )
+    return data
+  },
 }

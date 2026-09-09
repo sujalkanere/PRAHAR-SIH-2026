@@ -41,6 +41,7 @@ export const AdminPage: React.FC = () => {
   const [synthLoading, setSynthLoading] = useState(false)
   const [detectLoading, setDetectLoading] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
+  const [seedLoading, setSeedLoading] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [activeRun, setActiveRun] = useState<DetectionRun | null>(null)
   const [runs, setRuns] = useState<DetectionRun[]>([])
@@ -52,7 +53,7 @@ export const AdminPage: React.FC = () => {
       title: 'Reset Entire Project to Zero (Clear All Data)?',
       icon: <DeleteOutlined style={{ color: '#ef4444' }} />,
       content:
-        'This will completely wipe all works, fund releases, anomalies, and history across the entire project, setting all metrics to ZERO. After resetting, you can upload your official dataset to drive all project visuals directly from the uploaded file.',
+        'This will completely wipe all works, fund releases, anomalies, and history across the entire project, setting all metrics to ZERO. After resetting, you can upload your official dataset or click Load Official Datasets.',
       okText: 'Confirm Reset to Zero',
       okType: 'danger',
       cancelText: 'Cancel',
@@ -75,6 +76,21 @@ export const AdminPage: React.FC = () => {
         }
       },
     })
+  }
+
+  const handleLoadOfficialDatasets = async () => {
+    try {
+      setSeedLoading(true)
+      const res = await adminApi.seedOfficial()
+      message.success(res.message || 'Official datasets loaded successfully! 25,168 works and ₹3,363.8 Cr metrics restored.')
+      await loadHistory()
+      pollActiveRun()
+    } catch (err: any) {
+      console.error(err)
+      message.error(err.response?.data?.detail?.message || 'Failed to load official datasets')
+    } finally {
+      setSeedLoading(false)
+    }
   }
 
   const pollIntervalRef = useRef<any>(null)
@@ -297,6 +313,23 @@ export const AdminPage: React.FC = () => {
         </div>
 
         <Space>
+          <Button
+            type="primary"
+            icon={<DatabaseOutlined />}
+            loading={seedLoading}
+            onClick={handleLoadOfficialDatasets}
+            style={{
+              background: '#10b981',
+              borderColor: '#10b981',
+              color: '#fff',
+              fontWeight: 600,
+              borderRadius: 8,
+              height: 38,
+            }}
+          >
+            Load Official Datasets (3,363.8 Cr)
+          </Button>
+
           <Button
             type="primary"
             danger

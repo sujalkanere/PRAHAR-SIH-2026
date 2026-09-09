@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Card, Row, Col, Typography, Space, Tag, Spin, Button, Dropdown, MenuProps } from 'antd'
+import { Card, Row, Col, Typography, Space, Tag, Spin, Button, Dropdown, MenuProps, Empty } from 'antd'
 import {
   CalendarOutlined,
   DownOutlined,
@@ -79,23 +79,36 @@ export const NationalDashboardPage: React.FC = () => {
     )
   }
 
-  // Official Baseline Figures
-  const totalAllocatedCr =
-    Number(data.kpis?.find((k) => k.key === 'total_allocated_cr' || k.key === 'allocated')?.value ?? 3363.8)
-  const totalExpCr =
-    Number(data.kpis?.find((k) => k.key === 'total_expenditure_cr' || k.key === 'total_expenditure' || k.key === 'expenditure')?.value ?? 1237.9)
-  const fundUtilizationPct =
-    Number(data.kpis?.find((k) => k.key === 'fund_utilization_pct' || k.key === 'utilization')?.value ?? 66.1)
-  const totalWorks =
-    Number(data.kpis?.find((k) => k.key === 'total_works' || k.key === 'works')?.value ?? 25168)
-  const worksCompleted =
-    Number(data.kpis?.find((k) => k.key === 'works_completed')?.value ?? 9927)
-  const worksCompletedValCr =
-    Number(data.kpis?.find((k) => k.key === 'works_completed_value_cr')?.value ?? 759.6)
-  const worksPending =
-    Number(data.kpis?.find((k) => k.key === 'works_pending')?.value ?? 15241)
-  const ongoingPaymentsCr =
-    Number(data.kpis?.find((k) => k.key === 'ongoing_work_payments_cr')?.value ?? 478.4)
+  // Dynamic KPI Extraction — extracts exact values, faithfully defaults to 0 when reset/empty
+  const getKpiVal = (keys: string[]): number => {
+    for (const key of keys) {
+      const item = data.kpis?.find((k) => k.key === key)
+      if (item !== undefined && item.value !== undefined && item.value !== null) {
+        return Number(item.value)
+      }
+    }
+    if (data.official_metrics) {
+      for (const key of keys) {
+        const val = (data.official_metrics as any)[key]
+        if (val !== undefined && val !== null) {
+          return Number(val)
+        }
+      }
+    }
+    return 0
+  }
+
+  const totalAllocatedCr = getKpiVal(['total_allocated', 'total_allocated_cr', 'allocated'])
+  const totalExpCr = getKpiVal(['total_expenditure', 'total_expenditure_cr', 'expenditure'])
+  const fundUtilizationPct = getKpiVal(['fund_utilization', 'fund_utilization_pct', 'utilization'])
+  const totalWorks = getKpiVal(['total_works', 'works'])
+  const worksCompleted = getKpiVal(['works_completed'])
+  const worksCompletedValCr = getKpiVal(['works_completed_value', 'works_completed_value_cr'])
+  const worksPending = getKpiVal(['works_pending'])
+  const ongoingPaymentsCr = getKpiVal(['ongoing_work_payments', 'ongoing_work_payments_cr'])
+
+  const expRatePct = totalAllocatedCr > 0 ? ((totalExpCr / totalAllocatedCr) * 100).toFixed(1) : '0.0'
+  const completionRatePct = totalWorks > 0 ? ((worksCompleted / totalWorks) * 100).toFixed(1) : '0.0'
 
   // Top 10 bar chart data
   const barData = (data.top_risky_constituencies || []).slice(0, 10).map((c) => ({
@@ -115,8 +128,8 @@ export const NationalDashboardPage: React.FC = () => {
 
   const totalAnomaliesCount = pieData.reduce((acc, item) => acc + (Number(item.value) || 0), 0)
 
-  // Trend Spline Data (Cumulative fund trajectory matching official baseline)
-  const trendData = [
+  // Trend Spline Data (Cumulative fund trajectory matching official baseline if populated)
+  const trendData = totalAllocatedCr > 0 ? [
     { period: 'Apr 24', releases: 480.0, expenditure: 110.5 },
     { period: 'Jul 24', releases: 1120.0, expenditure: 340.2 },
     { period: 'Oct 24', releases: 1840.0, expenditure: 615.8 },
@@ -124,14 +137,19 @@ export const NationalDashboardPage: React.FC = () => {
     { period: 'Apr 25', releases: 2890.0, expenditure: 990.4 },
     { period: 'Jul 25', releases: 3180.0, expenditure: 1120.0 },
     { period: 'Current', releases: totalAllocatedCr, expenditure: totalExpCr },
-  ]
+  ] : []
 
   // Stepped Conversion Pipeline Data (Recommended -> Sanctioned -> Ongoing -> Completed)
-  const funnelData = [
-    { stage: 'Recommended', count: 25168, rate: 100, label: '25,168 works', fill: '#cbd5e1' },
-    { stage: 'Sanctioned', count: 22140, rate: 88.0, label: '22,140 works', fill: '#94a3b8' },
-    { stage: 'In Progress', count: worksPending, rate: 60.6, label: `${worksPending.toLocaleString('en-IN')} works`, fill: '#64748b' },
-    { stage: 'Completed', count: worksCompleted, rate: 39.5, label: `${worksCompleted.toLocaleString('en-IN')} works`, fill: '#10b981' },
+  const funnelData = totalWorks > 0 ? [
+    { stage: 'Recommended', count: totalWorks, rate: 100, label: `${totalWorks.toLocaleString('en-IN')} works`, fill: '#cbd5e1' },
+    { stage: 'Sanctioned', count: Math.round(totalWorks * 0.88), rate: 88.0, label: `${Math.round(totalWorks * 0.88).toLocaleString('en-IN')} works`, fill: '#94a3b8' },
+    { stage: 'In Progress', count: worksPending, rate: totalWorks > 0 ? Math.round((worksPending / totalWorks) * 1000) / 10 : 0, label: `${worksPending.toLocaleString('en-IN')} works`, fill: '#64748b' },
+    { stage: 'Completed', count: worksCompleted, rate: totalWorks > 0 ? Math.round((worksCompleted / totalWorks) * 1000) / 10 : 0, label: `${worksCompleted.toLocaleString('en-IN')} works`, fill: '#10b981' },
+  ] : [
+    { stage: 'Recommended', count: 0, rate: 0, label: '0 works', fill: '#cbd5e1' },
+    { stage: 'Sanctioned', count: 0, rate: 0, label: '0 works', fill: '#94a3b8' },
+    { stage: 'In Progress', count: 0, rate: 0, label: '0 works', fill: '#64748b' },
+    { stage: 'Completed', count: 0, rate: 0, label: '0 works', fill: '#10b981' },
   ]
 
   const periodMenu: MenuProps = {
@@ -246,10 +264,10 @@ export const NationalDashboardPage: React.FC = () => {
             value={totalAllocatedCr.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
             prefix="₹"
             suffix=" Cr"
-            badgeText="+100%"
-            badgeType="positive"
-            trendDirection="up"
-            subtitle="₹33,638.5 Cr Ministry outlay"
+            badgeText={totalAllocatedCr > 0 ? '+100%' : '0%'}
+            badgeType={totalAllocatedCr > 0 ? 'positive' : 'neutral'}
+            trendDirection={totalAllocatedCr > 0 ? 'up' : 'down'}
+            subtitle={totalAllocatedCr > 0 ? '₹33,638.5 Cr Ministry outlay' : '0 works allocated'}
           />
         </Col>
 
@@ -261,10 +279,10 @@ export const NationalDashboardPage: React.FC = () => {
             value={totalExpCr.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
             prefix="₹"
             suffix=" Cr"
-            badgeText="36.8%"
-            badgeType="positive"
-            trendDirection="up"
-            subtitle="Disbursed across 25,051 payments"
+            badgeText={`${expRatePct}%`}
+            badgeType={totalExpCr > 0 ? 'positive' : 'neutral'}
+            trendDirection={totalExpCr > 0 ? 'up' : 'down'}
+            subtitle={totalExpCr > 0 ? 'Disbursed across scheme payments' : '0 payments disbursed'}
           />
         </Col>
 
@@ -273,11 +291,11 @@ export const NationalDashboardPage: React.FC = () => {
           <KPICard
             theme="purple"
             title="Fund Utilization"
-            value={`${fundUtilizationPct}%`}
-            badgeText="+66.1%"
-            badgeType="positive"
-            trendDirection="up"
-            subtitle="State & constituency absorption"
+            value={`${fundUtilizationPct.toFixed(1)}%`}
+            badgeText={fundUtilizationPct > 0 ? `+${fundUtilizationPct.toFixed(1)}%` : '0%'}
+            badgeType={fundUtilizationPct > 0 ? 'positive' : 'neutral'}
+            trendDirection={fundUtilizationPct > 0 ? 'up' : 'down'}
+            subtitle={fundUtilizationPct > 0 ? 'State & constituency absorption' : 'No utilization recorded'}
           />
         </Col>
 
@@ -287,10 +305,10 @@ export const NationalDashboardPage: React.FC = () => {
             theme="amber"
             title="Works Completed"
             value={worksCompleted.toLocaleString('en-IN')}
-            badgeText="39.5%"
-            badgeType="positive"
-            trendDirection="up"
-            subtitle={`₹${worksCompletedValCr} Cr delivered assets`}
+            badgeText={`${completionRatePct}%`}
+            badgeType={worksCompleted > 0 ? 'positive' : 'neutral'}
+            trendDirection={worksCompleted > 0 ? 'up' : 'down'}
+            subtitle={worksCompletedValCr > 0 ? `₹${worksCompletedValCr.toFixed(1)} Cr delivered assets` : '0 delivered assets'}
           />
         </Col>
 
@@ -300,10 +318,10 @@ export const NationalDashboardPage: React.FC = () => {
             theme="rose"
             title="Works Pending"
             value={worksPending.toLocaleString('en-IN')}
-            badgeText={`₹${ongoingPaymentsCr} Cr`}
+            badgeText={`₹${ongoingPaymentsCr.toFixed(1)} Cr`}
             badgeType="neutral"
             trendDirection="down"
-            subtitle="Ongoing-work vendor payments"
+            subtitle={worksPending > 0 ? 'Ongoing-work vendor payments' : '0 works in pipeline'}
           />
         </Col>
       </Row>
@@ -365,59 +383,65 @@ export const NationalDashboardPage: React.FC = () => {
             }}
           >
             <div style={{ height: 490, width: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 30, left: 80, bottom: 10 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                  <XAxis type="number" domain={[0, 100]} stroke="#64748b" tick={{ fill: '#64748b', fontSize: 11 }} />
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    stroke="#64748b"
-                    tick={{ fill: '#334155', fontSize: 12, fontWeight: 500 }}
-                    width={100}
-                  />
-                  <RechartsTooltip
-                    contentStyle={{
-                      background: '#ffffff',
-                      borderColor: '#edf0f2',
-                      borderRadius: 12,
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-                    }}
-                    formatter={(val: any, _name: any, props: any) => [
-                      `${val} / 100 (${props.payload.tier})`,
-                      'Risk Score',
-                    ]}
-                  />
-                  <Bar
-                    dataKey="risk"
-                    radius={[0, 6, 6, 0]}
-                    onClick={(entry: any) => {
-                      if (entry && (entry.id || entry.payload?.id)) {
-                        const targetId = entry.id || entry.payload?.id
-                        const targetState = entry.state || entry.payload?.state
-                        if (hasRole('ROLE_PUBLIC')) {
-                          navigate(`/state?state=${encodeURIComponent(targetState || '')}`)
-                        } else {
-                          navigate(`/constituency/${targetId}`)
+              {barData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 30, left: 80, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                    <XAxis type="number" domain={[0, 100]} stroke="#64748b" tick={{ fill: '#64748b', fontSize: 11 }} />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      stroke="#64748b"
+                      tick={{ fill: '#334155', fontSize: 12, fontWeight: 500 }}
+                      width={100}
+                    />
+                    <RechartsTooltip
+                      contentStyle={{
+                        background: '#ffffff',
+                        borderColor: '#edf0f2',
+                        borderRadius: 12,
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                      }}
+                      formatter={(val: any, _name: any, props: any) => [
+                        `${val} / 100 (${props.payload.tier})`,
+                        'Risk Score',
+                      ]}
+                    />
+                    <Bar
+                      dataKey="risk"
+                      radius={[0, 6, 6, 0]}
+                      onClick={(entry: any) => {
+                        if (entry && (entry.id || entry.payload?.id)) {
+                          const targetId = entry.id || entry.payload?.id
+                          const targetState = entry.state || entry.payload?.state
+                          if (hasRole('ROLE_PUBLIC')) {
+                            navigate(`/state?state=${encodeURIComponent(targetState || '')}`)
+                          } else {
+                            navigate(`/constituency/${targetId}`)
+                          }
                         }
-                      }
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {barData.map((entry, index) => {
-                      let color = '#10b981'
-                      if (entry.risk >= 75) color = '#ef4444'
-                      else if (entry.risk >= 50) color = '#f97316'
-                      else if (entry.risk >= 25) color = '#f59e0b'
-                      return <Cell key={`cell-${index}`} fill={color} />
-                    })}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {barData.map((entry, index) => {
+                        let color = '#10b981'
+                        if (entry.risk >= 75) color = '#ef4444'
+                        else if (entry.risk >= 50) color = '#f97316'
+                        else if (entry.risk >= 25) color = '#f59e0b'
+                        return <Cell key={`cell-${index}`} fill={color} />
+                      })}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <Empty description="No high-risk constituencies found. Database is cleared." />
+                </div>
+              )}
             </div>
             <div style={{ textAlign: 'center', marginTop: 4 }}>
               <Text type="secondary" style={{ fontSize: '11px' }}>
-                Click any bar to drill down into constituency dossier
+                {barData.length > 0 ? 'Click any bar to drill down into constituency dossier' : 'Ingest official data to see constituency rankings'}
               </Text>
             </div>
           </Card>
@@ -460,8 +484,8 @@ export const NationalDashboardPage: React.FC = () => {
                     <span style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>
                       ₹{totalAllocatedCr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} Cr
                     </span>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#15803d', background: '#dcfce7', padding: '1px 6px', borderRadius: 8 }}>
-                      +100%
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: totalAllocatedCr > 0 ? '#15803d' : '#64748b', background: totalAllocatedCr > 0 ? '#dcfce7' : '#f1f5f9', padding: '1px 6px', borderRadius: 8 }}>
+                      {totalAllocatedCr > 0 ? '+100%' : '0%'}
                     </span>
                   </div>
                 </div>
@@ -475,8 +499,8 @@ export const NationalDashboardPage: React.FC = () => {
                     <span style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>
                       ₹{totalExpCr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} Cr
                     </span>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#0369a1', background: '#e0f2fe', padding: '1px 6px', borderRadius: 8 }}>
-                      36.8%
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: totalExpCr > 0 ? '#0369a1' : '#64748b', background: totalExpCr > 0 ? '#e0f2fe' : '#f1f5f9', padding: '1px 6px', borderRadius: 8 }}>
+                      {expRatePct}%
                     </span>
                   </div>
                 </div>
@@ -485,64 +509,69 @@ export const NationalDashboardPage: React.FC = () => {
 
             {/* Smooth Spline Area Chart */}
             <div style={{ height: 280, width: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorReleases" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
-                    </linearGradient>
-                    <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                  <XAxis
-                    dataKey="period"
-                    stroke="#94a3b8"
-                    tick={{ fill: '#64748b', fontSize: 12 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    stroke="#94a3b8"
-                    tick={{ fill: '#64748b', fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(v) => `₹${v}Cr`}
-                  />
-                  <RechartsTooltip
-                    contentStyle={{
-                      background: '#ffffff',
-                      border: '1px solid #edf0f2',
-                      borderRadius: 12,
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-                      padding: '10px 14px',
-                    }}
-                    formatter={(val: any, name: any) => [
-                      `₹${val} Cr`,
-                      name === 'releases' ? 'Cumulative Allocation' : 'Disbursed Expenditure',
-                    ]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="releases"
-                    stroke="#10b981"
-                    strokeWidth={2.5}
-                    fillOpacity={1}
-                    fill="url(#colorReleases)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="expenditure"
-                    stroke="#94a3b8"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#colorExp)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {trendData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorReleases" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                      </linearGradient>
+                      <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                    <XAxis
+                      dataKey="period"
+                      stroke="#94a3b8"
+                      tick={{ fill: '#64748b', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      stroke="#94a3b8"
+                      tick={{ fill: '#64748b', fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(v) => `₹${v}Cr`}
+                    />
+                    <RechartsTooltip
+                      contentStyle={{
+                        background: '#ffffff',
+                        border: '1px solid #edf0f2',
+                        borderRadius: 12,
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                      }}
+                      formatter={(val: any, name: string) => [
+                        `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Cr`,
+                        name === 'releases' ? 'Fund Released' : 'Expenditure',
+                      ]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="releases"
+                      stroke="#10b981"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#colorReleases)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="expenditure"
+                      stroke="#94a3b8"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorExp)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <Empty description="No financial flow data recorded. Database is empty." />
+                </div>
+              )}
             </div>
           </Card>
         </Col>
@@ -573,9 +602,9 @@ export const NationalDashboardPage: React.FC = () => {
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '11px', color: '#64748b' }}>Completion Rate</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                  <span style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>39.5%</span>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#15803d', background: '#dcfce7', padding: '1px 6px', borderRadius: 8 }}>
-                    +6.2%
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>{completionRatePct}%</span>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: totalWorks > 0 ? '#15803d' : '#64748b', background: totalWorks > 0 ? '#dcfce7' : '#f1f5f9', padding: '1px 6px', borderRadius: 8 }}>
+                    {totalWorks > 0 ? '+6.2%' : '0%'}
                   </span>
                 </div>
               </div>
@@ -583,53 +612,28 @@ export const NationalDashboardPage: React.FC = () => {
 
             {/* Stepped Column / Funnel Chart */}
             <div style={{ height: 280, width: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={funnelData} margin={{ top: 25, right: 10, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                  <XAxis
-                    dataKey="stage"
-                    stroke="#94a3b8"
-                    tick={{ fill: '#475569', fontSize: 11, fontWeight: 500 }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    stroke="#94a3b8"
-                    tick={{ fill: '#64748b', fontSize: 11 }}
-                    domain={[0, 110]}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(v) => `${v}%`}
-                  />
-                  <RechartsTooltip
-                    contentStyle={{
-                      background: '#ffffff',
-                      border: '1px solid #edf0f2',
-                      borderRadius: 12,
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-                    }}
-                    formatter={(val: any, _name: any, props: any) => [
-                      `${props.payload.count.toLocaleString('en-IN')} works (${val}%)`,
-                      'Stage Volume',
-                    ]}
-                  />
-                  <Bar
-                    dataKey="rate"
-                    radius={[6, 6, 0, 0]}
-                    label={{
-                      position: 'top',
-                      formatter: (v: any) => `${v}%`,
-                      fill: '#334155',
-                      fontSize: 11,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {funnelData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              {totalWorks === 0 ? (
+                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Empty description="No works execution data (reset to zero)" />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={funnelData} layout="vertical" margin={{ top: 10, right: 30, left: 30, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="stage" type="category" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 12, fontWeight: 500 }} />
+                    <RechartsTooltip
+                      formatter={(val: any, _name: any, item: any) => [`${val.toLocaleString('en-IN')} works (${item.payload.rate}%)`, 'Count']}
+                      contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0' }}
+                    />
+                    <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={24}>
+                      {funnelData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </Card>
         </Col>
