@@ -92,5 +92,6 @@ for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":8000 "') do (
 for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":5173 "') do (
     taskkill /F /PID %%a >nul 2>&1
 )
+taskkill /F /IM cloudflared.exe >nul 2>&1
 echo [OK] All services stopped.
 timeout /t 2 /nobreak >nul

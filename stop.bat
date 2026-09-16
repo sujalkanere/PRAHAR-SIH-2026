@@ -16,5 +16,9 @@ for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":5173 "') do (
     taskkill /F /PID %%a >nul 2>&1
 )
 
-echo [OK] All MPLADS Sentinel services have been stopped.
+echo [*] Terminating Cloudflare Tunnel...
+taskkill /F /IM cloudflared.exe >nul 2>&1
+
+echo [OK] All MPLADS Sentinel services & tunnels have been stopped.
 timeout /t 2 /nobreak >nul
+
