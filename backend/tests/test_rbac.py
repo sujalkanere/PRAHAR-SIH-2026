@@ -64,13 +64,13 @@ async def test_mp_gets_403_on_other_constituency(client, login):
     assert r.status_code == 403
 
 
-async def test_public_user_no_work_level_access(client, login):
+async def test_public_unauthenticated_access_and_guards(client):
     await _seed_constituencies()
-    h = await login("public_user", "Public@1234")
-    assert (await client.get("/api/v1/works", headers=h)).status_code == 403
-    assert (await client.get("/api/v1/constituencies", headers=h)).status_code == 403
-    # aggregate dashboard allowed
-    assert (await client.get("/api/v1/analytics/national-summary", headers=h)).status_code == 200
+    # Unauthenticated works and constituencies return 401
+    assert (await client.get("/api/v1/works")).status_code == 401
+    assert (await client.get("/api/v1/constituencies")).status_code == 401
+    # Aggregate public national summary is accessible without login
+    assert (await client.get("/api/v1/analytics/national-summary")).status_code == 200
 
 
 async def test_admin_only_upload_endpoint(client, login):

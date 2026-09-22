@@ -1,5 +1,5 @@
 """Seed users (FR-AAA-001 mvp_seed_users) + startup helpers."""
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from app.auth.password import hash_password
 from app.database import AsyncSessionLocal
@@ -16,14 +16,16 @@ SEED_USERS = [
      "full_name": "District Authority", "scope_type": "DISTRICT", "scope_value": "Pune"},
     {"username": "mp_user", "role": "ROLE_MP", "password": "Mp@12345",
      "full_name": "Member of Parliament", "scope_type": "CONSTITUENCY", "scope_value": "Pune"},
-    {"username": "public_user", "role": "ROLE_PUBLIC", "password": "Public@1234",
-     "full_name": "Public Viewer", "scope_type": None, "scope_value": None},
 ]
 
 
 async def seed_users() -> int:
     created = 0
     async with AsyncSessionLocal() as session:
+        # Purge former public observer account if present
+        await session.execute(
+            delete(User).where((User.username == "public_user") | (User.role == "ROLE_PUBLIC"))
+        )
         for u in SEED_USERS:
             existing = (await session.execute(
                 select(User).where(User.username == u["username"]))).scalar_one_or_none()

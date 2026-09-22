@@ -44,7 +44,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export const NationalDashboardPage: React.FC = () => {
   const navigate = useNavigate()
-  const { hasRole } = useAuth()
+  const { user } = useAuth()
   const [data, setData] = useState<NationalSummaryData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedPeriod, setSelectedPeriod] = useState('FY 2024-27 (Official)')
@@ -423,7 +423,7 @@ export const NationalDashboardPage: React.FC = () => {
                         if (entry && (entry.id || entry.payload?.id)) {
                           const targetId = entry.id || entry.payload?.id
                           const targetState = entry.state || entry.payload?.state
-                          if (hasRole('ROLE_PUBLIC')) {
+                          if (!user) {
                             navigate(`/state?state=${encodeURIComponent(targetState || '')}`)
                           } else {
                             navigate(`/constituency/${targetId}`)

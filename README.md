@@ -35,7 +35,7 @@ MPLADS Sentinel provides end-to-end oversight, AI anomaly detection, and automat
 
 ## 👥 Seed Demo User Accounts
 
-The system comes pre-configured with 6 seed accounts representing every level of administrative hierarchy:
+The system comes pre-configured with 5 seed accounts representing administrative hierarchy (the Public Dashboard is open by default without login):
 
 | Username | Password | Role | Data Scope | Allowed Views |
 | :--- | :--- | :--- | :--- | :--- |
@@ -44,7 +44,6 @@ The system comes pre-configured with 6 seed accounts representing every level of
 | **`state_user`** | `State@1234` | `ROLE_STATE_NODAL` | **Maharashtra** | Maharashtra state & constituent projects |
 | **`district_user`** | `District@1234` | `ROLE_DISTRICT` | **Pune District** | Pune district projects & anomaly transitions |
 | **`mp_user`** | `Mp@12345` | `ROLE_MP` | **Pune** | Pune constituency works & expenditure radar |
-| **`public_user`** | `Public@1234` | `ROLE_PUBLIC` | **Public** | High-level national & state summaries |
 
 ---
 

@@ -5,7 +5,7 @@ import { authApi } from '../api/auth'
 interface AuthContextType {
   user: User | null
   loading: boolean
-  login: (username: string, password: string) => Promise<void>
+  login: (username: string, password: string) => Promise<User>
   logout: () => Promise<void>
   hasRole: (...roles: Role[]) => boolean
 }
@@ -40,11 +40,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth()
   }, [])
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string): Promise<User> => {
     const res = await authApi.login(username, password)
     localStorage.setItem('access_token', res.access_token)
     localStorage.setItem('user', JSON.stringify(res.user))
     setUser(res.user)
+    return res.user
   }
 
   const logout = async () => {
@@ -56,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('access_token')
       localStorage.removeItem('user')
       setUser(null)
-      window.location.href = '/login'
+      window.location.href = '/'
     }
   }
 

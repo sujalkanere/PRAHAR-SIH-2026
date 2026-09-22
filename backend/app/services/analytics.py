@@ -39,9 +39,9 @@ def _to_uuids(ids: list | None) -> list | None:
     return res
 
 
-async def _visible_constituency_ids(db: AsyncSession, user: User) -> list | None:
-    if user.role == "ROLE_PUBLIC":
-        return None  # Public viewer has aggregate data access across all constituencies
+async def _visible_constituency_ids(db: AsyncSession, user: User | None) -> list | None:
+    if user is None:
+        return None  # Aggregate national data across all constituencies
     return await scope_constituency_filter(db, user)
 
 
@@ -91,7 +91,7 @@ async def _anomaly_rows(db: AsyncSession, ids: list | None, limit: int = 500) ->
     return list((await db.execute(q)).scalars().all())
 
 
-async def national_summary(db: AsyncSession, user: User) -> dict:
+async def national_summary(db: AsyncSession, user: User | None = None) -> dict:
     ids = await _visible_constituency_ids(db, user)
     uids = _to_uuids(ids)
     fy = await latest_fy(db)
@@ -357,7 +357,7 @@ async def anomaly_trends(db: AsyncSession, ids: list | None) -> list[dict]:
     return out
 
 
-async def state_summary(db: AsyncSession, user: User, state: str) -> dict:
+async def state_summary(db: AsyncSession, user: User | None = None, state: str = "Maharashtra") -> dict:
     ids = await _visible_constituency_ids(db, user)
     uids = _to_uuids(ids)
     # resolve state's constituency ids

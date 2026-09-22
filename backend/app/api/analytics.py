@@ -2,7 +2,10 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.rbac import require_roles, ROLE_ADMIN, ROLE_DISTRICT, ROLE_MINISTRY, ROLE_MP, ROLE_PUBLIC, ROLE_STATE_NODAL
+from app.auth.rbac import (
+    ROLE_ADMIN, ROLE_DISTRICT, ROLE_MINISTRY, ROLE_MP, ROLE_STATE_NODAL,
+    get_optional_current_user, require_roles,
+)
 from app.database import get_db
 from app.models import User
 
@@ -11,9 +14,7 @@ router = APIRouter(prefix="/api/v1/analytics", tags=["analytics"])
 
 @router.get("/national-summary")
 async def national_summary(db: AsyncSession = Depends(get_db),
-                           user: User = Depends(require_roles(ROLE_ADMIN, ROLE_MINISTRY,
-                                                              ROLE_STATE_NODAL, ROLE_DISTRICT,
-                                                              ROLE_MP, ROLE_PUBLIC))):
+                           user: User | None = Depends(get_optional_current_user)):
     from app.services.analytics import national_summary as ns
     return await ns(db, user)
 
@@ -21,9 +22,7 @@ async def national_summary(db: AsyncSession = Depends(get_db),
 @router.get("/official-metrics")
 @router.get("/current-data")
 async def official_metrics(db: AsyncSession = Depends(get_db),
-                           user: User = Depends(require_roles(ROLE_ADMIN, ROLE_MINISTRY,
-                                                              ROLE_STATE_NODAL, ROLE_DISTRICT,
-                                                              ROLE_MP, ROLE_PUBLIC))):
+                           user: User | None = Depends(get_optional_current_user)):
     from app.services.official_dataset_seeder import load_all_datasets
     try:
         ds = load_all_datasets()
@@ -40,9 +39,7 @@ async def official_metrics(db: AsyncSession = Depends(get_db),
 @router.get("/state-summary/{state_name}")
 @router.get("/state/{state_name}")
 async def state_summary(state_name: str, db: AsyncSession = Depends(get_db),
-                        user: User = Depends(require_roles(ROLE_ADMIN, ROLE_MINISTRY,
-                                                           ROLE_STATE_NODAL, ROLE_DISTRICT,
-                                                           ROLE_MP, ROLE_PUBLIC))):
+                        user: User | None = Depends(get_optional_current_user)):
     from app.services.analytics import state_summary as ss
     return await ss(db, user, state_name)
 
@@ -62,14 +59,13 @@ async def trends(
     group_by: str = Query("financial_year", pattern="^(financial_year|month|quarter)$"),
     scope: str | None = None,
     db: AsyncSession = Depends(get_db),
-    user: User = Depends(require_roles(ROLE_ADMIN, ROLE_MINISTRY, ROLE_STATE_NODAL,
-                                       ROLE_DISTRICT, ROLE_MP, ROLE_PUBLIC)),
+    user: User | None = Depends(get_optional_current_user),
 ):
     from app.auth.rbac import scope_constituency_filter
     from app.models import ConstituencyRiskScore, FundRelease, Work
     from sqlalchemy import func, select
 
-    ids = None if user.role == ROLE_PUBLIC else await scope_constituency_filter(db, user)
+    ids = None if user is None else await scope_constituency_filter(db, user)
     base = select(ConstituencyRiskScore)
     if ids is not None:
         if not ids:

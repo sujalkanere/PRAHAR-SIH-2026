@@ -4,7 +4,6 @@ export type Role =
   | 'ROLE_STATE_NODAL'
   | 'ROLE_DISTRICT'
   | 'ROLE_MP'
-  | 'ROLE_PUBLIC'
 
 export interface User {
   id: string
@@ -109,6 +108,7 @@ export interface StateSummaryItem {
 }
 
 export interface NationalSummaryData {
+  official_metrics?: Record<string, any>
   kpis: Array<{
     key: string
     label: string

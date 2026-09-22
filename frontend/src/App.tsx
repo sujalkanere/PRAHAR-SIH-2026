@@ -78,15 +78,15 @@ export const App: React.FC = () => {
               <Route
                 path="/"
                 element={
-                  <ProtectedRoute>
+                  <AppLayout>
                     <NationalDashboardPage />
-                  </ProtectedRoute>
+                  </AppLayout>
                 }
               />
               <Route
                 path="/state"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_MINISTRY', 'ROLE_STATE_NODAL', 'ROLE_DISTRICT', 'ROLE_MP']}>
                     <StateDashboardPage />
                   </ProtectedRoute>
                 }

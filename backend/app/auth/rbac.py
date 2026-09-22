@@ -17,7 +17,6 @@ ROLE_MINISTRY = "ROLE_MINISTRY"
 ROLE_STATE_NODAL = "ROLE_STATE_NODAL"
 ROLE_DISTRICT = "ROLE_DISTRICT"
 ROLE_MP = "ROLE_MP"
-ROLE_PUBLIC = "ROLE_PUBLIC"
 
 # Permission matrix (SRS 2.5 / FR-AAA-002)
 PERMISSIONS: dict[str, dict] = {
@@ -63,14 +62,6 @@ PERMISSIONS: dict[str, dict] = {
         "can_manage_alerts": False,
         "can_generate_reports": True,
     },
-    ROLE_PUBLIC: {
-        "data_scope": "AGGREGATE",
-        "can_upload_data": False,
-        "can_manage_users": False,
-        "can_view_public_dashboard": True,
-        "can_manage_alerts": False,
-        "can_generate_reports": False,
-    },
 }
 
 
@@ -100,6 +91,30 @@ async def get_current_user(
     return user
 
 
+async def get_optional_current_user(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """Optional user resolver: returns User if valid JWT provided, None otherwise."""
+    if credentials is None:
+        return None
+    try:
+        from app.auth.jwt_handler import decode_token
+
+        payload = decode_token(credentials.credentials, expected_type="access")
+        try:
+            uid = uuid.UUID(str(payload["sub"]))
+        except (ValueError, TypeError):
+            uid = payload["sub"]
+        user = (await db.execute(select(User).where(User.id == uid))).scalar_one_or_none()
+        if user is None or not user.is_active:
+            return None
+        return user
+    except Exception:
+        return None
+
+
 def require_roles(*roles: str):
     """Dependency factory enforcing role membership (returns 403 otherwise)."""
 
@@ -116,12 +131,14 @@ def has_permission(user: User, permission: str) -> bool:
     return bool(PERMISSIONS.get(user.role, {}).get(permission, False))
 
 
-async def scope_constituency_filter(db: AsyncSession, user: User) -> list | None:
+async def scope_constituency_filter(db: AsyncSession, user: User | None) -> list | None:
     """Returns list of constituency IDs visible to the user, or None for full access.
 
+    If user is None (public unauthenticated viewer), returns None (national aggregate scope).
     Fails closed if a scoped role has no scope_value configured.
-    ROLE_PUBLIC -> no work-level access (return []).
     """
+    if user is None:
+        return None
     perms = PERMISSIONS.get(user.role, {})
     scope = perms.get("data_scope")
     if scope in ("ALL",):
@@ -141,7 +158,7 @@ async def scope_constituency_filter(db: AsyncSession, user: User) -> list | None
         if scope == "CONSTITUENCY":
             rows = (await db.execute(select(Constituency.id).where(Constituency.name == user.scope_value))).scalars().all()
             return list(rows)
-    return []  # AGGREGATE
+    return []
 
 
 def ensure_scoped(user: User, constituency: Constituency) -> None:

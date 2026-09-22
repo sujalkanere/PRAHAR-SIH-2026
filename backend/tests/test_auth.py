@@ -33,11 +33,15 @@ async def test_login_all_seed_users(client):
     users = [
         ("admin", "Admin@1234"), ("ministry_user", "Ministry@1234"),
         ("state_user", "State@1234"), ("district_user", "District@1234"),
-        ("mp_user", "Mp@12345"), ("public_user", "Public@1234"),
+        ("mp_user", "Mp@12345"),
     ]
     for u, p in users:
         r = await _login(client, u, p)
         assert r.status_code == 200, (u, r.status_code, r.text)
+
+    # Public observer role is removed and cannot log in
+    r_pub = await _login(client, "public_user", "Public@1234")
+    assert r_pub.status_code == 401
 
 
 async def test_login_account_lockout_after_five_failures(client):

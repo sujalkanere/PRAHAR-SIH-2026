@@ -59,7 +59,7 @@ const INDIAN_STATES = [
 export const StateDashboardPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { hasRole } = useAuth()
+  const { user } = useAuth()
   const currentState = searchParams.get('state') || 'Maharashtra'
 
   const [summary, setSummary] = useState<any>(null)
@@ -198,10 +198,10 @@ export const StateDashboardPage: React.FC = () => {
               pagination={{ pageSize: 10 }}
               onRow={(record) => ({
                 onClick: () => {
-                  if (hasRole('ROLE_PUBLIC')) return
+                  if (!user) return
                   navigate(`/constituency/${record.id}`)
                 },
-                style: { cursor: hasRole('ROLE_PUBLIC') ? 'default' : 'pointer' },
+                style: { cursor: user ? 'pointer' : 'default' },
               })}
               columns={[
                 {
@@ -252,7 +252,7 @@ export const StateDashboardPage: React.FC = () => {
                     <Tag color={val > 0 ? 'red' : 'green'}>{val || 0}</Tag>
                   ),
                 },
-                ...(!hasRole('ROLE_PUBLIC')
+                ...(user
                   ? [
                       {
                         title: 'Action',

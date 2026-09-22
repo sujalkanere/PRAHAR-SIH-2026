@@ -12,7 +12,6 @@ const DEMO_ACCOUNTS = [
   { label: 'State Nodal (Maharashtra)', user: 'state_user', pass: 'State@1234', role: 'STATE_NODAL', color: '#8b5cf6' },
   { label: 'District Authority (Pune)', user: 'district_user', pass: 'District@1234', role: 'DISTRICT', color: '#f59e0b' },
   { label: 'Member of Parliament (Pune)', user: 'mp_user', pass: 'Mp@12345', role: 'MP', color: '#10b981' },
-  { label: 'Public Observer', user: 'public_user', pass: 'Public@1234', role: 'PUBLIC', color: '#475569' },
 ]
 
 export const LoginPage: React.FC = () => {
@@ -26,8 +25,17 @@ export const LoginPage: React.FC = () => {
     try {
       setLoading(true)
       setError(null)
-      await login(values.username, values.password)
-      navigate('/')
+      const loggedUser = await login(values.username, values.password)
+      if (loggedUser.role === 'ROLE_ADMIN') {
+        navigate('/admin')
+      } else if (loggedUser.role === 'ROLE_STATE_NODAL') {
+        const stateName = loggedUser.scope_value || 'Maharashtra'
+        navigate(`/state?state=${encodeURIComponent(stateName)}`)
+      } else if (loggedUser.role === 'ROLE_DISTRICT' || loggedUser.role === 'ROLE_MP') {
+        navigate('/alerts')
+      } else {
+        navigate('/')
+      }
     } catch (err: any) {
       console.error(err)
       setError(err.response?.data?.detail?.message || 'Invalid username or password')
@@ -183,6 +191,16 @@ export const LoginPage: React.FC = () => {
                 </Tag>
               </Button>
             ))}
+          </div>
+
+          <div style={{ textAlign: 'center', marginTop: 18, paddingTop: 14, borderTop: '1px solid #f1f5f9' }}>
+            <Button
+              type="link"
+              onClick={() => navigate('/')}
+              style={{ color: '#2563eb', fontSize: '13px', fontWeight: 600, padding: 0 }}
+            >
+              &larr; Return to Public Dashboard
+            </Button>
           </div>
         </Card>
       </div>

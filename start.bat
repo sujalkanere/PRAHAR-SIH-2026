@@ -78,7 +78,7 @@ echo   - Ministry:   ministry_user  / Ministry@1234
 echo   - State:      state_user     / State@1234
 echo   - District:   district_user  / District@1234
 echo   - MP:         mp_user        / Mp@12345
-echo   - Public:     public_user    / Public@1234
+echo   (Public Dashboard is open by default without login at http://localhost:5173)
 echo ----------------------------------------------------------------------
 echo.
 echo Press any key to stop all services and close...

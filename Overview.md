@@ -268,7 +268,8 @@ PRAHAR strictly enforces role-based access control (RBAC) at both the API endpoi
 | **`ROLE_STATE_NODAL`** | State Nodal Authority | Scoped strictly to their designated State (e.g. *Maharashtra*); View all constituencies within their state; Manage state alerts. |
 | **`ROLE_DISTRICT`** | District Collector / DDA | Scoped strictly to their District (e.g. *Pune*); Investigate alerts; Update anomaly statuses; Verify field inspection documents. |
 | **`ROLE_MP`** | Member of Parliament | Scoped strictly to their Constituency (e.g. *Pune Lok Sabha*); View constituency project progress, financial timeline, and radar scores. |
-| **`ROLE_PUBLIC`** | Citizen / Public Viewer | Transparency dashboard; High-level national & state aggregate statistics, choropleth maps, and anomaly totals; **Work-level confidential details & alert queues are hidden** *(AC-AAA-002-04 compliant)*. |
+
+*(Note: The Public Observer dashboard is now the default public landing page, accessible without login. Confidential work-level details & alert queues remain guarded for authenticated officials only).*
 
 ---
 
