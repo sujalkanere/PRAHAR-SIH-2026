@@ -347,12 +347,24 @@ export const AdminPage: React.FC = () => {
           >
             Reset All Data (Clear to Zero)
           </Button>
+
+          <Tag color="orange" style={{ fontWeight: 700, borderRadius: 4, margin: 0, padding: '4px 8px', fontSize: '11px', height: '26px', display: 'flex', alignItems: 'center' }}>
+            DEMO ONLY
+          </Tag>
         </Space>
       </div>
 
       <Row gutter={[20, 20]}>
         {/* Detection Pipeline Orchestrator */}
         <Col xs={24} lg={12}>
+          <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Title level={4} style={{ margin: 0, color: '#0f172a', fontWeight: 700, letterSpacing: '-0.01em' }}>
+              AI Detection Engine
+            </Title>
+            <Tag color="blue" style={{ fontWeight: 700, borderRadius: 4, margin: 0, fontSize: '11px' }}>
+              PIPELINE
+            </Tag>
+          </div>
           <Card
             title={
               <Space>
@@ -481,6 +493,11 @@ export const AdminPage: React.FC = () => {
 
         {/* Synthetic Generator */}
         <Col xs={24} lg={12}>
+          <div style={{ marginBottom: 12 }}>
+            <Title level={4} style={{ margin: 0, color: '#dc2626', fontWeight: 700, letterSpacing: '-0.01em' }}>
+              Strictly For Demonstration
+            </Title>
+          </div>
           <Card
             title={
               <Space>

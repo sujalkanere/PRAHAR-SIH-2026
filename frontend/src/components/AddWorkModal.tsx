@@ -85,6 +85,7 @@ export const AddWorkModal: React.FC<AddWorkModalProps> = ({
       message.success(`Work project ${created.work_id || 'entry'} added and indexed successfully!`)
       form.resetFields()
       onClose()
+      window.dispatchEvent(new CustomEvent('prahar:refresh-data'))
       if (onSuccess) {
         onSuccess()
       }
@@ -113,6 +114,7 @@ export const AddWorkModal: React.FC<AddWorkModalProps> = ({
         <Button
           key="cancel"
           onClick={onClose}
+          disabled={loading}
         >
           Cancel
         </Button>,
@@ -120,10 +122,11 @@ export const AddWorkModal: React.FC<AddWorkModalProps> = ({
           key="submit"
           type="primary"
           loading={loading}
+          disabled={loading}
           onClick={handleSubmit}
           style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', fontWeight: 600 }}
         >
-          Create & Synchronize Entry
+          {loading ? 'Creating & Indexing...' : 'Create & Synchronize Entry'}
         </Button>,
       ]}
     >

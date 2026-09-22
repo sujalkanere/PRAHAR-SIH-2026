@@ -69,6 +69,13 @@ export const StateDashboardPage: React.FC = () => {
 
   useEffect(() => {
     loadStateData(currentState)
+    const handleRefresh = () => {
+      loadStateData(currentState)
+    }
+    window.addEventListener('prahar:refresh-data', handleRefresh)
+    return () => {
+      window.removeEventListener('prahar:refresh-data', handleRefresh)
+    }
   }, [currentState])
 
   const loadStateData = async (stateName: string) => {

@@ -57,6 +57,13 @@ export const NationalDashboardPage: React.FC = () => {
 
   useEffect(() => {
     loadData()
+    const handleRefresh = () => {
+      loadData()
+    }
+    window.addEventListener('prahar:refresh-data', handleRefresh)
+    return () => {
+      window.removeEventListener('prahar:refresh-data', handleRefresh)
+    }
   }, [])
 
   const loadData = async () => {

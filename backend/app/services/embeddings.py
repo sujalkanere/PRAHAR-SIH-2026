@@ -30,10 +30,19 @@ class EmbeddingService:
         try:
             from sentence_transformers import SentenceTransformer
 
-            model_path = Path(self._model_dir) / self._model_name.split("/")[-1]
-            if not (model_path / "config.json").exists():
-                model_path = Path(self._model_dir) / "hub"  # HF cache layout
-            self._model = SentenceTransformer(self._model_name, cache_folder=self._model_dir)
+            # Attempt instant local load first (avoids remote HuggingFace checks that stall network)
+            try:
+                self._model = SentenceTransformer(
+                    self._model_name,
+                    cache_folder=self._model_dir,
+                    local_files_only=True,
+                )
+            except Exception:
+                # Fallback to standard load if local cache is not recognized
+                self._model = SentenceTransformer(
+                    self._model_name,
+                    cache_folder=self._model_dir,
+                )
             self._tfidf = None
         except Exception as exc:  # pragma: no cover - fallback path
             print(f"[embeddings] MiniLM unavailable ({exc}); using TF-IDF fallback")

@@ -219,9 +219,10 @@ async def create_work(
     if body.sanctioned_amount > 0 and body.actual_expenditure > body.sanctioned_amount:
         overrun = round((body.actual_expenditure - body.sanctioned_amount) / body.sanctioned_amount * 100, 2)
 
-    # 6. Compute MiniLM embedding vector
-    embed_service = get_embedding_service()
-    embeddings = embed_service.encode([desc])
+    # 6. Compute MiniLM embedding vector asynchronously
+    import asyncio
+    embed_service = await asyncio.to_thread(get_embedding_service)
+    embeddings = await asyncio.to_thread(embed_service.encode, [desc])
     emb_vector = embeddings[0].tolist() if len(embeddings) > 0 else None
 
     work_obj = Work(

@@ -57,11 +57,11 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
       open={open}
       onCancel={onClose}
       footer={[
-        <Button key="cancel" onClick={onClose}>
+        <Button key="cancel" onClick={onClose} disabled={loading}>
           Cancel
         </Button>,
-        <Button key="submit" type="primary" loading={loading} onClick={handleExport} style={{ background: '#1d4ed8' }}>
-          Generate & Download
+        <Button key="submit" type="primary" loading={loading} disabled={loading} onClick={handleExport} style={{ background: '#1d4ed8' }}>
+          {loading ? 'Generating Report...' : 'Generate & Download'}
         </Button>,
       ]}
     >

@@ -120,9 +120,11 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     ],
   }
 
-  const isLandingPage = location.pathname === '/'
+  // The sidebar is only hidden for unauthenticated public visitors on the landing page.
+  // For all logged-in officials, the sidebar remains persistently on the left across all dashboards.
+  const isPublicLandingPage = !user && location.pathname === '/'
 
-  if (isLandingPage) {
+  if (isPublicLandingPage) {
     return (
       <Layout style={{ minHeight: '100vh', background: '#f4f5f8' }}>
         {/* Landing Page Full-Width Header */}
@@ -351,7 +353,6 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         <AddWorkModal
           open={addWorkModalOpen}
           onClose={() => setAddWorkModalOpen(false)}
-          onSuccess={() => window.location.reload()}
         />
         <AIChatbotModal open={chatbotOpen} onClose={() => setChatbotOpen(false)} />
       </Layout>
@@ -704,7 +705,6 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       <AddWorkModal
         open={addWorkModalOpen}
         onClose={() => setAddWorkModalOpen(false)}
-        onSuccess={() => window.location.reload()}
       />
 
       {/* OpenRouter AI Chatbot Modal */}

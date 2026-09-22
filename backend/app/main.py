@@ -28,6 +28,10 @@ async def lifespan(app: FastAPI):
             s.execute(update(DetectionRun).where(DetectionRun.status == "RUNNING").values(
                 status="FAILED", error_message="interrupted by service restart"))
             s.commit()
+        # pre-warm NLP embedding service in background thread for instant response on create_work
+        import asyncio
+        from app.services.embeddings import get_embedding_service
+        asyncio.create_task(asyncio.to_thread(get_embedding_service))
     except Exception as exc:  # pragma: no cover
         print(f"[startup] DB init failed: {exc}")
     yield
@@ -98,6 +102,7 @@ async def root():
 @app.get("/docs", include_in_schema=False)
 async def docs_redirect():
     return RedirectResponse(url="/api/v1/docs")
+
 
 
 @app.get("/health")
