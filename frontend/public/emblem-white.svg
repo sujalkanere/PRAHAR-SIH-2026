@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120" width="44" height="52" fill="#ffffff">
+  <!-- Lion Capital of Ashoka stylized sovereign emblem -->
+  <path d="M50 8 C43 8 38 13 38 20 C38 25 41 29 45 32 C43 35 40 40 40 46 C40 52 44 57 48 59 L48 64 C43 64 36 67 36 72 L36 78 C36 80 38 82 40 82 L60 82 C62 82 64 80 64 78 L64 72 C64 67 57 64 52 64 L52 59 C56 57 60 52 60 46 C60 40 57 35 55 32 C59 29 62 25 62 20 C62 13 57 8 50 8 Z" fill="#ffffff" opacity="0.95"/>
+  <!-- Left & Right Flanking Lions -->
+  <path d="M26 24 C22 24 18 28 18 33 C18 38 21 42 24 44 C22 47 20 51 20 56 C20 62 24 66 28 68 L28 72 C25 73 22 75 22 78 L22 82 L34 82 L34 76 C34 71 30 67 30 63 C33 60 34 56 34 51 C34 44 30 38 30 34 C30 28 28 24 26 24 Z" fill="#ffffff" opacity="0.85"/>
+  <path d="M74 24 C78 24 82 28 82 33 C82 38 79 42 76 44 C78 47 80 51 80 56 C80 62 76 66 72 68 L72 72 C75 73 78 75 78 78 L78 82 L66 82 L66 76 C66 71 70 67 70 63 C67 60 66 56 66 51 C66 44 70 38 70 34 C70 28 72 24 74 24 Z" fill="#ffffff" opacity="0.85"/>
+  <!-- Ashoka Chakra Base -->
+  <rect x="18" y="84" width="64" height="6" rx="2" fill="#ffffff"/>
+  <circle cx="50" cy="98" r="9" fill="none" stroke="#ffffff" stroke-width="2"/>
+  <circle cx="50" cy="98" r="2" fill="#ffffff"/>
+  <!-- 24 Spokes (simplified 12 spokes for crisp rendering) -->
+  <line x1="50" y1="89" x2="50" y2="107" stroke="#ffffff" stroke-width="1.2"/>
+  <line x1="41" y1="98" x2="59" y2="98" stroke="#ffffff" stroke-width="1.2"/>
+  <line x1="43.6" y1="91.6" x2="56.4" y2="104.4" stroke="#ffffff" stroke-width="1.2"/>
+  <line x1="43.6" y1="104.4" x2="56.4" y2="91.6" stroke="#ffffff" stroke-width="1.2"/>
+  <!-- Flanking Bull & Horse Motifs -->
+  <circle cx="28" cy="98" r="3.5" fill="#ffffff" opacity="0.8"/>
+  <circle cx="72" cy="98" r="3.5" fill="#ffffff" opacity="0.8"/>
+  <!-- Base Pedestal -->
+  <rect x="12" y="110" width="76" height="5" rx="2" fill="#ffffff"/>
+</svg>

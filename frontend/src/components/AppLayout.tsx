@@ -14,6 +14,7 @@ import {
   RightOutlined,
   ThunderboltOutlined,
   LoginOutlined,
+  HeartFilled,
 } from '@ant-design/icons'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -21,8 +22,32 @@ import { ReportExportModal } from './ReportExportModal'
 import { AddWorkModal } from './AddWorkModal'
 import { AIChatbotModal } from './AIChatbotModal'
 
-const { Sider, Content } = Layout
+const { Sider, Content, Footer } = Layout
 const { Text } = Typography
+
+const AppFooter: React.FC = () => (
+  <Footer
+    style={{
+      background: 'transparent',
+      borderTop: '1px solid #e2e8f0',
+      padding: '24px 28px',
+      textAlign: 'center',
+      color: '#64748b',
+    }}
+  >
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
+      <div style={{ fontSize: '13px', fontWeight: 500, color: '#475569' }}>
+        Data sourced from official MPLADS portal • Last updated: 9/3/2026 •
+      </div>
+      <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+        © 2026 PRAHAR. All rights reserved.
+      </div>
+      <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
+        Made with <HeartFilled style={{ color: '#ef4444', fontSize: '12px' }} /> for India
+      </div>
+    </div>
+  </Footer>
+)
 
 export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout, hasRole } = useAuth()
@@ -63,10 +88,10 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   if (user && hasRole('ROLE_ADMIN', 'ROLE_MINISTRY', 'ROLE_STATE_NODAL', 'ROLE_DISTRICT', 'ROLE_MP')) {
     navItems.push(
       {
-        key: '/',
+        key: '/dashboard',
         label: 'National Explorer',
         icon: <GlobalOutlined style={{ fontSize: '16px' }} />,
-        onClick: () => navigate('/'),
+        onClick: () => navigate('/dashboard'),
       },
       {
         key: '/state',
@@ -120,13 +145,13 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     ],
   }
 
-  // The sidebar is only hidden for unauthenticated public visitors on the landing page.
+  // The sidebar is only hidden for unauthenticated public visitors on the dashboard/landing page.
   // For all logged-in officials, the sidebar remains persistently on the left across all dashboards.
-  const isPublicLandingPage = !user && location.pathname === '/'
+  const isPublicLandingPage = !user && (location.pathname === '/dashboard' || location.pathname === '/')
 
   if (isPublicLandingPage) {
     return (
-      <Layout style={{ minHeight: '100vh', background: '#f4f5f8' }}>
+      <Layout style={{ minHeight: '100vh', background: '#f4f5f8', display: 'flex', flexDirection: 'column' }}>
         {/* Landing Page Full-Width Header */}
         <div
           style={{
@@ -179,7 +204,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                 PRAHAR
               </div>
               <div style={{ fontSize: '9px', color: '#64748b', letterSpacing: '0.06em', fontWeight: 700 }}>
-                AI AUDIT CONSOLE
+
               </div>
             </div>
           </div>
@@ -190,7 +215,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               <Button
                 type="text"
                 icon={<GlobalOutlined style={{ color: '#10b981' }} />}
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/dashboard')}
                 style={{ fontWeight: 600, color: '#0f172a', background: '#f1f5f9', borderRadius: 8 }}
               >
                 National Explorer
@@ -317,9 +342,12 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         </div>
 
         {/* Content Body */}
-        <Content style={{ padding: '24px 32px 40px 32px', maxWidth: 1600, margin: '0 auto', width: '100%' }}>
+        <Content style={{ padding: '24px 32px 40px 32px', maxWidth: 1600, margin: '0 auto', width: '100%', flex: 1 }}>
           {children}
         </Content>
+
+        {/* Footer */}
+        <AppFooter />
 
         {/* Floating Action Button for AI Assistant */}
         <Tooltip title="Ask PRAHAR AI Assistant">
@@ -429,7 +457,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                     PRAHAR
                   </div>
                   <div style={{ fontSize: '9px', color: '#64748b', letterSpacing: '0.06em', fontWeight: 700 }}>
-                    AI AUDIT CONSOLE
+
                   </div>
                 </div>
               )}
@@ -566,7 +594,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       </Sider>
 
       {/* Main Layout Area */}
-      <Layout style={{ background: '#f4f5f8' }}>
+      <Layout style={{ background: '#f4f5f8', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         {/* Top Minimal Action Header */}
         <div
           style={{
@@ -656,10 +684,14 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             maxWidth: 1600,
             margin: '0 auto',
             width: '100%',
+            flex: 1,
           }}
         >
           {children}
         </Content>
+
+        {/* Footer */}
+        <AppFooter />
       </Layout>
 
       {/* Floating Action Button for AI Assistant */}

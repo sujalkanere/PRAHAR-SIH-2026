@@ -6,6 +6,7 @@ import { AppLayout } from './components/AppLayout'
 import { Role } from './types'
 
 // Route-level code splitting (P2.10 & Section 13 bundle optimization)
+const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })))
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })))
 const NationalDashboardPage = lazy(() => import('./pages/NationalDashboardPage').then(m => ({ default: m.NationalDashboardPage })))
 const StateDashboardPage = lazy(() => import('./pages/StateDashboardPage').then(m => ({ default: m.StateDashboardPage })))
@@ -38,7 +39,7 @@ const ProtectedRoute: React.FC<{
   }
 
   if (allowedRoles && allowedRoles.length > 0 && !hasRole(...allowedRoles)) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/dashboard" replace />
   }
 
   return <AppLayout>{children}</AppLayout>
@@ -74,9 +75,10 @@ export const App: React.FC = () => {
         <BrowserRouter>
           <Suspense fallback={<LoadingFallback />}>
             <Routes>
+              <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route
-                path="/"
+                path="/dashboard"
                 element={
                   <AppLayout>
                     <NationalDashboardPage />

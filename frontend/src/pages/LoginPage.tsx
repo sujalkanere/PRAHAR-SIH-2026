@@ -34,7 +34,7 @@ export const LoginPage: React.FC = () => {
       } else if (loggedUser.role === 'ROLE_DISTRICT' || loggedUser.role === 'ROLE_MP') {
         navigate('/alerts')
       } else {
-        navigate('/')
+        navigate('/dashboard')
       }
     } catch (err: any) {
       console.error(err)
@@ -193,13 +193,21 @@ export const LoginPage: React.FC = () => {
             ))}
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: 18, paddingTop: 14, borderTop: '1px solid #f1f5f9' }}>
+          <div style={{ textAlign: 'center', marginTop: 18, paddingTop: 14, borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14 }}>
             <Button
               type="link"
               onClick={() => navigate('/')}
               style={{ color: '#2563eb', fontSize: '13px', fontWeight: 600, padding: 0 }}
             >
-              &larr; Return to Public Dashboard
+              &larr; Return to MPLADS Portal
+            </Button>
+            <span style={{ color: '#cbd5e1' }}>•</span>
+            <Button
+              type="link"
+              onClick={() => navigate('/dashboard')}
+              style={{ color: '#475569', fontSize: '13px', fontWeight: 500, padding: 0 }}
+            >
+              Risk Dashboard &rarr;
             </Button>
           </div>
         </Card>
