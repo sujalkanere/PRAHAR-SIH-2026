@@ -30,3 +30,7 @@ cookies.txt
 .sudo_as_admin_successful
 *.log
 cloudflared.exe
+venv/
+backend/backend/
+frontend/node_modules/
+map_screenshot.png

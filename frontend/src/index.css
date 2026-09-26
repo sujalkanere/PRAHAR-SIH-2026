@@ -265,3 +265,55 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 4px;
   transition: width 0.4s ease;
 }
+
+/* Donut Chart Animations */
+@keyframes prahar-spin {
+  to { transform: rotate(360deg); }
+}
+
+.anomaly-donut-container {
+  animation: prahar-fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes prahar-fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Donut Segment Hover Effect */
+.anomaly-donut-container .recharts-pie-sector {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Legend Item Hover */
+.anomaly-donut-container .legend-item {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Center total pulse animation */
+.anomaly-donut-container .center-total {
+  animation: prahar-pulse 3s ease-in-out infinite;
+}
+
+@keyframes prahar-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+/* Donut Gradient Overlay */
+.anomaly-donut-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}

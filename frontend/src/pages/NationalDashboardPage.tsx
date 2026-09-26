@@ -18,8 +18,6 @@ import {
   CartesianGrid,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
   Cell,
 } from 'recharts'
 import { analyticsApi } from '../api/analytics'
@@ -27,20 +25,9 @@ import { NationalSummaryData } from '../types'
 import { KPICard } from '../components/KPICard'
 import { IndiaMap } from '../components/IndiaMap'
 import { InvestigationDrawer } from '../components/InvestigationDrawer'
+import { AnomalyDonutChart } from '../components/AnomalyDonutChart'
 
 const { Title, Text } = Typography
-
-const CATEGORY_COLORS: Record<string, string> = {
-  COST_OVERRUN: '#b91c1c',
-  DELAYED_PROJECT: '#c2410c',
-  STALLED_PROJECT: '#ea580c',
-  DUPLICATE_WORK: '#7c3aed',
-  PAYMENT_RISK: '#0284c7',
-  COMPLIANCE_RISK: '#0d9488',
-  DURABILITY_RISK: '#4f46e5',
-  PATTERN_ANOMALY: '#b45309',
-  FUND_MISUTILIZATION: '#1d4ed8',
-}
 
 export const NationalDashboardPage: React.FC = () => {
   const navigate = useNavigate()
@@ -131,14 +118,9 @@ export const NationalDashboardPage: React.FC = () => {
       tier: c.risk_tier,
     }))
 
-  // Category donut data
-  const pieData = Object.entries(data.anomaly_distribution || {}).map(([name, value]) => ({
-    name: name.replace(/_/g, ' '),
-    rawKey: name,
-    value,
-  }))
-
-  const totalAnomaliesCount = pieData.reduce((acc, item) => acc + (Number(item.value) || 0), 0)
+  // Category donut data — total anomalies count
+  const totalAnomaliesCount = Object.values(data.anomaly_distribution || {})
+    .reduce((acc, v) => acc + (Number(v) || 0), 0)
 
   // Trend Spline Data (Cumulative fund trajectory matching official baseline if populated)
   const trendData = totalAllocatedCr > 0 ? [
@@ -342,21 +324,30 @@ export const NationalDashboardPage: React.FC = () => {
           <Card
             title={
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <GlobalOutlined style={{ color: '#10b981' }} />
-                  <span style={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
-                    India Risk Choropleth Map
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 8, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
+                    <GlobalOutlined style={{ fontSize: 16 }} />
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '15px', color: '#0f172a' }}>
+                      National Risk Choropleth Command
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 500 }}>
+                      Interactive Geospatial Audit Matrix • Click any state to zoom, enlarge & inspect
+                    </div>
+                  </div>
                 </div>
-                <span style={{ fontSize: '12px', color: '#64748b' }}>Click state to view breakdown</span>
+                <Tag color="cyan" style={{ borderRadius: 10, fontWeight: 700, fontSize: '11px', margin: 0 }}>
+                  36 States & UTs
+                </Tag>
               </div>
             }
-            styles={{ body: { padding: 12 } }}
+            styles={{ body: { padding: 10 } }}
             style={{
-              borderRadius: 18,
+              borderRadius: 20,
               border: '1px solid #edf0f2',
               background: '#ffffff',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.02)',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02), 0 8px 24px rgba(0, 0, 0, 0.03)',
             }}
           >
             <IndiaMap
@@ -673,76 +664,17 @@ export const NationalDashboardPage: React.FC = () => {
           background: '#ffffff',
           boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
         }}
-        styles={{ body: { padding: '20px 24px' } }}
+        styles={{ body: { padding: '24px' } }}
       >
-        <Row gutter={[24, 24]} align="middle">
-          <Col xs={24} md={9}>
-            <div style={{ height: 280, width: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={65}
-                    outerRadius={105}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[entry.rawKey] || '#64748b'} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip
-                    contentStyle={{
-                      background: '#ffffff',
-                      borderColor: '#edf0f2',
-                      borderRadius: 12,
-                      boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </Col>
-
-          <Col xs={24} md={15}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 12 }}>
-              {pieData.map((item, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 12,
-                    background: '#f8fafc',
-                    border: '1px solid #edf0f2',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        background: CATEGORY_COLORS[item.rawKey] || '#64748b',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span style={{ fontSize: '12.5px', fontWeight: 500, color: '#334155' }}>
-                      {item.name}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
-                    {Number(item.value).toLocaleString('en-IN')}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Col>
-        </Row>
+        <AnomalyDonutChart
+          distribution={data.anomaly_distribution || {}}
+          totalCount={totalAnomaliesCount}
+          size={280}
+          showLegend={true}
+          onCategoryClick={(category, count) => {
+            console.log('Category clicked:', category.label, count)
+          }}
+        />
       </Card>
 
       {/* Investigation Drawer Component */}
