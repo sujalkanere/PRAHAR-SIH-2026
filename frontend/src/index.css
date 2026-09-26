@@ -1,28 +1,39 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
-:root {
+/* ==========================================================================
+   DESIGN TOKENS — LIGHT MODE (Default / Ivory Public Sector)
+   ========================================================================== */
+:root,
+[data-theme="light"],
+.light {
   /* Typography */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Theme Tokens — Light Theme (Public Sector Intelligence Console) */
-  --color-bg: #f8fafc;
-  --color-surface: #ffffff;
-  --color-surface-elevated: #ffffff;
-  --color-border: #e2e8f0;
-  --color-border-subtle: #f1f5f9;
-  --color-border-hover: #cbd5e1;
+  /* Primary Surfaces & Backgrounds */
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #ffffff;
+  --bg-surface-hover: #f8fafc;
 
-  --color-text: #0f172a;
-  --color-text-secondary: #334155;
-  --color-text-muted: #475569;
+  /* Borders & Dividers */
+  --border-primary: #e2e8f0;
+  --border-secondary: #f1f5f9;
+  --border-hover: #cbd5e1;
 
+  /* Typography / Text Colors (WCAG AAA) */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+
+  /* Brand & Interactive Colors */
   --color-primary: #1d4ed8;
   --color-primary-hover: #1e40af;
   --color-primary-light: #eff6ff;
   --color-primary-gradient: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
 
-  /* Semantic Risk Tokens */
+  /* Semantic Status & Risk Tokens */
   --color-success: #15803d;
   --color-success-bg: #f0fdf4;
   --color-warning: #b45309;
@@ -34,7 +45,7 @@
   --color-info: #0284c7;
   --color-info-bg: #f0f9ff;
 
-  /* Elevation & Geometry */
+  /* Elevation & Shadows */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
@@ -42,14 +53,29 @@
   --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
   --shadow-lg: 0 12px 24px -4px rgba(15, 23, 42, 0.12), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
 
-  /* Legacy variable bridges for backwards-compatibility */
-  --bg-main: var(--color-bg);
-  --bg-card: var(--color-surface);
-  --bg-card-hover: #f8fafc;
-  --border-color: var(--color-border);
-  --text-primary: var(--color-text);
-  --text-secondary: var(--color-text-secondary);
-  --text-muted: var(--color-text-muted);
+  /* Scrollbars */
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(226, 232, 240, 0.8);
+
+  /* Backward Compatibility Aliases */
+  --color-bg: var(--bg-primary);
+  --color-surface: var(--bg-surface);
+  --color-surface-elevated: var(--bg-surface-elevated);
+  --color-border: var(--border-primary);
+  --color-border-subtle: var(--border-secondary);
+  --color-border-hover: var(--border-hover);
+  --color-text: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --bg-main: var(--bg-primary);
+  --bg-card: var(--bg-surface);
+  --bg-card-hover: var(--bg-surface-hover);
+  --border-color: var(--border-primary);
   --primary-accent: var(--color-primary);
   --primary-gradient: var(--color-primary-gradient);
   --danger-accent: var(--color-danger);
@@ -57,48 +83,149 @@
   --success-accent: var(--color-success);
 }
 
+/* ==========================================================================
+   DESIGN TOKENS — DARK MODE (Tactical Obsidian / Command Palette)
+   ========================================================================== */
+[data-theme="dark"],
+.dark {
+  /* Primary Surfaces & Backgrounds */
+  --bg-primary: #070b13;
+  --bg-secondary: #0c1322;
+  --bg-surface: #10192d;
+  --bg-surface-elevated: #16223b;
+  --bg-surface-hover: #1b2947;
+
+  /* Borders & Dividers */
+  --border-primary: #1e2c45;
+  --border-secondary: #141f33;
+  --border-hover: #3b82f6;
+
+  /* Typography / Text Colors (WCAG AAA High Contrast) */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #8493a8;
+
+  /* Brand & Interactive Colors */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-primary-light: rgba(59, 130, 246, 0.15);
+  --color-primary-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+
+  /* Semantic Status & Risk Tokens (High Luminance for Dark Backgrounds) */
+  --color-success: #34d399;
+  --color-success-bg: rgba(52, 211, 153, 0.12);
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(251, 191, 36, 0.12);
+  --color-high: #fb923c;
+  --color-high-bg: rgba(251, 146, 60, 0.12);
+  --color-danger: #f87171;
+  --color-danger-bg: rgba(248, 113, 113, 0.12);
+  --color-info: #38bdf8;
+  --color-info-bg: rgba(56, 189, 248, 0.12);
+
+  /* Elevation & Shadows */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 14px -2px rgba(0, 0, 0, 0.55), 0 2px 6px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 28px -4px rgba(0, 0, 0, 0.7), 0 4px 10px -2px rgba(0, 0, 0, 0.5);
+
+  /* Scrollbars */
+  --scrollbar-track: #0c1322;
+  --scrollbar-thumb: #1e2c45;
+  --scrollbar-thumb-hover: #334466;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(16, 25, 45, 0.88);
+  --glass-border: rgba(30, 44, 69, 0.8);
+
+  /* Backward Compatibility Aliases */
+  --color-bg: var(--bg-primary);
+  --color-surface: var(--bg-surface);
+  --color-surface-elevated: var(--bg-surface-elevated);
+  --color-border: var(--border-primary);
+  --color-border-subtle: var(--border-secondary);
+  --color-border-hover: var(--border-hover);
+  --color-text: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --bg-main: var(--bg-primary);
+  --bg-card: var(--bg-surface);
+  --bg-card-hover: var(--bg-surface-hover);
+  --border-color: var(--border-primary);
+  --primary-accent: var(--color-primary);
+  --primary-gradient: var(--color-primary-gradient);
+  --danger-accent: var(--color-danger);
+  --warning-accent: var(--color-warning);
+  --success-accent: var(--color-success);
+}
+
+/* ==========================================================================
+   GLOBAL RESET & BASE STYLES
+   ========================================================================== */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html {
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
 body {
   font-family: var(--font-family);
-  background-color: var(--color-bg);
-  color: var(--color-text);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   letter-spacing: -0.02em;
-  color: var(--color-text);
+  color: var(--text-primary);
 }
 
-/* Ant Design Light Theme Overrides */
+/* ==========================================================================
+   THEME TRANSITION OPTIMIZATIONS
+   ========================================================================== */
+.ant-layout,
+.ant-card,
+.ant-layout-header,
+.ant-modal-content,
+.ant-drawer-content,
+.ant-table,
+.glass-panel {
+  transition: background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   ANT DESIGN THEME INTEGRATION
+   ========================================================================== */
 .ant-layout {
-  background: var(--color-bg) !important;
+  background: var(--bg-primary) !important;
 }
 
 .ant-layout-header {
-  background: #ffffff !important;
-  border-bottom: 1px solid var(--color-border) !important;
+  background: var(--bg-surface) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
   padding: 0 24px !important;
   height: 64px !important;
   line-height: 64px !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-sm);
 }
 
 .ant-card {
-  background: #ffffff !important;
-  border: 1px solid var(--color-border) !important;
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-primary) !important;
   border-radius: var(--radius-lg) !important;
   box-shadow: var(--shadow-sm) !important;
-  color: var(--color-text) !important;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  color: var(--text-primary) !important;
 }
 
 .ant-card:hover {
@@ -106,14 +233,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .ant-card-head {
-  border-bottom: 1px solid var(--color-border-subtle) !important;
-  color: var(--color-text) !important;
+  border-bottom: 1px solid var(--border-secondary) !important;
+  color: var(--text-primary) !important;
   font-family: var(--font-heading);
   padding: 14px 20px !important;
 }
 
 .ant-card-head-title {
-  color: var(--color-text) !important;
+  color: var(--text-primary) !important;
   font-size: 1.05rem !important;
   font-weight: 600 !important;
 }
@@ -124,15 +251,15 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Tables */
 .ant-table {
-  background: #ffffff !important;
-  color: var(--color-text) !important;
+  background: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
   border-radius: var(--radius-md) !important;
 }
 
 .ant-table-thead > tr > th {
-  background: #f8fafc !important;
-  color: #334155 !important;
-  border-bottom: 1px solid var(--color-border) !important;
+  background: var(--bg-secondary) !important;
+  color: var(--text-secondary) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
   font-weight: 600 !important;
   font-size: 0.85rem !important;
   text-transform: uppercase;
@@ -141,23 +268,23 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .ant-table-tbody > tr > td {
-  border-bottom: 1px solid var(--color-border-subtle) !important;
-  color: #1e293b !important;
+  border-bottom: 1px solid var(--border-secondary) !important;
+  color: var(--text-secondary) !important;
   padding: 14px 16px !important;
 }
 
 .ant-table-tbody > tr:hover > td {
-  background: #f8fafc !important;
+  background: var(--bg-surface-hover) !important;
 }
 
 .ant-pagination-item {
-  background: #ffffff !important;
-  border-color: var(--color-border) !important;
+  background: var(--bg-surface) !important;
+  border-color: var(--border-primary) !important;
   border-radius: var(--radius-sm) !important;
 }
 
 .ant-pagination-item a {
-  color: #475569 !important;
+  color: var(--text-muted) !important;
 }
 
 .ant-pagination-item-active {
@@ -172,52 +299,71 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Modals and Drawers */
 .ant-modal-content {
-  background: #ffffff !important;
-  border: 1px solid var(--color-border) !important;
+  background: var(--bg-surface-elevated) !important;
+  border: 1px solid var(--border-primary) !important;
   border-radius: var(--radius-lg) !important;
   box-shadow: var(--shadow-lg) !important;
+  color: var(--text-primary) !important;
 }
 
 .ant-modal-header {
   background: transparent !important;
-  border-bottom: 1px solid var(--color-border-subtle) !important;
+  border-bottom: 1px solid var(--border-secondary) !important;
   padding-bottom: 14px !important;
 }
 
 .ant-modal-title {
-  color: var(--color-text) !important;
+  color: var(--text-primary) !important;
   font-family: var(--font-heading);
 }
 
 .ant-drawer-content {
-  background: #ffffff !important;
+  background: var(--bg-surface-elevated) !important;
+  color: var(--text-primary) !important;
 }
 
 .ant-drawer-header {
-  border-bottom: 1px solid var(--color-border-subtle) !important;
+  border-bottom: 1px solid var(--border-secondary) !important;
   padding: 16px 24px !important;
 }
 
 .ant-drawer-title {
-  color: var(--color-text) !important;
+  color: var(--text-primary) !important;
   font-family: var(--font-heading);
   font-size: 1.15rem !important;
 }
 
-/* Leaflet Container Styling for Light Theme */
+/* Select, Dropdown, Menu dark adaptations */
+.ant-select-dropdown,
+.ant-dropdown-menu {
+  background: var(--bg-surface-elevated) !important;
+  border: 1px solid var(--border-primary) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.ant-select-item-option-content {
+  color: var(--text-primary) !important;
+}
+
+.ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background-color: var(--color-primary-light) !important;
+  color: var(--color-primary) !important;
+}
+
+/* Leaflet Container Styling */
 .leaflet-container {
   width: 100%;
   height: 100%;
-  background: #f1f5f9 !important;
+  background: var(--bg-secondary) !important;
   border-radius: var(--radius-md);
   font-family: var(--font-family);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--border-primary);
 }
 
 .leaflet-tooltip-custom {
-  background: #ffffff !important;
-  border: 1px solid var(--color-border) !important;
-  color: var(--color-text) !important;
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-primary) !important;
+  color: var(--text-primary) !important;
   border-radius: var(--radius-sm) !important;
   padding: 8px 12px !important;
   font-size: 12px !important;
@@ -231,29 +377,29 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--scrollbar-thumb-hover);
 }
 
-/* Light Surface Utility */
+/* Surface Utility */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--glass-bg);
   backdrop-filter: blur(12px);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-sm);
 }
 
 /* Investigation Component Contribution Bar */
 .risk-bar-container {
-  background: #f1f5f9;
+  background: var(--bg-secondary);
   border-radius: 4px;
   height: 8px;
   overflow: hidden;
@@ -265,3 +411,313 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 4px;
   transition: width 0.4s ease;
 }
+
+/* Donut Chart Animations */
+@keyframes prahar-spin {
+  to { transform: rotate(360deg); }
+}
+
+.anomaly-donut-container {
+  animation: prahar-fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes prahar-fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Donut Segment Hover Effect */
+.anomaly-donut-container .recharts-pie-sector {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Legend Item Hover */
+.anomaly-donut-container .legend-item {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Center total pulse animation */
+.anomaly-donut-container .center-total {
+  animation: prahar-pulse 3s ease-in-out infinite;
+}
+
+@keyframes prahar-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+/* Donut Gradient Overlay */
+.anomaly-donut-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   GLOBAL DARK MODE TEXT INVERSION & READABILITY ENHANCEMENTS
+   ========================================================================== */
+[data-theme="dark"],
+.dark {
+  color-scheme: dark;
+}
+
+/* Headings and Typography in Dark Mode */
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3,
+[data-theme="dark"] h4, [data-theme="dark"] h5, [data-theme="dark"] h6,
+.dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .ant-typography,
+.dark .ant-typography {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .ant-typography-secondary,
+.dark .ant-typography-secondary {
+  color: var(--text-secondary) !important;
+}
+
+/* Recharts styling in Dark Mode */
+[data-theme="dark"] .recharts-cartesian-grid-line,
+.dark .recharts-cartesian-grid-line {
+  stroke: var(--border-secondary) !important;
+}
+
+[data-theme="dark"] .recharts-text,
+.dark .recharts-text {
+  fill: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .recharts-default-tooltip,
+.dark .recharts-default-tooltip {
+  background-color: var(--bg-surface-elevated) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* Invert hardcoded dark text in dark mode for maximum readability (handles both hex and browser-normalized rgb) */
+[data-theme="dark"] [style*="color: #0f172a"],
+[data-theme="dark"] [style*="color:#0f172a"],
+[data-theme="dark"] [style*="color: #0f2744"],
+[data-theme="dark"] [style*="color:#0f2744"],
+[data-theme="dark"] [style*="color: rgb(15, 23, 42)"],
+[data-theme="dark"] [style*="color: rgb(15, 39, 68)"],
+[data-theme="dark"] [style*="color:rgb(15, 23, 42)"],
+[data-theme="dark"] [style*="color:rgb(15,23,42)"],
+.dark [style*="color: #0f172a"],
+.dark [style*="color:#0f172a"],
+.dark [style*="color: #0f2744"],
+.dark [style*="color:#0f2744"],
+.dark [style*="color: rgb(15, 23, 42)"],
+.dark [style*="color: rgb(15, 39, 68)"],
+.dark [style*="color:rgb(15, 23, 42)"],
+.dark [style*="color:rgb(15,23,42)"] {
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] [style*="color: #1e293b"],
+[data-theme="dark"] [style*="color:#1e293b"],
+[data-theme="dark"] [style*="color: rgb(30, 41, 59)"],
+[data-theme="dark"] [style*="color:rgb(30, 41, 59)"],
+[data-theme="dark"] [style*="color:rgb(30,41,59)"],
+[data-theme="dark"] [style*="color: #334155"],
+[data-theme="dark"] [style*="color:#334155"],
+[data-theme="dark"] [style*="color: rgb(51, 65, 85)"],
+[data-theme="dark"] [style*="color:rgb(51, 65, 85)"],
+[data-theme="dark"] [style*="color:rgb(51,65,85)"],
+[data-theme="dark"] [style*="color: #475569"],
+[data-theme="dark"] [style*="color:#475569"],
+[data-theme="dark"] [style*="color: rgb(71, 85, 105)"],
+[data-theme="dark"] [style*="color:rgb(71, 85, 105)"],
+[data-theme="dark"] [style*="color:rgb(71,85,105)"],
+.dark [style*="color: #1e293b"],
+.dark [style*="color:#1e293b"],
+.dark [style*="color: rgb(30, 41, 59)"],
+.dark [style*="color:rgb(30, 41, 59)"],
+.dark [style*="color:rgb(30,41,59)"],
+.dark [style*="color: #334155"],
+.dark [style*="color:#334155"],
+.dark [style*="color: rgb(51, 65, 85)"],
+.dark [style*="color:rgb(51, 65, 85)"],
+.dark [style*="color:rgb(51,65,85)"],
+.dark [style*="color: #475569"],
+.dark [style*="color:#475569"],
+.dark [style*="color: rgb(71, 85, 105)"],
+.dark [style*="color:rgb(71, 85, 105)"],
+.dark [style*="color:rgb(71,85,105)"] {
+  color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] [style*="color: #64748b"],
+[data-theme="dark"] [style*="color:#64748b"],
+[data-theme="dark"] [style*="color: rgb(100, 116, 139)"],
+[data-theme="dark"] [style*="color:rgb(100, 116, 139)"],
+[data-theme="dark"] [style*="color:rgb(100,116,139)"],
+[data-theme="dark"] [style*="color: #94a3b8"],
+[data-theme="dark"] [style*="color:#94a3b8"],
+[data-theme="dark"] [style*="color: rgb(148, 163, 184)"],
+[data-theme="dark"] [style*="color:rgb(148, 163, 184)"],
+[data-theme="dark"] [style*="color:rgb(148,163,184)"],
+.dark [style*="color: #64748b"],
+.dark [style*="color:#64748b"],
+.dark [style*="color: rgb(100, 116, 139)"],
+.dark [style*="color:rgb(100, 116, 139)"],
+.dark [style*="color:rgb(100,116,139)"],
+.dark [style*="color: #94a3b8"],
+.dark [style*="color:#94a3b8"],
+.dark [style*="color: rgb(148, 163, 184)"],
+.dark [style*="color:rgb(148, 163, 184)"],
+.dark [style*="color:rgb(148,163,184)"] {
+  color: var(--text-muted) !important;
+}
+
+/* Invert inline card backgrounds in dark mode */
+[data-theme="dark"] [style*="background: #ffffff"],
+[data-theme="dark"] [style*="background:#ffffff"],
+[data-theme="dark"] [style*="background: rgb(255, 255, 255)"],
+[data-theme="dark"] [style*="background:rgb(255, 255, 255)"],
+[data-theme="dark"] [style*="background:rgb(255,255,255)"],
+[data-theme="dark"] [style*="background-color: #ffffff"],
+[data-theme="dark"] [style*="background-color:#ffffff"],
+[data-theme="dark"] [style*="background-color: rgb(255, 255, 255)"],
+[data-theme="dark"] [style*="background-color:rgb(255, 255, 255)"],
+[data-theme="dark"] [style*="background-color:rgb(255,255,255)"],
+.dark [style*="background: #ffffff"],
+.dark [style*="background:#ffffff"],
+.dark [style*="background: rgb(255, 255, 255)"],
+.dark [style*="background:rgb(255, 255, 255)"],
+.dark [style*="background:rgb(255,255,255)"],
+.dark [style*="background-color: #ffffff"],
+.dark [style*="background-color:#ffffff"],
+.dark [style*="background-color: rgb(255, 255, 255)"],
+.dark [style*="background-color:rgb(255, 255, 255)"],
+.dark [style*="background-color:rgb(255,255,255)"] {
+  background: var(--bg-surface) !important;
+}
+
+[data-theme="dark"] [style*="background: #f8fafc"],
+[data-theme="dark"] [style*="background:#f8fafc"],
+[data-theme="dark"] [style*="background: rgb(248, 250, 252)"],
+[data-theme="dark"] [style*="background:rgb(248, 250, 252)"],
+[data-theme="dark"] [style*="background:rgb(248,250,252)"],
+[data-theme="dark"] [style*="background: #f1f5f9"],
+[data-theme="dark"] [style*="background:#f1f5f9"],
+[data-theme="dark"] [style*="background: rgb(241, 245, 249)"],
+[data-theme="dark"] [style*="background:rgb(241, 245, 249)"],
+[data-theme="dark"] [style*="background:rgb(241,245,249)"],
+.dark [style*="background: #f8fafc"],
+.dark [style*="background:#f8fafc"],
+.dark [style*="background: rgb(248, 250, 252)"],
+.dark [style*="background:rgb(248, 250, 252)"],
+.dark [style*="background:rgb(248,250,252)"],
+.dark [style*="background: #f1f5f9"],
+.dark [style*="background:#f1f5f9"],
+.dark [style*="background: rgb(241, 245, 249)"],
+.dark [style*="background:rgb(241, 245, 249)"],
+.dark [style*="background:rgb(241,245,249)"] {
+  background: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] [style*="border: 1px solid #edf0f2"],
+[data-theme="dark"] [style*="border: 1px solid #e2e8f0"],
+[data-theme="dark"] [style*="border: 1px solid #f1f5f9"],
+[data-theme="dark"] [style*="border:1px solid #edf0f2"],
+[data-theme="dark"] [style*="border:1px solid #e2e8f0"],
+[data-theme="dark"] [style*="border:1px solid #f1f5f9"],
+.dark [style*="border: 1px solid #edf0f2"],
+.dark [style*="border: 1px solid #e2e8f0"],
+.dark [style*="border: 1px solid #f1f5f9"],
+.dark [style*="border:1px solid #edf0f2"],
+.dark [style*="border:1px solid #e2e8f0"],
+.dark [style*="border:1px solid #f1f5f9"] {
+  border-color: var(--border-primary) !important;
+}
+
+/* Anomaly Donut specific dark mode radial backdrop */
+[data-theme="dark"] .anomaly-donut-stage,
+.dark .anomaly-donut-stage {
+  background: radial-gradient(circle at center, #131d33 0%, #0c1322 75%) !important;
+  border-color: var(--border-primary) !important;
+}
+
+/* Global Ant Design typography & table text inversion in dark mode */
+[data-theme="dark"] .ant-typography,
+.dark .ant-typography {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .ant-typography.ant-typography-secondary,
+.dark .ant-typography.ant-typography-secondary {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .ant-table-thead > tr > th,
+.dark .ant-table-thead > tr > th {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
+}
+
+[data-theme="dark"] .ant-table-tbody > tr > td,
+.dark .ant-table-tbody > tr > td {
+  border-bottom: 1px solid var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .ant-table-tbody > tr:hover > td,
+.dark .ant-table-tbody > tr:hover > td {
+  background: var(--bg-surface-hover) !important;
+}
+
+/* Ant Design Input, Affix Wrapper, and Form Controls dark adaptation */
+[data-theme="dark"] .ant-input,
+[data-theme="dark"] .ant-input-affix-wrapper,
+[data-theme="dark"] .ant-input-password,
+.dark .ant-input,
+.dark .ant-input-affix-wrapper,
+.dark .ant-input-password {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+[data-theme="dark"] .ant-input-affix-wrapper input.ant-input,
+.dark .ant-input-affix-wrapper input.ant-input {
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .ant-input::placeholder,
+.dark .ant-input::placeholder {
+  color: var(--text-muted) !important;
+}
+
+[data-theme="dark"] .ant-form-item-label > label,
+.dark .ant-form-item-label > label {
+  color: var(--text-secondary) !important;
+}
+
+/* Ensure root container and body backgrounds always remain dark in dark mode */
+[data-theme="dark"] html,
+[data-theme="dark"] body,
+[data-theme="dark"] #root,
+.dark html,
+.dark body,
+.dark #root {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+

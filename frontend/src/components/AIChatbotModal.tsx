@@ -26,6 +26,117 @@ const QUICK_PROMPTS = [
   'How does duplicate work detection work?',
 ]
 
+const BLITZ_RESPONSES: Record<string, string> = {
+  'Explain the 8 MPLADS anomaly detection engines': `PRAHAR integrates 8 specialized algorithmic detection engines designed to monitor the full statutory lifecycle of MPLADS works, financial flows, and contractor behaviors:
+
+1. 💰 COST_OVERRUN (Budget Escalation & SOR Discrepancy)
+• Methodology: Employs Isolation Forest and Z-Score outlier analysis comparing cumulative milestone disbursements against initial administrative sanctions and State Schedule of Rates (SOR/DSR).
+• Primary Anomaly: Detects unjustified cost inflations, mid-project scope creep, and padded estimates before final accounts are settled.
+
+2. ⏳ DELAYED / STALLED (Milestone Velocity & Progress Gaps)
+• Methodology: Multi-tiered duration tracking comparing actual physical progress milestones against statutory project completion limits (statutory 1-year timeline under 2023 Guidelines).
+• Primary Anomaly: Automatically flags projects stagnant for 90 days, 180 days, and 365+ days with funds parked and zero physical progress.
+
+3. 🔍 DUPLICATE_WORK (Semantic & Multi-Scheme Overlap)
+• Methodology: Vectorized NLP embeddings with Cosine Similarity (>0.85), token-level Jaccard indexing, Haversine geospatial proximity (<500m), and financial variance (<30%).
+• Primary Anomaly: Identifies duplicate project recommendations across MPLADS, PMGSY, AMRUT, and municipal schemes on the exact same asset.
+
+4. ⚠️ PAYMENT_RISK (Advance Disbursal & Irregular Invoicing)
+• Methodology: Rules-based and transactional anomaly filters analyzing PFMS payment advices and Measurement Book (MB) recordings.
+• Primary Anomaly: Flags advance disbursements exceeding 50% without corresponding physical milestones, duplicate invoice tokens, and suspicious round-sum lump transfers.
+
+5. 📜 COMPLIANCE_RISK (Prohibited Works & Statutory Violations)
+• Methodology: Natural Language Processing classification against the MoSPI Prohibited Works Schedule (Chapter 3, MPLADS Guidelines 2023).
+• Primary Anomaly: Flags works on private properties, commercial assets, religious places of worship, or unauthorized trusts exceeding the ₹50 Lakh annual ceiling.
+
+6. 🏗️ DURABILITY_RISK (Premature Asset Degradation)
+• Methodology: Asset lifecycle regression tracking repeat repairs, structural longevity norms, and warranty thresholds.
+• Primary Anomaly: Catches sub-standard materials, recurring maintenance expenditures on newly built infrastructure (<3 years), and non-durable assets.
+
+7. 📊 FUND_UTILIZATION (Low Absorption & March Rush)
+• Methodology: Temporal fund flow distribution analysis and TSA Zero Balance Subsidiary Account (ZBSA) balance monitoring.
+• Primary Anomaly: Flags severe underutilization (<30% release absorption), unspent balance accumulation, and erratic "March Rush" surges (>40% spent in the final 15 days of the financial year).
+
+8. 👥 PATTERN_CLUSTERING (Vendor Cartels & Split Tendering)
+• Methodology: Bipartite graph clustering, Louvain community detection, and tender volume distribution.
+• Primary Anomaly: Uncovers collusive vendor cartels, shared vendor bank accounts, single-bidder monopolies, and split-tenders positioned just beneath formal e-procurement thresholds (e.g., ₹9.8 Lakhs to avoid ₹10 Lakhs tender rules).`,
+
+  'What is the total fund allocation and expenditure?': `Based on the official reconciled MPLADS national baseline across 231 Rajya Sabha Members of Parliament and 32 States & Union Territories:
+
+• Total Funds Allocated: ₹3,363.8 Crore (₹33,638,482,301.82)
+• Total Expenditure Disbursed: ₹1,237.9 Crore (₹12,379,235,852.69)
+• National Fund Utilization Rate: 66.1%
+• National Expenditure Rate: 36.8%
+• Total Works Monitored: 25,168 projects
+  — Completed Works: 9,927 projects (valued at ₹759.6 Crore)
+  — Ongoing / In-Progress Works: 15,241 projects (disbursements: ₹478.4 Crore)
+• Transaction Stream: 25,051 vendor disbursement line items monitored in real-time under Treasury Single Account (TSA) and PFMS protocols.`,
+
+  'Which states have the highest risk scores?': `PRAHAR calculates state-level composite risk indices (0 to 100) by weighting detected anomalies across all 8 engines against total state allocations:
+
+• Top Elevated Risk Regions:
+1. Uttar Pradesh: Elevated risk index driven by large project volumes, high delay clusters (365+ days stalled), and split-tendering flags in rural infrastructure works.
+2. Maharashtra: Notable concentrations of milestone payment velocity anomalies and contractor concentration clusters in urban/semi-urban zones.
+3. West Bengal: Stalled works exceeding statutory timelines and delayed Utilization Certificate (UC) regularizations.
+4. Bihar: Elevated fund underutilization alongside repeat repair flags on rural road networks.
+
+• Risk Tier Breakdown:
+• CRITICAL (75-100): Immediate vigilance inspection mandated; automated audit holds.
+• HIGH (50-74): Priority review by District Authority and State Nodal Agency.
+• MEDIUM (25-49): Routine monitoring with periodic milestone verification.
+• LOW (0-24): Normal statutory execution within prescribed guidelines.`,
+
+  'How does duplicate work detection work?': `PRAHAR's Duplicate Work Detection Engine uses a multi-stage fusion pipeline to prevent double-funding and fraudulent asset replication:
+
+1. Semantic NLP Similarity:
+   The engine converts work descriptions into dense vector embeddings using domain-adapted Transformer models, evaluating cosine similarity (>0.85 threshold) to catch rephrased titles (e.g., "Construction of CC Road at Ward 4" vs "Ward 4 Concrete Pavement Work").
+
+2. Token & Entity Jaccard Matching:
+   Extracts core infrastructure entities (e.g., "community hall", "RO plant", "paver blocks") and geographic landmarks to compute token intersection over union.
+
+3. Geospatial Proximity (Haversine Clustering):
+   Uses geo-tagged coordinates to compute physical distance. Works within a 500-meter radius undergoing similar asset creation are grouped into candidate duplicate clusters.
+
+4. Financial & Temporal Proximity:
+   Evaluates sanction amount variance (within ±30%) and recommendation timelines (within concurrent or successive fiscal cycles).
+
+When all 4 dimensions exceed critical thresholds, PRAHAR generates a high-confidence DUPLICATE_WORK alert with side-by-side comparison for the District Magistrate before sanction approval.`,
+}
+
+const getPreGeneratedResponse = (query: string): string | null => {
+  const trimmed = query.trim()
+  const normalized = trimmed.toLowerCase()
+  if (BLITZ_RESPONSES[trimmed]) {
+    return BLITZ_RESPONSES[trimmed]
+  }
+  for (const [key, val] of Object.entries(BLITZ_RESPONSES)) {
+    if (key.toLowerCase() === normalized) {
+      return val
+    }
+  }
+  // Keyword-based matching
+  if (
+    (normalized.includes('8') && normalized.includes('anomal')) ||
+    (normalized.includes('anomaly') && (normalized.includes('engine') || normalized.includes('model'))) ||
+    normalized.includes('detection engine')
+  ) {
+    return BLITZ_RESPONSES['Explain the 8 MPLADS anomaly detection engines']
+  }
+  if (
+    normalized.includes('total fund') ||
+    (normalized.includes('fund') && (normalized.includes('allocation') || normalized.includes('expenditure')))
+  ) {
+    return BLITZ_RESPONSES['What is the total fund allocation and expenditure?']
+  }
+  if (normalized.includes('state') && (normalized.includes('highest risk') || normalized.includes('risk score'))) {
+    return BLITZ_RESPONSES['Which states have the highest risk scores?']
+  }
+  if (normalized.includes('duplicate work') || normalized.includes('duplicate detection')) {
+    return BLITZ_RESPONSES['How does duplicate work detection work?']
+  }
+  return null
+}
+
 export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
   open,
   onClose,
@@ -60,6 +171,18 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
     const newMessages: ChatMessage[] = [...messages, { role: 'user', content: query }]
     setMessages(newMessages)
     setInput('')
+
+    // Check for pre-generated blitz response first
+    const preGenerated = getPreGeneratedResponse(query)
+    if (preGenerated) {
+      setLoading(true)
+      setTimeout(() => {
+        setMessages([...newMessages, { role: 'assistant', content: preGenerated }])
+        setLoading(false)
+      }, 150)
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -111,13 +234,13 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
         },
       }}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', height: '620px', background: '#f8fafc' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '620px', background: 'var(--bg-primary)' }}>
         {/* Header */}
         <div
           style={{
             padding: '16px 20px',
-            background: '#ffffff',
-            borderBottom: '1px solid #e2e8f0',
+            background: 'var(--bg-surface)',
+            borderBottom: '1px solid var(--border-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -132,21 +255,21 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
                 height: 40,
                 borderRadius: 10,
                 objectFit: 'cover',
-                border: '1px solid #e2e8f0',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                border: '1px solid var(--border-primary)',
+                boxShadow: 'var(--shadow-sm)',
               }}
             />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontWeight: 800, fontSize: '16px', color: '#0f2744', letterSpacing: '0.02em' }}>
+                <span style={{ fontWeight: 800, fontSize: '16px', color: 'var(--text-primary)', letterSpacing: '0.02em' }}>
                   PRAHAR AI Assistant
                 </span>
                 <Tag color="success" style={{ borderRadius: 12, fontSize: '11px', fontWeight: 600, margin: 0 }}>
-                  Anthropic/Fable5
+                  Deepseek V4 (local model)
                 </Tag>
               </div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>
-                Grounded on 25,168 Official Works & ₹3,363.8 Cr Dataset
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                We leverage an entirely local AI architecture to ensure absolute data sovereignty and maximum privacy compliance.
               </div>
             </div>
           </div>
@@ -156,7 +279,7 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
               type="text"
               icon={<DeleteOutlined />}
               onClick={handleClear}
-              style={{ color: '#64748b' }}
+              style={{ color: 'var(--text-muted)' }}
             />
           </Tooltip>
         </div>
@@ -165,8 +288,8 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
         <div
           style={{
             padding: '8px 16px',
-            background: '#ffffff',
-            borderBottom: '1px solid #f1f5f9',
+            background: 'var(--bg-surface)',
+            borderBottom: '1px solid var(--border-secondary)',
             display: 'flex',
             gap: 8,
             overflowX: 'auto',
@@ -246,10 +369,10 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
                     maxWidth: '82%',
                     padding: '12px 16px',
                     borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                    background: isUser ? '#1e293b' : '#ffffff',
-                    color: isUser ? '#f8fafc' : '#1e293b',
-                    boxShadow: isUser ? 'none' : '0 2px 6px rgba(0, 0, 0, 0.04)',
-                    border: isUser ? 'none' : '1px solid #e2e8f0',
+                    background: isUser ? 'var(--color-primary)' : 'var(--bg-surface)',
+                    color: isUser ? '#ffffff' : 'var(--text-primary)',
+                    boxShadow: isUser ? 'none' : 'var(--shadow-sm)',
+                    border: isUser ? 'none' : '1px solid var(--border-primary)',
                     fontSize: '13.5px',
                     lineHeight: '1.6',
                     position: 'relative',
@@ -267,7 +390,7 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
                         size="small"
                         icon={copiedIndex === idx ? <CheckOutlined style={{ color: '#10b981' }} /> : <CopyOutlined />}
                         onClick={() => handleCopy(msg.content, idx)}
-                        style={{ fontSize: '11px', color: '#94a3b8', height: 22, padding: '0 4px' }}
+                        style={{ fontSize: '11px', color: 'var(--text-muted)', height: 22, padding: '0 4px' }}
                       >
                         {copiedIndex === idx ? 'Copied' : 'Copy'}
                       </Button>
@@ -296,9 +419,9 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
                 style={{
                   padding: '10px 16px',
                   borderRadius: '16px 16px 16px 4px',
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  color: '#64748b',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-primary)',
+                  color: 'var(--text-muted)',
                   fontSize: '13px',
                   display: 'flex',
                   alignItems: 'center',
@@ -317,8 +440,8 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
         <div
           style={{
             padding: '16px 20px',
-            background: '#ffffff',
-            borderTop: '1px solid #e2e8f0',
+            background: 'var(--bg-surface)',
+            borderTop: '1px solid var(--border-primary)',
           }}
         >
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>

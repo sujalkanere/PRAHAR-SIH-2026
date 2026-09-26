@@ -149,14 +149,38 @@ async def scope_constituency_filter(db: AsyncSession, user: User | None) -> list
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail={"code": "FORBIDDEN", "message": "User scope is not configured"}
             )
+        sv = str(user.scope_value).strip()
+        from sqlalchemy import func
+        from app.models import Work
+
         if scope == "STATE":
-            rows = (await db.execute(select(Constituency.id).where(Constituency.state == user.scope_value))).scalars().all()
+            rows = (await db.execute(
+                select(Constituency.id).where(
+                    func.lower(Constituency.state) == func.lower(sv)
+                )
+            )).scalars().all()
             return list(rows)
         if scope == "DISTRICT":
-            rows = (await db.execute(select(Constituency.id).where(Constituency.district == user.scope_value))).scalars().all()
-            return list(rows)
+            c_rows = (await db.execute(
+                select(Constituency.id).where(
+                    Constituency.district.ilike(f"%{sv}%") | Constituency.name.ilike(f"%{sv}%")
+                )
+            )).scalars().all()
+            w_c_rows = (await db.execute(
+                select(Work.constituency_id).where(
+                    Work.implementing_agency.ilike(f"%{sv}%")
+                ).distinct()
+            )).scalars().all()
+            combined = list(set(list(c_rows) + list(w_c_rows)))
+            return combined if combined else list(c_rows)
         if scope == "CONSTITUENCY":
-            rows = (await db.execute(select(Constituency.id).where(Constituency.name == user.scope_value))).scalars().all()
+            rows = (await db.execute(
+                select(Constituency.id).where(
+                    Constituency.name.ilike(f"%{sv}%") |
+                    Constituency.district.ilike(f"%{sv}%") |
+                    Constituency.mp_name.ilike(f"%{sv}%")
+                )
+            )).scalars().all()
             return list(rows)
     return []
 
@@ -173,11 +197,17 @@ def ensure_scoped(user: User, constituency: Constituency) -> None:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail={"code": "FORBIDDEN", "message": "User scope is not configured"}
             )
-        if scope == "STATE" and constituency.state == user.scope_value:
+        sv = str(user.scope_value).strip().lower()
+        c_state = (constituency.state or "").strip().lower()
+        c_dist = (constituency.district or "").strip().lower()
+        c_name = (constituency.name or "").strip().lower()
+        c_mp = (constituency.mp_name or "").strip().lower()
+
+        if scope == "STATE" and (c_state == sv or sv in c_state):
             return
-        if scope == "DISTRICT" and constituency.district == user.scope_value:
+        if scope == "DISTRICT" and (sv in c_dist or sv in c_name or sv in c_mp or c_dist == sv):
             return
-        if scope == "CONSTITUENCY" and constituency.name == user.scope_value:
+        if scope == "CONSTITUENCY" and (sv in c_name or sv in c_dist or sv in c_mp):
             return
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail={
         "code": "FORBIDDEN", "message": "Insufficient permissions for this scope"})

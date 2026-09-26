@@ -186,25 +186,25 @@ export const ConstituencyDetailPage: React.FC = () => {
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate(-1)}
-            style={{ background: '#ffffff', borderColor: '#cbd5e1', color: '#334155' }}
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}
           >
             Back
           </Button>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Title level={3} style={{ color: '#0f172a', margin: 0, fontFamily: 'Outfit, sans-serif' }}>
+              <Title level={3} style={{ color: 'var(--text-primary)', margin: 0, fontFamily: 'Outfit, sans-serif' }}>
                 {c.name || 'Constituency'} Constituency
               </Title>
               <RiskBadge tier={riskTier} score={riskScore} showScore />
             </div>
-            <Text style={{ color: '#475569', fontSize: '13px' }}>
+            <Text style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
               {c.district || c.name || 'District'} &bull; {c.state || 'State'} &bull; MP: {c.mp_name || 'N/A'}
             </Text>
           </div>
         </Space>
 
         <Space align="center" size={12}>
-          <span style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>Financial Year:</span>
+          <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Financial Year:</span>
           <Select
             value={selectedFy}
             onChange={(v) => setSelectedFy(v)}
@@ -273,14 +273,14 @@ export const ConstituencyDetailPage: React.FC = () => {
                 <span>6-Dimension Risk Radar Profile</span>
               </Space>
             }
-            style={{ height: '100%', borderRadius: 12, border: '1px solid #e2e8f0', background: '#ffffff' }}
+            style={{ height: '100%', borderRadius: 12, border: '1px solid var(--border-primary)', background: 'var(--bg-surface)' }}
           >
             <div style={{ height: 320, width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radar}>
-                  <PolarGrid stroke="#e2e8f0" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#475569', fontSize: 11, fontWeight: 500 }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                  <PolarGrid stroke="var(--border-primary)" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 500 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
                   <Radar
                     name="Risk Contribution"
                     dataKey="value"
@@ -289,7 +289,7 @@ export const ConstituencyDetailPage: React.FC = () => {
                     fillOpacity={0.25}
                   />
                   <RechartsTooltip
-                    contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 8, color: '#0f172a' }}
+                    contentStyle={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-primary)', borderRadius: 8, color: 'var(--text-primary)' }}
                   />
                 </RadarChart>
               </ResponsiveContainer>
@@ -322,17 +322,17 @@ export const ConstituencyDetailPage: React.FC = () => {
                 />
               </div>
             }
-            style={{ height: '100%', borderRadius: 12, border: '1px solid #e2e8f0', background: '#ffffff' }}
+            style={{ height: '100%', borderRadius: 12, border: '1px solid var(--border-primary)', background: 'var(--bg-surface)' }}
           >
             <div style={{ height: 320, width: '100%' }}>
               {effectiveChartType === 'bar' && timelineData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={timelineData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis dataKey="fy" stroke="#475569" fontSize={12} />
-                    <YAxis stroke="#475569" fontSize={12} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-secondary)" vertical={false} />
+                    <XAxis dataKey="fy" stroke="var(--text-muted)" fontSize={12} />
+                    <YAxis stroke="var(--text-muted)" fontSize={12} />
                     <RechartsTooltip
-                      contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 8, color: '#0f172a' }}
+                      contentStyle={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-primary)', borderRadius: 8, color: 'var(--text-primary)' }}
                       formatter={(val: any) => [`₹${val} L`, '']}
                     />
                     <Legend wrapperStyle={{ paddingTop: 10 }} />
@@ -357,7 +357,7 @@ export const ConstituencyDetailPage: React.FC = () => {
                       ))}
                     </Pie>
                     <RechartsTooltip
-                      contentStyle={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 8, color: '#0f172a' }}
+                      contentStyle={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-primary)', borderRadius: 8, color: 'var(--text-primary)' }}
                       formatter={(val: any) => [`₹${val} Lakhs`, '']}
                     />
                     <Legend wrapperStyle={{ paddingTop: 8 }} />
@@ -378,7 +378,7 @@ export const ConstituencyDetailPage: React.FC = () => {
       <DuplicatePairsCard pairs={data.duplicate_pairs || []} />
 
       {/* Works & Anomalies Tabs */}
-      <Card style={{ borderRadius: 12, border: '1px solid #e2e8f0', background: '#ffffff' }}>
+      <Card style={{ borderRadius: 12, border: '1px solid var(--border-primary)', background: 'var(--bg-surface)' }}>
         <Tabs
           defaultActiveKey="works"
           items={[

@@ -20,6 +20,7 @@ import {
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
 import {
   AreaChart,
   Area,
@@ -170,6 +171,7 @@ const CATEGORY_COLORS: Record<string, string> = Object.fromEntries(
 export const NationalDashboardPage: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { isDark } = useTheme()
   const [data, setData] = useState<NationalSummaryData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -346,32 +348,95 @@ export const NationalDashboardPage: React.FC = () => {
 
 
 
+  const isScoped = user?.role === 'ROLE_DISTRICT' || user?.role === 'ROLE_MP'
+  const dashboardTitle =
+    user?.role === 'ROLE_DISTRICT'
+      ? `District Intelligence & Risk Overview • ${user.scope_value || 'Pune'}`
+      : user?.role === 'ROLE_MP'
+      ? `Parliamentary Constituency Dashboard • ${user.scope_value || 'Pune'}`
+      : user?.role === 'ROLE_STATE_NODAL'
+      ? `State Intelligence Overview • ${user.scope_value || 'Maharashtra'}`
+      : 'National Risk & Anomaly Overview'
+
+  const dashboardSubtitle =
+    user?.role === 'ROLE_DISTRICT'
+      ? `MPLADS project surveillance and district authority expenditure audit for ${user.scope_value || 'Pune'}`
+      : user?.role === 'ROLE_MP'
+      ? `MPLADS parliamentary monitoring, work sanctions, and anomaly intelligence for ${user.scope_value || 'Pune'}`
+      : "A bird's-eye view of local data across parliamentary districts"
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* 1. Header Row (Reverted to original title & subtitle with MPLADS ACTIVE tag) */}
+      {/* 1. Header Row */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Title
               level={2}
               style={{
-                color: '#0f172a',
+                color: 'var(--text-primary)',
                 margin: 0,
                 fontFamily: 'Outfit, -apple-system, sans-serif',
                 fontWeight: 700,
                 letterSpacing: '-0.025em',
               }}
             >
-              National Risk & Anomaly Overview
+              {dashboardTitle}
             </Title>
+            {isScoped && (
+              <Tag color="cyan" style={{ fontWeight: 600, fontSize: '12px', padding: '2px 8px' }}>
+                {user?.scope_value || 'Pune'} Scoped
+              </Tag>
+            )}
           </div>
-          <Text style={{ color: '#64748b', fontSize: '13.5px' }}>
-            A bird's-eye view of local data across parliamentary districts
+          <Text style={{ color: 'var(--text-muted)', fontSize: '13.5px' }}>
+            {dashboardSubtitle}
           </Text>
         </div>
-
-
       </div>
+
+      {/* Scoped Quick Action Banner */}
+      {isScoped && (
+        <Card
+          style={{
+            background: isDark
+              ? 'linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(16, 185, 129, 0.12) 100%)'
+              : 'linear-gradient(135deg, #eff6ff 0%, #ecfdf5 100%)',
+            border: isDark ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid #bfdbfe',
+            borderRadius: 12,
+          }}
+          bodyStyle={{ padding: '14px 20px' }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <Space size={12} align="center">
+              <Tag color="blue" style={{ fontSize: '12px', padding: '2px 8px', fontWeight: 600 }}>
+                {user?.role === 'ROLE_DISTRICT' ? 'DISTRICT AUTHORITY' : 'MEMBER OF PARLIAMENT'}
+              </Tag>
+              <Text strong style={{ color: 'var(--text-primary)', fontSize: '14px' }}>
+                {user?.scope_value || 'Pune'} Jurisdiction — 107 Works, ₹14.7 Cr Allocation Active
+              </Text>
+            </Space>
+            <Space size={8}>
+              <Button
+                type="primary"
+                size="small"
+                icon={<ArrowRightOutlined />}
+                onClick={() => navigate('/constituency/5b79b1d0370a4bdaa94de6a530987de7')}
+                style={{ borderRadius: 6, fontWeight: 600 }}
+              >
+                Constituency Deep-Dive &bull; Pune Profile
+              </Button>
+              <Button
+                size="small"
+                onClick={() => navigate('/state?state=Maharashtra')}
+                style={{ borderRadius: 6 }}
+              >
+                State Overview
+              </Button>
+            </Space>
+          </div>
+        </Card>
+      )}
 
       {/* 2. Five Colorful KPI Cards Row */}
       <Row gutter={[16, 16]}>
@@ -454,19 +519,19 @@ export const NationalDashboardPage: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <GlobalOutlined style={{ color: '#10b981' }} />
-                  <span style={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
+                  <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>
                     India Risk Choropleth Map
                   </span>
                 </div>
-                <span style={{ fontSize: '12px', color: '#64748b' }}>Click state to view breakdown</span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Click state to view breakdown</span>
               </div>
             }
             styles={{ body: { padding: 12 } }}
             style={{
               borderRadius: 18,
-              border: '1px solid #edf0f2',
-              background: '#ffffff',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.02)',
+              border: '1px solid var(--border-primary)',
+              background: 'var(--bg-surface)',
+              boxShadow: 'var(--shadow-sm)',
             }}
           >
             <IndiaMap
@@ -483,7 +548,7 @@ export const NationalDashboardPage: React.FC = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <BarChartOutlined style={{ color: '#ef4444' }} />
-                  <span style={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>
+                  <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>
                     Top-10 Highest Risk Constituencies
                   </span>
                 </div>
@@ -495,9 +560,9 @@ export const NationalDashboardPage: React.FC = () => {
             styles={{ body: { padding: '20px 16px 16px 16px' } }}
             style={{
               borderRadius: 18,
-              border: '1px solid #edf0f2',
-              background: '#ffffff',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.02)',
+              border: '1px solid var(--border-primary)',
+              background: 'var(--bg-surface)',
+              boxShadow: 'var(--shadow-sm)',
               height: '100%',
             }}
           >
@@ -505,21 +570,22 @@ export const NationalDashboardPage: React.FC = () => {
               {barData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 45, left: 80, bottom: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                    <XAxis type="number" domain={[0, 100]} stroke="#64748b" tick={{ fill: '#64748b', fontSize: 11 }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e2c45' : '#f1f5f9'} horizontal={false} />
+                    <XAxis type="number" domain={[0, 100]} stroke="var(--text-muted)" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
                     <YAxis
                       dataKey="name"
                       type="category"
-                      stroke="#64748b"
-                      tick={{ fill: '#334155', fontSize: 11, fontWeight: 500 }}
+                      stroke="var(--text-muted)"
+                      tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontWeight: 500 }}
                       width={120}
                     />
                     <RechartsTooltip
                       contentStyle={{
-                        background: '#ffffff',
-                        borderColor: '#edf0f2',
+                        background: 'var(--bg-surface-elevated)',
+                        borderColor: 'var(--border-primary)',
+                        color: 'var(--text-primary)',
                         borderRadius: 12,
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                        boxShadow: 'var(--shadow-lg)',
                       }}
                       formatter={(val: any, _name: any, props: any) => [
                         `${val} / 100 (${props.payload.tier})`,
@@ -532,7 +598,7 @@ export const NationalDashboardPage: React.FC = () => {
                       label={{
                         position: 'right',
                         formatter: (v: any) => `${v}`,
-                        fill: '#1e293b',
+                        fill: isDark ? '#f8fafc' : '#1e293b',
                         fontSize: 12,
                         fontWeight: 700,
                       }}
@@ -581,9 +647,9 @@ export const NationalDashboardPage: React.FC = () => {
           <Card
             style={{
               borderRadius: 18,
-              border: '1px solid #edf0f2',
-              background: '#ffffff',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.02)',
+              border: '1px solid var(--border-primary)',
+              background: 'var(--bg-surface)',
+              boxShadow: 'var(--shadow-sm)',
               height: '100%',
             }}
             styles={{ body: { padding: '24px 24px 20px 24px' } }}
@@ -591,10 +657,10 @@ export const NationalDashboardPage: React.FC = () => {
             {/* Header with Title + Legend Statistics */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
               <div>
-                <div style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
                   Fund Flow & Cumulative Trajectory
                 </div>
-                <div style={{ fontSize: '13px', color: '#64748b', marginTop: 2 }}>
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 2 }}>
                   Total allocation ₹{totalAllocatedCr.toLocaleString('en-IN')} Cr, with ₹{totalExpCr.toLocaleString('en-IN')} Cr disbursed
                 </div>
               </div>
@@ -602,30 +668,30 @@ export const NationalDashboardPage: React.FC = () => {
               {/* Right Side Stats */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#64748b' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: 'var(--text-muted)' }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} />
                     <span>Allocated</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                    <span style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>
+                    <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>
                       ₹{totalAllocatedCr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} Cr
                     </span>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: totalAllocatedCr > 0 ? '#15803d' : '#64748b', background: totalAllocatedCr > 0 ? '#dcfce7' : '#f1f5f9', padding: '1px 6px', borderRadius: 8 }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: totalAllocatedCr > 0 ? '#15803d' : 'var(--text-muted)', background: totalAllocatedCr > 0 ? (isDark ? 'rgba(16, 185, 129, 0.2)' : '#dcfce7') : 'var(--bg-secondary)', padding: '1px 6px', borderRadius: 8 }}>
                       {totalAllocatedCr > 0 ? '+100%' : '0%'}
                     </span>
                   </div>
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#64748b' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: 'var(--text-muted)' }}>
                     <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#94a3b8' }} />
                     <span>Expenditure</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                    <span style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>
+                    <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>
                       ₹{totalExpCr.toLocaleString('en-IN', { maximumFractionDigits: 0 })} Cr
                     </span>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: totalExpCr > 0 ? '#0369a1' : '#64748b', background: totalExpCr > 0 ? '#e0f2fe' : '#f1f5f9', padding: '1px 6px', borderRadius: 8 }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: totalExpCr > 0 ? (isDark ? '#38bdf8' : '#0369a1') : 'var(--text-muted)', background: totalExpCr > 0 ? (isDark ? 'rgba(56, 189, 248, 0.2)' : '#e0f2fe') : 'var(--bg-secondary)', padding: '1px 6px', borderRadius: 8 }}>
                       {expRatePct}%
                     </span>
                   </div>
@@ -640,35 +706,36 @@ export const NationalDashboardPage: React.FC = () => {
                   <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorReleases" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={isDark ? 0.35 : 0.25} />
                         <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                       </linearGradient>
                       <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.2} />
+                        <stop offset="5%" stopColor="#94a3b8" stopOpacity={isDark ? 0.3 : 0.2} />
                         <stop offset="95%" stopColor="#94a3b8" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e2c45' : '#f1f5f9'} vertical={false} />
                     <XAxis
                       dataKey="period"
-                      stroke="#94a3b8"
-                      tick={{ fill: '#64748b', fontSize: 12 }}
+                      stroke="var(--text-muted)"
+                      tick={{ fill: 'var(--text-muted)', fontSize: 12 }}
                       axisLine={false}
                       tickLine={false}
                     />
                     <YAxis
-                      stroke="#94a3b8"
-                      tick={{ fill: '#64748b', fontSize: 11 }}
+                      stroke="var(--text-muted)"
+                      tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={(v) => `₹${v}Cr`}
                     />
                     <RechartsTooltip
                       contentStyle={{
-                        background: '#ffffff',
-                        border: '1px solid #edf0f2',
+                        background: 'var(--bg-surface-elevated)',
+                        border: '1px solid var(--border-primary)',
+                        color: 'var(--text-primary)',
                         borderRadius: 12,
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                        boxShadow: 'var(--shadow-lg)',
                       }}
                       formatter={(val: any, name: string) => [
                         `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Cr`,
@@ -707,9 +774,9 @@ export const NationalDashboardPage: React.FC = () => {
           <Card
             style={{
               borderRadius: 18,
-              border: '1px solid #edf0f2',
-              background: '#ffffff',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.02)',
+              border: '1px solid var(--border-primary)',
+              background: 'var(--bg-surface)',
+              boxShadow: 'var(--shadow-sm)',
               height: '100%',
             }}
             styles={{ body: { padding: '24px 24px 20px 24px' } }}
@@ -717,19 +784,19 @@ export const NationalDashboardPage: React.FC = () => {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <div>
-                <div style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
+                <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
                   Work Execution Pipeline
                 </div>
-                <div style={{ fontSize: '13px', color: '#64748b', marginTop: 2 }}>
+                <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: 2 }}>
                   Lifecycle conversion from recommended works to completion
                 </div>
               </div>
 
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '11px', color: '#64748b' }}>Completion Rate</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Completion Rate</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                  <span style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>{completionRatePct}%</span>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: totalWorks > 0 ? '#15803d' : '#64748b', background: totalWorks > 0 ? '#dcfce7' : '#f1f5f9', padding: '1px 6px', borderRadius: 8 }}>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>{completionRatePct}%</span>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: totalWorks > 0 ? '#15803d' : 'var(--text-muted)', background: totalWorks > 0 ? (isDark ? 'rgba(16, 185, 129, 0.2)' : '#dcfce7') : 'var(--bg-secondary)', padding: '1px 6px', borderRadius: 8 }}>
                     {totalWorks > 0 ? '+6.2%' : '0%'}
                   </span>
                 </div>
@@ -745,12 +812,12 @@ export const NationalDashboardPage: React.FC = () => {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={funnelData} layout="vertical" margin={{ top: 10, right: 30, left: 30, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDark ? '#1e2c45' : '#f1f5f9'} />
                     <XAxis type="number" hide />
-                    <YAxis dataKey="stage" type="category" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 12, fontWeight: 500 }} />
+                    <YAxis dataKey="stage" type="category" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-secondary)', fontSize: 12, fontWeight: 500 }} />
                     <RechartsTooltip
                       formatter={(val: any, _name: any, item: any) => [`${val.toLocaleString('en-IN')} works (${item.payload.rate}%)`, 'Count']}
-                      contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0' }}
+                      contentStyle={{ borderRadius: 8, border: '1px solid var(--border-primary)', background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)' }}
                     />
                     <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={24}>
                       {funnelData.map((entry, index) => (
@@ -787,10 +854,10 @@ export const NationalDashboardPage: React.FC = () => {
                 <AlertOutlined />
               </div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '15px', color: '#0f172a', lineHeight: 1.2 }}>
+                <div style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', lineHeight: 1.2 }}>
                   Anomaly Distribution by Detection Category
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 400 }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 400 }}>
                   Multidimensional risk intelligence across all 8 statutory MPLADS detector engines
                 </div>
               </div>
@@ -804,9 +871,9 @@ export const NationalDashboardPage: React.FC = () => {
                   fontWeight: 700,
                   fontSize: '12px',
                   padding: '3px 12px',
-                  background: '#f0f9ff',
-                  color: '#0284c7',
-                  border: '1px solid #bae6fd',
+                  background: isDark ? 'rgba(56, 189, 248, 0.15)' : '#f0f9ff',
+                  color: isDark ? '#38bdf8' : '#0284c7',
+                  border: isDark ? '1px solid rgba(56, 189, 248, 0.3)' : '1px solid #bae6fd',
                 }}
               >
                 {totalAnomaliesCount.toLocaleString('en-IN')} Flagged Alerts
@@ -818,9 +885,9 @@ export const NationalDashboardPage: React.FC = () => {
                   fontWeight: 600,
                   fontSize: '11.5px',
                   padding: '3px 10px',
-                  background: '#f8fafc',
-                  color: '#475569',
-                  border: '1px solid #e2e8f0',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid var(--border-primary)',
                 }}
               >
                 {totalWorks > 0 ? `${((totalAnomaliesCount / totalWorks) * 100).toFixed(1)}% Alert Rate` : 'Official Baseline'}
@@ -830,7 +897,8 @@ export const NationalDashboardPage: React.FC = () => {
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  background: '#f1f5f9',
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-primary)',
                   borderRadius: 20,
                   padding: 2,
                   marginLeft: 4,
@@ -842,12 +910,12 @@ export const NationalDashboardPage: React.FC = () => {
                     padding: '4px 12px',
                     borderRadius: 16,
                     border: 'none',
-                    background: chartViewMode === 'donut' ? '#ffffff' : 'transparent',
-                    color: chartViewMode === 'donut' ? '#0f172a' : '#64748b',
+                    background: chartViewMode === 'donut' ? 'var(--bg-surface)' : 'transparent',
+                    color: chartViewMode === 'donut' ? 'var(--text-primary)' : 'var(--text-muted)',
                     fontWeight: chartViewMode === 'donut' ? 600 : 500,
                     fontSize: '11.5px',
                     cursor: 'pointer',
-                    boxShadow: chartViewMode === 'donut' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                    boxShadow: chartViewMode === 'donut' ? 'var(--shadow-sm)' : 'none',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 5,
@@ -862,12 +930,12 @@ export const NationalDashboardPage: React.FC = () => {
                     padding: '4px 12px',
                     borderRadius: 16,
                     border: 'none',
-                    background: chartViewMode === 'bar' ? '#ffffff' : 'transparent',
-                    color: chartViewMode === 'bar' ? '#0f172a' : '#64748b',
+                    background: chartViewMode === 'bar' ? 'var(--bg-surface)' : 'transparent',
+                    color: chartViewMode === 'bar' ? 'var(--text-primary)' : 'var(--text-muted)',
                     fontWeight: chartViewMode === 'bar' ? 600 : 500,
                     fontSize: '11.5px',
                     cursor: 'pointer',
-                    boxShadow: chartViewMode === 'bar' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                    boxShadow: chartViewMode === 'bar' ? 'var(--shadow-sm)' : 'none',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 5,
@@ -882,9 +950,9 @@ export const NationalDashboardPage: React.FC = () => {
         }
         style={{
           borderRadius: 20,
-          border: '1px solid #edf0f2',
-          background: '#ffffff',
-          boxShadow: '0 2px 10px rgba(0, 0, 0, 0.02)',
+          border: '1px solid var(--border-primary)',
+          background: 'var(--bg-surface)',
+          boxShadow: 'var(--shadow-sm)',
         }}
         styles={{ body: { padding: '24px 28px' } }}
       >
@@ -893,6 +961,7 @@ export const NationalDashboardPage: React.FC = () => {
             {/* Left Column: Interactive Donut with Live Metric Center */}
             <Col xs={24} lg={10} xl={9}>
               <div
+                className="anomaly-donut-stage"
                 style={{
                   position: 'relative',
                   width: '100%',
@@ -900,9 +969,11 @@ export const NationalDashboardPage: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  background: 'radial-gradient(circle at center, #f8fafc 0%, #ffffff 70%)',
+                  background: isDark
+                    ? 'radial-gradient(circle at center, #131d33 0%, #0c1322 75%)'
+                    : 'radial-gradient(circle at center, #f8fafc 0%, #ffffff 70%)',
                   borderRadius: 20,
-                  border: '1px solid #f1f5f9',
+                  border: `1px solid ${isDark ? '#1e2c45' : '#f1f5f9'}`,
                 }}
               >
                 <ResponsiveContainer width="100%" height="100%">
@@ -934,7 +1005,7 @@ export const NationalDashboardPage: React.FC = () => {
                           <Cell
                             key={`cell-${entry.key}`}
                             fill={`url(#grad-${entry.key})`}
-                            stroke={isSelected ? '#0f172a' : '#ffffff'}
+                            stroke={isSelected ? (isDark ? '#38bdf8' : '#0f172a') : (isDark ? '#10192d' : '#ffffff')}
                             strokeWidth={isSelected ? 2.5 : 2}
                             style={{
                               filter: isSelected ? `drop-shadow(0 0 10px ${entry.color}70)` : 'none',
@@ -953,11 +1024,11 @@ export const NationalDashboardPage: React.FC = () => {
                           return (
                             <div
                               style={{
-                                background: '#ffffff',
+                                background: 'var(--bg-surface-elevated)',
                                 border: `1px solid ${item.color}40`,
                                 borderRadius: 14,
                                 padding: '12px 16px',
-                                boxShadow: '0 12px 32px rgba(15, 23, 42, 0.12)',
+                                boxShadow: 'var(--shadow-lg)',
                                 minWidth: 230,
                               }}
                             >
@@ -971,12 +1042,12 @@ export const NationalDashboardPage: React.FC = () => {
                                     boxShadow: `0 0 6px ${item.color}80`,
                                   }}
                                 />
-                                <span style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a' }}>
+                                <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>
                                   {item.name}
                                 </span>
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-                                <span style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', fontFamily: 'Outfit, sans-serif' }}>
+                                <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
                                   {item.value.toLocaleString('en-IN')}
                                 </span>
                                 <span
@@ -992,7 +1063,7 @@ export const NationalDashboardPage: React.FC = () => {
                                   {item.percentage}% share
                                 </span>
                               </div>
-                              <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.35, marginTop: 4 }}>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.35, marginTop: 4 }}>
                                 {item.description}
                               </div>
                             </div>
@@ -1040,7 +1111,7 @@ export const NationalDashboardPage: React.FC = () => {
                       >
                         {activeItem.shortLabel}
                       </span>
-                      <span style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', lineHeight: 1.1, fontFamily: 'Outfit, sans-serif' }}>
+                      <span style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1, fontFamily: 'Outfit, sans-serif' }}>
                         {activeItem.value.toLocaleString('en-IN')}
                       </span>
                       <span style={{ fontSize: '11px', fontWeight: 700, color: activeItem.color, marginTop: 2 }}>
@@ -1054,23 +1125,23 @@ export const NationalDashboardPage: React.FC = () => {
                           width: 30,
                           height: 30,
                           borderRadius: '50%',
-                          background: '#f0f9ff',
+                          background: isDark ? '#16223b' : '#f0f9ff',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           marginBottom: 3,
-                          border: '1px solid #bae6fd',
+                          border: isDark ? '1px solid #1e2c45' : '1px solid #bae6fd',
                         }}
                       >
                         <AlertOutlined style={{ color: '#0284c7', fontSize: '14px' }} />
                       </div>
-                      <span style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', lineHeight: 1.1, fontFamily: 'Outfit, sans-serif' }}>
+                      <span style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1, fontFamily: 'Outfit, sans-serif' }}>
                         {totalAnomaliesCount.toLocaleString('en-IN')}
                       </span>
-                      <span style={{ fontSize: '10.5px', color: '#64748b', fontWeight: 600 }}>
+                      <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
                         Total Flagged
                       </span>
-                      <span style={{ fontSize: '9.5px', color: '#94a3b8' }}>
+                      <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>
                         {totalWorks > 0 ? `across ${totalWorks.toLocaleString('en-IN')} works` : 'Official Baseline'}
                       </span>
                     </>
@@ -1085,7 +1156,7 @@ export const NationalDashboardPage: React.FC = () => {
                 {/* Filter Pills */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', marginRight: 4 }}>
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginRight: 4 }}>
                       Filter Engine:
                     </span>
                     {(['all', 'financial', 'execution'] as const).map((mode) => {
@@ -1100,9 +1171,11 @@ export const NationalDashboardPage: React.FC = () => {
                           style={{
                             padding: '4px 12px',
                             borderRadius: 14,
-                            border: `1px solid ${isActive ? '#0284c7' : '#e2e8f0'}`,
-                            background: isActive ? '#f0f9ff' : '#ffffff',
-                            color: isActive ? '#0284c7' : '#475569',
+                            border: `1px solid ${isActive ? '#0284c7' : 'var(--border-primary)'}`,
+                            background: isActive
+                              ? (isDark ? 'rgba(56, 189, 248, 0.2)' : '#f0f9ff')
+                              : 'var(--bg-secondary)',
+                            color: isActive ? (isDark ? '#38bdf8' : '#0284c7') : 'var(--text-secondary)',
                             fontSize: '11.5px',
                             fontWeight: isActive ? 700 : 500,
                             cursor: 'pointer',
@@ -1115,7 +1188,7 @@ export const NationalDashboardPage: React.FC = () => {
                     })}
                   </div>
 
-                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                     Hover any category card to highlight donut slice
                   </span>
                 </div>
@@ -1133,9 +1206,11 @@ export const NationalDashboardPage: React.FC = () => {
                         style={{
                           padding: '12px 14px',
                           borderRadius: 14,
-                          background: isHovered ? item.bgTint : '#f8fafc',
-                          border: `1.5px solid ${isHovered ? item.color : '#edf0f2'}`,
-                          boxShadow: isHovered ? `0 8px 20px ${item.color}18` : '0 1px 3px rgba(0,0,0,0.02)',
+                          background: isHovered
+                            ? (isDark ? `${item.color}25` : item.bgTint)
+                            : (isDark ? '#0c1322' : '#f8fafc'),
+                          border: `1.5px solid ${isHovered ? item.color : (isDark ? '#1e2c45' : '#edf0f2')}`,
+                          boxShadow: isHovered ? `0 8px 20px ${item.color}18` : 'var(--shadow-sm)',
                           cursor: 'pointer',
                           transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
                           transform: isHovered ? 'translateY(-2px)' : 'none',
@@ -1168,7 +1243,7 @@ export const NationalDashboardPage: React.FC = () => {
                               style={{
                                 fontSize: '12.5px',
                                 fontWeight: 600,
-                                color: isHovered ? '#0f172a' : '#334155',
+                                color: isHovered ? 'var(--text-primary)' : 'var(--text-secondary)',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
@@ -1186,9 +1261,9 @@ export const NationalDashboardPage: React.FC = () => {
                               fontSize: '9.5px',
                               fontWeight: 700,
                               padding: '1px 5px',
-                              background: item.severity === 'CRITICAL' ? '#fef2f2' : item.severity === 'HIGH' ? '#fff7ed' : '#f0fdfa',
-                              color: item.severity === 'CRITICAL' ? '#b91c1c' : item.severity === 'HIGH' ? '#ea580c' : '#0d9488',
-                              borderColor: item.severity === 'CRITICAL' ? '#fecaca' : item.severity === 'HIGH' ? '#fed7aa' : '#99f6e4',
+                              background: item.severity === 'CRITICAL' ? (isDark ? 'rgba(239, 68, 68, 0.2)' : '#fef2f2') : item.severity === 'HIGH' ? (isDark ? 'rgba(249, 115, 22, 0.2)' : '#fff7ed') : (isDark ? 'rgba(13, 148, 136, 0.2)' : '#f0fdfa'),
+                              color: item.severity === 'CRITICAL' ? (isDark ? '#f87171' : '#b91c1c') : item.severity === 'HIGH' ? (isDark ? '#fb923c' : '#ea580c') : (isDark ? '#2dd4bf' : '#0d9488'),
+                              borderColor: item.severity === 'CRITICAL' ? (isDark ? '#7f1d1d' : '#fecaca') : item.severity === 'HIGH' ? (isDark ? '#7c2d12' : '#fed7aa') : (isDark ? '#134e4a' : '#99f6e4'),
                             }}
                           >
                             {item.severity}
@@ -1198,10 +1273,10 @@ export const NationalDashboardPage: React.FC = () => {
                         {/* Metric Row: Count + Percentage */}
                         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                           <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                            <span style={{ fontSize: '17px', fontWeight: 800, color: '#0f172a', fontFamily: 'Outfit, sans-serif' }}>
+                            <span style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
                               {item.value.toLocaleString('en-IN')}
                             </span>
-                            <span style={{ fontSize: '11px', color: '#64748b' }}>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                               alerts
                             </span>
                           </div>
@@ -1225,7 +1300,7 @@ export const NationalDashboardPage: React.FC = () => {
                             width: '100%',
                             height: 4,
                             borderRadius: 2,
-                            background: '#e2e8f0',
+                            background: isDark ? '#1e2c45' : '#e2e8f0',
                             overflow: 'hidden',
                           }}
                         >
@@ -1244,7 +1319,7 @@ export const NationalDashboardPage: React.FC = () => {
                         <div
                           style={{
                             fontSize: '10.5px',
-                            color: '#64748b',
+                            color: 'var(--text-muted)',
                             lineHeight: 1.3,
                             display: '-webkit-box',
                             WebkitLineClamp: 1,
@@ -1275,8 +1350,10 @@ export const NationalDashboardPage: React.FC = () => {
                   style={{
                     padding: '12px 18px',
                     borderRadius: 14,
-                    background: isHovered ? item.bgTint : '#f8fafc',
-                    border: `1.5px solid ${isHovered ? item.color : '#edf0f2'}`,
+                    background: isHovered
+                      ? (isDark ? `${item.color}25` : item.bgTint)
+                      : (isDark ? '#0c1322' : '#f8fafc'),
+                    border: `1.5px solid ${isHovered ? item.color : (isDark ? '#1e2c45' : '#edf0f2')}`,
                     display: 'flex',
                     alignItems: 'center',
                     gap: 16,
@@ -1285,7 +1362,7 @@ export const NationalDashboardPage: React.FC = () => {
                     boxShadow: isHovered ? `0 6px 16px ${item.color}15` : 'none',
                   }}
                 >
-                  <div style={{ width: 24, fontSize: '13px', fontWeight: 800, color: '#94a3b8' }}>
+                  <div style={{ width: 24, fontSize: '13px', fontWeight: 800, color: 'var(--text-muted)' }}>
                     #{index + 1}
                   </div>
                   <div
@@ -1306,11 +1383,11 @@ export const NationalDashboardPage: React.FC = () => {
                     {item.icon}
                   </div>
                   <div style={{ width: 230, flexShrink: 0 }}>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{item.name}</div>
-                    <div style={{ fontSize: '11px', color: '#64748b' }}>{item.rule}</div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{item.name}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.rule}</div>
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ height: 8, borderRadius: 4, background: '#e2e8f0', overflow: 'hidden' }}>
+                    <div style={{ height: 8, borderRadius: 4, background: isDark ? '#1e2c45' : '#e2e8f0', overflow: 'hidden' }}>
                       <div
                         style={{
                           height: '100%',
@@ -1323,7 +1400,7 @@ export const NationalDashboardPage: React.FC = () => {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', minWidth: 90 }}>
-                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', fontFamily: 'Outfit, sans-serif' }}>
+                    <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
                       {item.value.toLocaleString('en-IN')}
                     </div>
                     <div style={{ fontSize: '11px', fontWeight: 700, color: item.color }}>

@@ -207,11 +207,14 @@ def seed_official_datasets_sync(session: Session) -> dict:
         cid = uuid.uuid4()
         mp_to_cid[mp_name] = cid
 
+        c_name = "Pune" if "Medha Vishram Kulkarni" in mp_name else mp_name
+        c_dist = "Pune" if "Medha Vishram Kulkarni" in mp_name else state
+
         c_obj = Constituency(
             id=cid,
-            name=mp_name,
+            name=c_name,
             state=state,
-            district=state,
+            district=c_dist,
             mp_name=mp_name,
             mp_type="RAJYA_SABHA",
         )

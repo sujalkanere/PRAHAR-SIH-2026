@@ -304,10 +304,10 @@ export const AdminPage: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <Title level={3} style={{ color: '#0f172a', margin: 0, fontFamily: 'Outfit, sans-serif' }}>
+          <Title level={3} style={{ color: 'var(--text-primary)', margin: 0, fontFamily: 'Outfit, sans-serif' }}>
             System Administration & AI Pipelines
           </Title>
-          <Text style={{ color: '#475569', fontSize: '13px' }}>
+          <Text style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
             Manage official 543 Lok Sabha dataset synchronization, ingest CSV records, and orchestrate ML detection pipelines
           </Text>
         </div>
@@ -358,7 +358,7 @@ export const AdminPage: React.FC = () => {
         {/* Detection Pipeline Orchestrator */}
         <Col xs={24} lg={12}>
           <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <Title level={4} style={{ margin: 0, color: '#0f172a', fontWeight: 700, letterSpacing: '-0.01em' }}>
+            <Title level={4} style={{ margin: 0, color: 'var(--text-primary)', fontWeight: 700, letterSpacing: '-0.01em' }}>
               AI Detection Engine
             </Title>
             <Tag color="blue" style={{ fontWeight: 700, borderRadius: 4, margin: 0, fontSize: '11px' }}>
@@ -386,25 +386,25 @@ export const AdminPage: React.FC = () => {
                 marginBottom: 20,
               }}
             >
-              <div style={{ background: '#f8fafc', padding: '10px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+              <div style={{ background: 'var(--bg-secondary)', padding: '10px', borderRadius: 8, border: '1px solid var(--border-primary)' }}>
                 <div style={{ color: '#dc2626', fontWeight: 600, fontSize: '12px' }}>1. Cost Overruns</div>
-                <div style={{ color: '#475569', fontSize: '11px' }}>Z-score + IsoForest</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Z-score + IsoForest</div>
               </div>
-              <div style={{ background: '#f8fafc', padding: '10px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+              <div style={{ background: 'var(--bg-secondary)', padding: '10px', borderRadius: 8, border: '1px solid var(--border-primary)' }}>
                 <div style={{ color: '#ea580c', fontWeight: 600, fontSize: '12px' }}>2. Delays / Stalled</div>
-                <div style={{ color: '#475569', fontSize: '11px' }}>90/180/365 Tiering</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>90/180/365 Tiering</div>
               </div>
-              <div style={{ background: '#f8fafc', padding: '10px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+              <div style={{ background: 'var(--bg-secondary)', padding: '10px', borderRadius: 8, border: '1px solid var(--border-primary)' }}>
                 <div style={{ color: '#9333ea', fontWeight: 600, fontSize: '12px' }}>3. Duplicates</div>
-                <div style={{ color: '#475569', fontSize: '11px' }}>MiniLM + Jaccard</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>MiniLM + Jaccard</div>
               </div>
-              <div style={{ background: '#f8fafc', padding: '10px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+              <div style={{ background: 'var(--bg-secondary)', padding: '10px', borderRadius: 8, border: '1px solid var(--border-primary)' }}>
                 <div style={{ color: '#ca8a04', fontWeight: 600, fontSize: '12px' }}>4. Suspicious Patterns</div>
-                <div style={{ color: '#475569', fontSize: '11px' }}>Clustering & Rush</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Clustering & Rush</div>
               </div>
-              <div style={{ background: '#f8fafc', padding: '10px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+              <div style={{ background: 'var(--bg-secondary)', padding: '10px', borderRadius: 8, border: '1px solid var(--border-primary)' }}>
                 <div style={{ color: '#2563eb', fontWeight: 600, fontSize: '12px' }}>5. Fund Utilization</div>
-                <div style={{ color: '#475569', fontSize: '11px' }}>Per-State Normalization</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>Per-State Normalization</div>
               </div>
             </div>
 
@@ -585,8 +585,8 @@ export const AdminPage: React.FC = () => {
           accept=".csv,.xlsx"
           beforeUpload={handleFileUpload}
           style={{
-            background: '#f8fafc',
-            borderColor: '#cbd5e1',
+            background: 'var(--bg-secondary)',
+            borderColor: 'var(--border-primary)',
             borderRadius: 12,
             padding: '24px',
           }}
@@ -594,10 +594,10 @@ export const AdminPage: React.FC = () => {
           <p className="ant-upload-drag-icon">
             <InboxOutlined style={{ color: '#2563eb', fontSize: 44 }} />
           </p>
-          <p style={{ color: '#0f172a', fontSize: '15px', fontWeight: 600, margin: '8px 0 4px 0' }}>
+          <p style={{ color: 'var(--text-primary)', fontSize: '15px', fontWeight: 600, margin: '8px 0 4px 0' }}>
             Click or drag official dataset file here to upload
           </p>
-          <p style={{ color: '#475569', fontSize: '13px' }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
             Supports Sanctioned Works or Fund Releases schemas (.csv or .xlsx). Strict per-row validation is applied.
           </p>
         </Dragger>
@@ -606,18 +606,18 @@ export const AdminPage: React.FC = () => {
           <div
             style={{
               marginTop: 16,
-              background: '#f8fafc',
+              background: 'var(--bg-secondary)',
               padding: '16px',
               borderRadius: 8,
-              border: '1px solid #e2e8f0',
+              border: '1px solid var(--border-primary)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontWeight: 600, color: '#0f172a' }}>Ingestion Summary</span>
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Ingestion Summary</span>
               <Tag color="green">Upload ID: {uploadResult.upload_id}</Tag>
             </div>
             <div style={{ display: 'flex', gap: 20, fontSize: '13px' }}>
-              <div>Total Parsed: <strong style={{ color: '#0f172a' }}>{uploadResult.records_parsed}</strong></div>
+              <div>Total Parsed: <strong style={{ color: 'var(--text-primary)' }}>{uploadResult.records_parsed}</strong></div>
               <div>Valid Ingested: <strong style={{ color: '#059669' }}>{uploadResult.records_valid}</strong></div>
               <div>Rejected: <strong style={{ color: '#dc2626' }}>{uploadResult.records_rejected}</strong></div>
             </div>

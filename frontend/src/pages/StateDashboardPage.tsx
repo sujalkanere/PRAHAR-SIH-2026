@@ -114,16 +114,16 @@ export const StateDashboardPage: React.FC = () => {
       {/* State Header & Selector */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <Title level={3} style={{ color: '#0f172a', margin: 0, fontFamily: 'Outfit, sans-serif' }}>
-            State Risk Dashboard &bull; <span style={{ color: '#1d4ed8' }}>{currentState}</span>
+          <Title level={3} style={{ color: 'var(--text-primary)', margin: 0, fontFamily: 'Outfit, sans-serif' }}>
+            State Risk Dashboard &bull; <span style={{ color: 'var(--color-primary)' }}>{currentState}</span>
           </Title>
-          <Text style={{ color: '#475569', fontSize: '13px' }}>
+          <Text style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
             District-level aggregation and constituency risk monitoring
           </Text>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Text style={{ color: '#475569', fontSize: '13px' }}>Select State:</Text>
+          <Text style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Select State:</Text>
           <Select
             value={currentState}
             onChange={handleStateChange}
@@ -216,8 +216,8 @@ export const StateDashboardPage: React.FC = () => {
                   dataIndex: 'name',
                   render: (val: string, record: any) => (
                     <div>
-                      <div style={{ fontWeight: 600, color: '#0f172a' }}>{val}</div>
-                      <Text style={{ color: '#475569', fontSize: '12px' }}>MP: {record.mp_name || 'N/A'}</Text>
+                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{val}</div>
+                      <Text style={{ color: 'var(--text-muted)', fontSize: '12px' }}>MP: {record.mp_name || 'N/A'}</Text>
                     </div>
                   ),
                 },

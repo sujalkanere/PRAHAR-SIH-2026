@@ -393,12 +393,75 @@ async def state_summary(db: AsyncSession, user: User | None = None, state: str =
     anomalies = [a for a in await _anomaly_rows(db, state_ids)
                  if a.status in ACTIVE_STATUSES]
     trends = await anomaly_trends(db, state_ids)
+
+    w_sum_q = select(
+        func.count(Work.id),
+        func.coalesce(func.sum(Work.actual_expenditure), 0)
+    ).where(Work.constituency_id.in_(state_ids))
+    tot_works_state, tot_exp_state = (await db.execute(w_sum_q)).one()
+    tot_works_state = int(tot_works_state or sum(r["total_works"] for r in risk_rows))
+    tot_exp_cr = round(float(tot_exp_state) / 1e7, 2) if tot_exp_state else round(sum(r["total_expenditure"] for r in risk_rows) / 1e7, 2)
+
     return {
         "state": state,
         "kpis": [
+            {"key": "constituencies", "label": "Constituencies", "value": len(state_ids), "format": "int"},
+            {"key": "works", "label": "Total Works", "value": tot_works_state, "format": "int"},
+            {"key": "expenditure", "label": "Total Expenditure (₹ Cr)", "value": tot_exp_cr, "format": "cr"},
+            {"key": "anomalies", "label": "Active Anomalies", "value": len(anomalies), "format": "int"},
+        ],
+        "constituencies": risk_rows,
+        "trends": trends,
+    }
+
+
+async def district_summary(db: AsyncSession, user: User | None = None, district: str = "Pune") -> dict:
+    ids = await _visible_constituency_ids(db, user)
+    uids = _to_uuids(ids)
+    
+    # resolve district's constituencies
+    q = select(Constituency).where(
+        Constituency.district.ilike(f"%{district}%") | Constituency.name.ilike(f"%{district}%")
+    )
+    consts = list((await db.execute(q)).scalars().all())
+    dist_cids = [c.id for c in consts]
+
+    from app.models import Work
+    w_q = select(Work.constituency_id).where(Work.implementing_agency.ilike(f"%{district}%")).distinct()
+    w_cids = list((await db.execute(w_q)).scalars().all())
+    all_dist_cids = list(set(dist_cids + w_cids))
+
+    if uids is not None:
+        visible_set = set(uids)
+        all_dist_cids = [i for i in all_dist_cids if i in visible_set]
+        dist_cids = [i for i in dist_cids if i in visible_set]
+
+    if not all_dist_cids:
+        return {"district": district, "state": "Maharashtra", "constituencies": [], "kpis": [], "trends": []}
+
+    fy = await latest_fy(db)
+    risk_rows = await _risk_rows(db, all_dist_cids, fy)
+    anomalies = [a for a in await _anomaly_rows(db, all_dist_cids) if a.status in ACTIVE_STATUSES]
+    trends = await anomaly_trends(db, all_dist_cids)
+
+    works_count_q = select(func.count(Work.id)).where(
+        Work.implementing_agency.ilike(f"%{district}%") | Work.constituency_id.in_(all_dist_cids)
+    )
+    total_works_cnt = (await db.execute(works_count_q)).scalar() or sum(r["total_works"] for r in risk_rows)
+
+    total_exp = sum(r["total_expenditure"] for r in risk_rows)
+    total_rel = sum(r["total_funds_released"] for r in risk_rows)
+    util_rate = round(total_exp / total_rel * 100, 1) if total_rel > 0 else 0.0
+
+    return {
+        "district": district,
+        "state": consts[0].state if consts else "Maharashtra",
+        "kpis": [
             {"key": "constituencies", "label": "Constituencies", "value": len(risk_rows), "format": "int"},
-            {"key": "works", "label": "Total Works", "value": sum(r["total_works"] for r in risk_rows), "format": "int"},
-            {"key": "expenditure", "label": "Total Expenditure (₹ Cr)", "value": round(sum(r["total_expenditure"] for r in risk_rows) / 1e7, 2), "format": "cr"},
+            {"key": "works", "label": "Total Works", "value": total_works_cnt, "format": "int"},
+            {"key": "expenditure", "label": "Total Expenditure (₹ Cr)", "value": round(total_exp / 1e7, 2), "format": "cr"},
+            {"key": "allocated", "label": "Total Allocated (₹ Cr)", "value": round(total_rel / 1e7, 2), "format": "cr"},
+            {"key": "fund_utilization", "label": "Fund Utilization Rate", "value": util_rate, "format": "percent"},
             {"key": "anomalies", "label": "Active Anomalies", "value": len(anomalies), "format": "int"},
         ],
         "constituencies": risk_rows,

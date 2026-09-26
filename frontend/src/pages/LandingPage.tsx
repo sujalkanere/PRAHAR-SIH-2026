@@ -33,10 +33,13 @@ import {
   FileProtectOutlined,
   PlayCircleOutlined,
   DownloadOutlined,
+  ExportOutlined,
   BarChartOutlined,
 } from '@ant-design/icons'
 import { analyticsApi } from '../api/analytics'
 import { NationalSummaryData } from '../types'
+import { useTheme } from '../context/ThemeContext'
+import { ThemeToggle } from '../components/ThemeToggle'
 
 /* 
  * Replicated exactly from the official MPLADS reference screenshot:
@@ -52,6 +55,7 @@ import { NationalSummaryData } from '../types'
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate()
+  const { isDark } = useTheme()
   const [data, setData] = useState<NationalSummaryData | null>(null)
   const [fontSizeOffset, setFontSizeOffset] = useState<number>(() => {
     const saved = localStorage.getItem('prahar_font_offset')
@@ -223,7 +227,7 @@ export const LandingPage: React.FC = () => {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0f172a', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", transition: 'background-color 0.25s ease, color 0.25s ease' }}>
       {/* 1. Top Accessibility Dark Bar (Exact match from reference screenshot) */}
       <div
         role="region"
@@ -234,8 +238,10 @@ export const LandingPage: React.FC = () => {
           display: 'flex',
           justifyContent: 'flex-end',
           alignItems: 'center',
+          gap: 16,
         }}
       >
+        <ThemeToggle matchDarkBg={true} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#ffffff', fontSize: '13px', fontWeight: 600 }}>
           <span style={{ fontSize: '12px', opacity: 0.85, marginRight: 2 }}>Text Size:</span>
           <button
@@ -461,18 +467,18 @@ export const LandingPage: React.FC = () => {
             </a>
           </nav>
 
-          {/* Right: Pure White Pill Login Button */}
+          {/* Right: Pill Login Button */}
           <Button
             onClick={() => navigate('/login')}
             style={{
               borderRadius: 9999,
-              background: '#ffffff',
-              color: '#0f2744',
+              background: isDark ? 'var(--bg-surface)' : '#ffffff',
+              color: isDark ? 'var(--text-primary)' : '#0f2744',
               fontWeight: 700,
               fontSize: '13.5px',
               height: 38,
               padding: '0 22px',
-              border: 'none',
+              border: isDark ? '1px solid var(--border-primary)' : 'none',
               boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)',
             }}
             aria-label="Access Role-Based Secured Portal"
@@ -555,10 +561,10 @@ export const LandingPage: React.FC = () => {
               d="M0,178 C260,238 480,248 720,208 C980,158 1140,83 1440,33 L1440,41 C1140,91 980,166 720,216 C480,256 260,246 0,186 Z"
               fill="#138808"
             />
-            {/* White Fill below */}
+            {/* Fill below wave */}
             <path
               d="M0,186 C260,246 480,256 720,216 C980,166 1140,91 1440,41 L1440,260 L0,260 Z"
-              fill="#ffffff"
+              fill={isDark ? '#070b13' : '#ffffff'}
             />
           </svg>
         </div>
@@ -574,7 +580,7 @@ export const LandingPage: React.FC = () => {
             maxWidth: 1600,
             margin: '0 auto',
             padding: '36px 36px 48px 36px',
-            background: '#ffffff',
+            background: 'var(--bg-primary)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
@@ -587,7 +593,7 @@ export const LandingPage: React.FC = () => {
                   fontFamily: 'Outfit, -apple-system, sans-serif',
                   fontSize: '13.5px',
                   fontWeight: 800,
-                  color: '#0369a1',
+                  color: 'var(--color-primary)',
                   letterSpacing: '0.06em',
                   textTransform: 'uppercase',
                   marginBottom: 8,
@@ -601,14 +607,14 @@ export const LandingPage: React.FC = () => {
                   fontFamily: 'Outfit, -apple-system, sans-serif',
                   fontSize: '28px',
                   fontWeight: 800,
-                  color: '#0f2744',
+                  color: 'var(--text-primary)',
                   margin: 0,
                   letterSpacing: '-0.02em',
                 }}
               >
                 Official MPLADS Scheme Performance
               </h2>
-              <div style={{ color: '#475569', fontSize: '13px', marginTop: 4 }}>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: 4 }}>
                 Synchronized with the official eSAKSHI data pipeline with Rajya Sabha and Lok Sabha distribution
               </div>
             </div>
@@ -619,11 +625,11 @@ export const LandingPage: React.FC = () => {
             <Col xs={24} sm={12} lg={8} xl={4}>
               <div
                 style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-primary)',
                   borderRadius: 12,
                   padding: '20px 16px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                  boxShadow: 'var(--shadow-sm)',
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
@@ -631,14 +637,14 @@ export const LandingPage: React.FC = () => {
                 }}
               >
                 <div>
-                  <div style={{ color: '#475569', fontSize: '12px', fontWeight: 600 }}>Total MPs Monitored</div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#0f2744', margin: '8px 0 12px 0', fontFamily: 'Outfit, sans-serif' }}>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600 }}>Total MPs Monitored</div>
+                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)', margin: '8px 0 12px 0', fontFamily: 'Outfit, sans-serif' }}>
                     {totalMPs}
                   </div>
                 </div>
-                <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#475569' }}>
-                  <span>Rajya Sabha: <b style={{ color: '#0f2744' }}>245</b></span>
-                  <span>Lok Sabha: <b style={{ color: '#0f2744' }}>543</b></span>
+                <div style={{ borderTop: '1px dashed var(--border-primary)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <span>Rajya Sabha: <b style={{ color: 'var(--text-primary)' }}>245</b></span>
+                  <span>Lok Sabha: <b style={{ color: 'var(--text-primary)' }}>543</b></span>
                 </div>
               </div>
             </Col>
@@ -647,11 +653,11 @@ export const LandingPage: React.FC = () => {
             <Col xs={24} sm={12} lg={8} xl={4}>
               <div
                 style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-primary)',
                   borderRadius: 12,
                   padding: '20px 16px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                  boxShadow: 'var(--shadow-sm)',
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
@@ -659,14 +665,14 @@ export const LandingPage: React.FC = () => {
                 }}
               >
                 <div>
-                  <div style={{ color: '#475569', fontSize: '12px', fontWeight: 600 }}>Allocated Outlay</div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#1d4ed8', margin: '8px 0 12px 0', fontFamily: 'Outfit, sans-serif' }}>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600 }}>Allocated Outlay</div>
+                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--color-primary)', margin: '8px 0 12px 0', fontFamily: 'Outfit, sans-serif' }}>
                     ₹{totalAllocatedCr.toLocaleString('en-IN', { maximumFractionDigits: 1 })} Cr
                   </div>
                 </div>
-                <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#475569' }}>
-                  <span>RS: <b style={{ color: '#0f2744' }}>₹1,155.0 Cr</b></span>
-                  <span>LS: <b style={{ color: '#0f2744' }}>₹2,208.8 Cr</b></span>
+                <div style={{ borderTop: '1px dashed var(--border-primary)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <span>RS: <b style={{ color: 'var(--text-primary)' }}>₹1,155.0 Cr</b></span>
+                  <span>LS: <b style={{ color: 'var(--text-primary)' }}>₹2,208.8 Cr</b></span>
                 </div>
               </div>
             </Col>
@@ -675,11 +681,11 @@ export const LandingPage: React.FC = () => {
             <Col xs={24} sm={12} lg={8} xl={4}>
               <div
                 style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-primary)',
                   borderRadius: 12,
                   padding: '20px 16px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                  boxShadow: 'var(--shadow-sm)',
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
@@ -687,14 +693,14 @@ export const LandingPage: React.FC = () => {
                 }}
               >
                 <div>
-                  <div style={{ color: '#475569', fontSize: '12px', fontWeight: 600 }}>Works Recommended</div>
-                  <div style={{ fontSize: '28px', fontWeight: 800, color: '#0f2744', margin: '8px 0 12px 0', fontFamily: 'Outfit, sans-serif' }}>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600 }}>Works Recommended</div>
+                  <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)', margin: '8px 0 12px 0', fontFamily: 'Outfit, sans-serif' }}>
                     {Number(totalWorks).toLocaleString()}
                   </div>
                 </div>
-                <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#475569' }}>
-                  <span>RS: <b style={{ color: '#0f2744' }}>6,412</b></span>
-                  <span>LS: <b style={{ color: '#0f2744' }}>18,732</b></span>
+                <div style={{ borderTop: '1px dashed var(--border-primary)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <span>RS: <b style={{ color: 'var(--text-primary)' }}>6,412</b></span>
+                  <span>LS: <b style={{ color: 'var(--text-primary)' }}>18,732</b></span>
                 </div>
               </div>
             </Col>
@@ -703,11 +709,11 @@ export const LandingPage: React.FC = () => {
             <Col xs={24} sm={12} lg={8} xl={4}>
               <div
                 style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-primary)',
                   borderRadius: 12,
                   padding: '20px 16px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                  boxShadow: 'var(--shadow-sm)',
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
@@ -715,14 +721,14 @@ export const LandingPage: React.FC = () => {
                 }}
               >
                 <div>
-                  <div style={{ color: '#475569', fontSize: '12px', fontWeight: 600 }}>Works Sanctioned</div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600 }}>Works Sanctioned</div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: '#0284c7', margin: '8px 0 12px 0', fontFamily: 'Outfit, sans-serif' }}>
                     {worksSanctioned.toLocaleString()}
                   </div>
                 </div>
-                <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#475569' }}>
-                  <span>RS: <b style={{ color: '#0f2744' }}>5,640</b></span>
-                  <span>LS: <b style={{ color: '#0f2744' }}>16,487</b></span>
+                <div style={{ borderTop: '1px dashed var(--border-primary)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <span>RS: <b style={{ color: 'var(--text-primary)' }}>5,640</b></span>
+                  <span>LS: <b style={{ color: 'var(--text-primary)' }}>16,487</b></span>
                 </div>
               </div>
             </Col>
@@ -731,11 +737,11 @@ export const LandingPage: React.FC = () => {
             <Col xs={24} sm={12} lg={8} xl={4}>
               <div
                 style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-primary)',
                   borderRadius: 12,
                   padding: '20px 16px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                  boxShadow: 'var(--shadow-sm)',
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
@@ -743,14 +749,14 @@ export const LandingPage: React.FC = () => {
                 }}
               >
                 <div>
-                  <div style={{ color: '#475569', fontSize: '12px', fontWeight: 600 }}>Works Completed</div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600 }}>Works Completed</div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: '#16a34a', margin: '8px 0 12px 0', fontFamily: 'Outfit, sans-serif' }}>
                     {worksCompleted.toLocaleString()}
                   </div>
                 </div>
-                <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#475569' }}>
-                  <span>RS: <b style={{ color: '#0f2744' }}>2,890</b></span>
-                  <span>LS: <b style={{ color: '#0f2744' }}>7,037</b></span>
+                <div style={{ borderTop: '1px dashed var(--border-primary)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <span>RS: <b style={{ color: 'var(--text-primary)' }}>2,890</b></span>
+                  <span>LS: <b style={{ color: 'var(--text-primary)' }}>7,037</b></span>
                 </div>
               </div>
             </Col>
@@ -759,11 +765,11 @@ export const LandingPage: React.FC = () => {
             <Col xs={24} sm={12} lg={8} xl={4}>
               <div
                 style={{
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-primary)',
                   borderRadius: 12,
                   padding: '20px 16px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                  boxShadow: 'var(--shadow-sm)',
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
@@ -771,14 +777,14 @@ export const LandingPage: React.FC = () => {
                 }}
               >
                 <div>
-                  <div style={{ color: '#475569', fontSize: '12px', fontWeight: 600 }}>Total Expenditure</div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600 }}>Total Expenditure</div>
                   <div style={{ fontSize: '28px', fontWeight: 800, color: '#0d9488', margin: '8px 0 12px 0', fontFamily: 'Outfit, sans-serif' }}>
                     ₹{totalExpCr.toLocaleString('en-IN', { maximumFractionDigits: 1 })} Cr
                   </div>
                 </div>
-                <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#475569' }}>
-                  <span>RS: <b style={{ color: '#0f2744' }}>₹389.2 Cr</b></span>
-                  <span>LS: <b style={{ color: '#0f2744' }}>₹848.7 Cr</b></span>
+                <div style={{ borderTop: '1px dashed var(--border-primary)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <span>RS: <b style={{ color: 'var(--text-primary)' }}>₹389.2 Cr</b></span>
+                  <span>LS: <b style={{ color: 'var(--text-primary)' }}>₹848.7 Cr</b></span>
                 </div>
               </div>
             </Col>
@@ -791,16 +797,16 @@ export const LandingPage: React.FC = () => {
             maxWidth: 1600,
             margin: '0 auto',
             padding: '0 36px 40px 36px',
-            background: '#ffffff',
+            background: 'var(--bg-primary)',
           }}
         >
           <div
             style={{
-              background: '#ffffff',
+              background: 'var(--bg-surface)',
               borderRadius: 16,
               padding: '28px 32px',
-              border: '1.5px solid #e2e8f0',
-              boxShadow: '0 4px 20px rgba(15, 40, 74, 0.05)',
+              border: '1.5px solid var(--border-primary)',
+              boxShadow: 'var(--shadow-sm)',
             }}
           >
             <div style={{ marginBottom: 22 }}>
@@ -811,77 +817,77 @@ export const LandingPage: React.FC = () => {
                   fontWeight: 800,
                   letterSpacing: '0.08em',
                   textTransform: 'uppercase',
-                  color: '#0f766e',
+                  color: 'var(--color-primary)',
                   marginBottom: 6,
                 }}
               >
                 MULTI TENANT RBAC
               </div>
-              <div style={{ fontSize: '20px', fontWeight: 800, color: '#0f2744', fontFamily: 'Outfit, sans-serif' }}>
+              <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
                 Built for Every Stakeholder in the MPLADS Governance Chain
               </div>
-              <div style={{ fontSize: '13.5px', color: '#475569', marginTop: 4, maxWidth: 880 }}>
+              <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)', marginTop: 4, maxWidth: 880 }}>
                 Role-tailored interfaces: Ministry policy oversight, District inquiry queues, MP constituency visibility, and citizen public accountability — each with granular cryptographic access control.
               </div>
             </div>
 
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={12} lg={6}>
-                <div style={{ background: '#f8fafc', borderRadius: 12, padding: '20px', border: '1px solid #e2e8f0', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ background: 'var(--bg-surface)', borderRadius: 12, padding: '20px', border: '1px solid var(--border-primary)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                     <div style={{ width: 30, height: 30, borderRadius: 8, background: '#eff6ff', color: '#1d4ed8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, fontFamily: 'Outfit, sans-serif', flexShrink: 0 }}>
                       01
                     </div>
-                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f2744', fontFamily: 'Outfit, sans-serif' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
                       Ministry of Statistics (MoSPI)
                     </div>
                   </div>
-                  <div style={{ fontSize: '12.5px', color: '#475569', lineHeight: 1.55 }}>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
                     Macro-level national risk maps, TSA idle float tracking, policy exception reporting.
                   </div>
                 </div>
               </Col>
               <Col xs={24} sm={12} lg={6}>
-                <div style={{ background: '#f8fafc', borderRadius: 12, padding: '20px', border: '1px solid #e2e8f0', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ background: 'var(--bg-surface)', borderRadius: 12, padding: '20px', border: '1px solid var(--border-primary)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                     <div style={{ width: 30, height: 30, borderRadius: 8, background: '#f0fdfa', color: '#0f766e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, fontFamily: 'Outfit, sans-serif', flexShrink: 0 }}>
                       02
                     </div>
-                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f2744', fontFamily: 'Outfit, sans-serif' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
                       District Authorities (DM / DC)
                     </div>
                   </div>
-                  <div style={{ fontSize: '12.5px', color: '#475569', lineHeight: 1.55 }}>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
                     Prioritized investigation queue, contractor audit records, technical sanction verification.
                   </div>
                 </div>
               </Col>
               <Col xs={24} sm={12} lg={6}>
-                <div style={{ background: '#f8fafc', borderRadius: 12, padding: '20px', border: '1px solid #e2e8f0', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ background: 'var(--bg-surface)', borderRadius: 12, padding: '20px', border: '1px solid var(--border-primary)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                     <div style={{ width: 30, height: 30, borderRadius: 8, background: '#f5f3ff', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, fontFamily: 'Outfit, sans-serif', flexShrink: 0 }}>
                       03
                     </div>
-                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f2744', fontFamily: 'Outfit, sans-serif' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
                       Members of Parliament (MPs)
                     </div>
                   </div>
-                  <div style={{ fontSize: '12.5px', color: '#475569', lineHeight: 1.55 }}>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
                     Real-time recommendation tracking, milestone delivery alerts, bottleneck resolution.
                   </div>
                 </div>
               </Col>
               <Col xs={24} sm={12} lg={6}>
-                <div style={{ background: '#f8fafc', borderRadius: 12, padding: '20px', border: '1px solid #e2e8f0', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ background: 'var(--bg-surface)', borderRadius: 12, padding: '20px', border: '1px solid var(--border-primary)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                     <div style={{ width: 30, height: 30, borderRadius: 8, background: '#fff7ed', color: '#c2410c', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800, fontFamily: 'Outfit, sans-serif', flexShrink: 0 }}>
                       04
                     </div>
-                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: '#0f2744', fontFamily: 'Outfit, sans-serif' }}>
+                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'Outfit, sans-serif' }}>
                       Citizen & Public Vigilance
                     </div>
                   </div>
-                  <div style={{ fontSize: '12.5px', color: '#475569', lineHeight: 1.55 }}>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
                     Open access asset verification, geotagged proof check, local priority proposal tracking.
                   </div>
                 </div>
@@ -895,9 +901,9 @@ export const LandingPage: React.FC = () => {
           id="engines"
           aria-labelledby="engines-heading"
           style={{
-            background: '#f8fafc',
-            borderTop: '1px solid #e2e8f0',
-            borderBottom: '1px solid #e2e8f0',
+            background: 'var(--bg-secondary)',
+            borderTop: '1px solid var(--border-primary)',
+            borderBottom: '1px solid var(--border-primary)',
             padding: '64px 36px',
           }}
         >
@@ -926,7 +932,7 @@ export const LandingPage: React.FC = () => {
                   fontFamily: 'Outfit, -apple-system, sans-serif',
                   fontSize: '34px',
                   fontWeight: 800,
-                  color: '#0f2744',
+                  color: 'var(--text-primary)',
                   letterSpacing: '-0.02em',
                   lineHeight: 1.2,
                   marginBottom: 12,
@@ -934,7 +940,7 @@ export const LandingPage: React.FC = () => {
               >
                 Autonomous Multi-Detector Intelligence for MPLADS
               </h2>
-              <p style={{ color: '#334155', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
                 PRAHAR replaces retrospective manual audits with an active, automated surveillance mesh.
                 Six specialized algorithmic engines ingest live eSAKSHI data, bank transaction trails,
                 and schedule norms to intercept financial and procedural irregularities before final disbursement.
@@ -947,8 +953,8 @@ export const LandingPage: React.FC = () => {
                 <Col xs={24} md={12} lg={8} key={engine.id}>
                   <div
                     style={{
-                      background: '#ffffff',
-                      border: '1px solid #e2e8f0',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-primary)',
                       borderRadius: 12,
                       padding: '24px',
                       height: '100%',
@@ -956,15 +962,16 @@ export const LandingPage: React.FC = () => {
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       transition: 'all 0.2s ease',
+                      boxShadow: 'var(--shadow-sm)',
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.borderColor = engine.color
-                      e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.06)'
+                      e.currentTarget.style.boxShadow = `0 6px 20px ${engine.color}25`
                       e.currentTarget.style.transform = 'translateY(-2px)'
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = '#e2e8f0'
-                      e.currentTarget.style.boxShadow = 'none'
+                      e.currentTarget.style.borderColor = 'var(--border-primary)'
+                      e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
                       e.currentTarget.style.transform = 'none'
                     }}
                   >
@@ -1013,23 +1020,23 @@ export const LandingPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0f2744', marginBottom: 10 }}>
+                      <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 10 }}>
                         {engine.name}
                       </h3>
 
-                      <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, marginBottom: 18 }}>
+                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 18 }}>
                         {engine.desc}
                       </p>
                     </div>
 
-                    <div style={{ borderTop: '1px solid #edf0f2', paddingTop: 14 }}>
+                    <div style={{ borderTop: '1px solid var(--border-secondary)', paddingTop: 14 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
-                        <span style={{ color: '#475569' }}>Impact Scale:</span>
+                        <span style={{ color: 'var(--text-muted)' }}>Impact Scale:</span>
                         <span style={{ fontWeight: 700, color: engine.color }}>{engine.metric}</span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', marginTop: 4, color: '#64748b' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', marginTop: 4, color: 'var(--text-muted)' }}>
                         <span>Statutory Baseline:</span>
-                        <span style={{ fontWeight: 600 }}>{engine.rule}</span>
+                        <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{engine.rule}</span>
                       </div>
                     </div>
                   </div>
@@ -1089,10 +1096,10 @@ export const LandingPage: React.FC = () => {
           id="how-it-works"
           aria-labelledby="workflow-heading"
           style={{
-            background: '#ffffff',
+            background: 'var(--bg-primary)',
             padding: '64px 36px',
-            borderTop: '1px solid #e2e8f0',
-            borderBottom: '1px solid #e2e8f0',
+            borderTop: '1px solid var(--border-primary)',
+            borderBottom: '1px solid var(--border-primary)',
           }}
         >
           <div style={{ maxWidth: 1600, margin: '0 auto' }}>
@@ -1129,7 +1136,7 @@ export const LandingPage: React.FC = () => {
                     fontFamily: 'Outfit, -apple-system, sans-serif',
                     fontSize: '32px',
                     fontWeight: 800,
-                    color: '#0f2744',
+                    color: 'var(--text-primary)',
                     letterSpacing: '-0.02em',
                     lineHeight: 1.2,
                     marginBottom: 12,
@@ -1137,7 +1144,7 @@ export const LandingPage: React.FC = () => {
                 >
                   How a Flag Becomes an Action
                 </h2>
-                <p style={{ color: '#334155', fontSize: '15px', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '15px', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
                   AI flags potential irregularities. Authorities verify documents, request clarification, and conduct the actual investigation before any action is taken.
                 </p>
               </div>
@@ -1151,10 +1158,10 @@ export const LandingPage: React.FC = () => {
                   gap: 12,
                   padding: '10px 22px',
                   borderRadius: 30,
-                  background: '#f8fafc',
-                  border: '1.5px solid #e2e8f0',
+                  background: 'var(--bg-surface)',
+                  border: '1.5px solid var(--border-primary)',
                   cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(15, 40, 74, 0.06)',
+                  boxShadow: 'var(--shadow-sm)',
                   transition: 'all 0.2s ease',
                   flexShrink: 0,
                 }}
@@ -1165,8 +1172,8 @@ export const LandingPage: React.FC = () => {
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'none'
-                  e.currentTarget.style.borderColor = '#e2e8f0'
-                  e.currentTarget.style.boxShadow = '0 2px 8px rgba(15, 40, 74, 0.06)'
+                  e.currentTarget.style.borderColor = 'var(--border-primary)'
+                  e.currentTarget.style.boxShadow = 'var(--shadow-sm)'
                 }}
                 role="button"
                 tabIndex={0}
@@ -1177,7 +1184,7 @@ export const LandingPage: React.FC = () => {
                     width: 42,
                     height: 42,
                     borderRadius: '50%',
-                    background: '#0f284a',
+                    background: 'var(--color-primary)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -1189,10 +1196,10 @@ export const LandingPage: React.FC = () => {
                   <PlayCircleOutlined aria-hidden="true" />
                 </div>
                 <div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f284a', lineHeight: 1.2 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.2 }}>
                     Videos
                   </div>
-                  <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
                     Watch System Overview
                   </div>
                 </div>
@@ -1254,8 +1261,8 @@ export const LandingPage: React.FC = () => {
                 <Col xs={24} sm={12} lg={8} key={idx}>
                   <div
                     style={{
-                      background: '#ffffff',
-                      border: '1px solid #e2e8f0',
+                      background: 'var(--bg-surface)',
+                      border: '1px solid var(--border-primary)',
                       borderRadius: 12,
                       padding: '24px 22px',
                       height: '100%',
@@ -1263,7 +1270,7 @@ export const LandingPage: React.FC = () => {
                       flexDirection: 'column',
                       justifyContent: 'space-between',
                       position: 'relative',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                      boxShadow: 'var(--shadow-sm)',
                       transition: 'all 0.2s ease',
                     }}
                     onMouseEnter={(e) => {
@@ -1319,10 +1326,10 @@ export const LandingPage: React.FC = () => {
                           {item.badge}
                         </div>
                       </div>
-                      <h3 style={{ fontSize: '16.5px', fontWeight: 700, color: '#0f2744', marginBottom: 10, lineHeight: 1.3 }}>
+                      <h3 style={{ fontSize: '16.5px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 10, lineHeight: 1.3 }}>
                         {item.title}
                       </h3>
-                      <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, margin: 0 }}>
+                      <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
                         {item.desc}
                       </p>
                     </div>
@@ -1338,9 +1345,9 @@ export const LandingPage: React.FC = () => {
           id="why-prahar"
           aria-labelledby="why-heading"
           style={{
-            background: '#f8fafc',
+            background: 'var(--bg-secondary)',
             padding: '64px 36px',
-            borderBottom: '1px solid #e2e8f0',
+            borderBottom: '1px solid var(--border-primary)',
           }}
         >
           <div style={{ maxWidth: 1600, margin: '0 auto' }}>
@@ -1367,7 +1374,7 @@ export const LandingPage: React.FC = () => {
                   fontFamily: 'Outfit, -apple-system, sans-serif',
                   fontSize: '32px',
                   fontWeight: 800,
-                  color: '#0f2744',
+                  color: 'var(--text-primary)',
                   letterSpacing: '-0.02em',
                   lineHeight: 1.2,
                   marginBottom: 10,
@@ -1375,7 +1382,7 @@ export const LandingPage: React.FC = () => {
               >
                 Why PRAHAR
               </h2>
-              <p style={{ color: '#475569', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
                 Engineered specifically for sovereign public financial integrity, combining forensic depth with judicial explainability.
               </p>
             </div>
@@ -1384,14 +1391,14 @@ export const LandingPage: React.FC = () => {
               <Col xs={24} md={8}>
                 <div
                   style={{
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-primary)',
                     borderRadius: 14,
                     padding: '30px 24px',
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                    boxShadow: 'var(--shadow-sm)',
                   }}
                 >
                   <div
@@ -1399,8 +1406,8 @@ export const LandingPage: React.FC = () => {
                       width: 48,
                       height: 48,
                       borderRadius: 12,
-                      background: '#eff6ff',
-                      color: '#1d4ed8',
+                      background: isDark ? 'rgba(59, 130, 246, 0.15)' : '#eff6ff',
+                      color: 'var(--color-primary)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1410,10 +1417,10 @@ export const LandingPage: React.FC = () => {
                   >
                     <BarChartOutlined />
                   </div>
-                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0f2744', marginBottom: 12 }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
                     Comprehensive Risk Analysis
                   </h3>
-                  <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: 1.65, margin: 0 }}>
+                  <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>
                     Integrates financial, progress, inspection, and asset-quality signals — not just spending data. Cross-examines GST filings, GPS photo metadata, and state civil schedules simultaneously.
                   </p>
                 </div>
@@ -1422,14 +1429,14 @@ export const LandingPage: React.FC = () => {
               <Col xs={24} md={8}>
                 <div
                   style={{
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-primary)',
                     borderRadius: 14,
                     padding: '30px 24px',
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                    boxShadow: 'var(--shadow-sm)',
                   }}
                 >
                   <div
@@ -1437,8 +1444,8 @@ export const LandingPage: React.FC = () => {
                       width: 48,
                       height: 48,
                       borderRadius: 12,
-                      background: '#fdf4ff',
-                      color: '#9333ea',
+                      background: isDark ? 'rgba(168, 85, 247, 0.15)' : '#fdf4ff',
+                      color: '#a855f7',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1448,10 +1455,10 @@ export const LandingPage: React.FC = () => {
                   >
                     <AuditOutlined />
                   </div>
-                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0f2744', marginBottom: 12 }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
                     Explainable & Transparent
                   </h3>
-                  <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: 1.65, margin: 0 }}>
+                  <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>
                     Every score of 0–100 comes with the specific factors that produced it, never a black-box number. Officers view exact statutory rule violations, price delta percentages, and coordinate distances.
                   </p>
                 </div>
@@ -1460,14 +1467,14 @@ export const LandingPage: React.FC = () => {
               <Col xs={24} md={8}>
                 <div
                   style={{
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-primary)',
                     borderRadius: 14,
                     padding: '30px 24px',
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                    boxShadow: 'var(--shadow-sm)',
                   }}
                 >
                   <div
@@ -1475,7 +1482,7 @@ export const LandingPage: React.FC = () => {
                       width: 48,
                       height: 48,
                       borderRadius: 12,
-                      background: '#f0fdf4',
+                      background: isDark ? 'rgba(22, 163, 74, 0.15)' : '#f0fdf4',
                       color: '#16a34a',
                       display: 'flex',
                       alignItems: 'center',
@@ -1486,10 +1493,10 @@ export const LandingPage: React.FC = () => {
                   >
                     <ClockCircleOutlined />
                   </div>
-                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0f2744', marginBottom: 12 }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
                     Actionable Prioritization
                   </h3>
-                  <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: 1.65, margin: 0 }}>
+                  <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.65, margin: 0 }}>
                     Ranks projects by risk so investigators focus on the highest-risk cases first, not every case equally. Transforms hundreds of raw project alerts into a clear, triageable daily action queue.
                   </p>
                 </div>
@@ -1504,13 +1511,13 @@ export const LandingPage: React.FC = () => {
             maxWidth: 1600,
             margin: '0 auto',
             padding: '56px 36px 20px 36px',
-            background: '#ffffff',
+            background: 'var(--bg-primary)',
           }}
         >
           <div
             style={{
-              background: '#f1f5f9',
-              borderLeft: '4px solid #1d4ed8',
+              background: 'var(--bg-secondary)',
+              borderLeft: '4px solid var(--color-primary)',
               borderRadius: '0 12px 12px 0',
               padding: '28px 32px',
             }}
@@ -1526,7 +1533,7 @@ export const LandingPage: React.FC = () => {
                   fontWeight: 800,
                   letterSpacing: '0.06em',
                   textTransform: 'uppercase',
-                  color: '#1d4ed8',
+                  color: 'var(--color-primary)',
                 }}
               >
                 <span
@@ -1534,21 +1541,21 @@ export const LandingPage: React.FC = () => {
                     width: 6,
                     height: 6,
                     borderRadius: '50%',
-                    background: '#1d4ed8',
+                    background: 'var(--color-primary)',
                     display: 'inline-block',
                   }}
                   aria-hidden="true"
                 />
                 Problem Validation • Audit Evidence
               </div>
-              <span style={{ fontSize: '12.5px', fontWeight: 700, color: '#475569' }}>
+              <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>
                 Comptroller and Auditor General of India (CAG) Performance Audit Report No. 31 of 2010–11
               </span>
             </div>
-            <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#0f2744', margin: '0 0 10px 0' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 10px 0' }}>
               Why Continuous Algorithmic Monitoring is Critical for MPLADS
             </h3>
-            <p style={{ fontSize: '14px', lineHeight: 1.65, color: '#334155', margin: 0 }}>
+            <p style={{ fontSize: '14px', lineHeight: 1.65, color: 'var(--text-secondary)', margin: 0 }}>
               CAG Performance Audit Report No. 31 of 2010–11 documented persistent challenges in MPLADS execution, including fund underutilization, irregular payments, asset verification deficits, and extensive monitoring gaps across districts. Traditional retrospective audits occur years after disbursements occur; PRAHAR solves this by embedding proactive, real-time algorithmic oversight to detect irregularities before funds are lost, not after.
             </p>
           </div>
@@ -1562,26 +1569,27 @@ export const LandingPage: React.FC = () => {
             maxWidth: 1600,
             margin: '0 auto',
             padding: '20px 36px 64px 36px',
-            background: '#ffffff',
+            background: 'var(--bg-primary)',
           }}
         >
           <div
             style={{
-              background: '#fafafa',
-              border: '1px solid #e5e7eb',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-primary)',
               borderRadius: 14,
               padding: '28px 32px',
+              boxShadow: 'var(--shadow-sm)',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
               <div style={{ maxWidth: 840 }}>
-                <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                <div style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
                   Statutory Scheme Background
                 </div>
-                <h3 id="about-scheme-heading" style={{ fontSize: '19px', fontWeight: 800, color: '#111827', margin: '0 0 8px 0' }}>
+                <h3 id="about-scheme-heading" style={{ fontSize: '19px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
                   Members of Parliament Local Area Development Scheme (MPLADS)
                 </h3>
-                <p style={{ fontSize: '13px', lineHeight: 1.6, color: '#4b5563', margin: 0 }}>
+                <p style={{ fontSize: '13px', lineHeight: 1.6, color: 'var(--text-secondary)', margin: 0 }}>
                   Launched in December 1993 and administered by the Ministry of Statistics and Programme Implementation (MoSPI), MPLADS enables MPs to recommend durable capital works in their constituencies with an annual allocation of ₹5 Crore per MP. Following the April 2023 transition to the 100% paperless eSAKSHI portal and the April 2025 Treasury Single Account (TSA) Just-In-Time release mechanism, PRAHAR serves as the automated integrity and risk analytics sentinel across the scheme's national lifecycle.
                 </p>
               </div>
@@ -1590,7 +1598,7 @@ export const LandingPage: React.FC = () => {
                 <Button
                   onClick={() => setDocsModalOpen(true)}
                   icon={<FileTextOutlined />}
-                  style={{ borderRadius: 8, fontSize: '13px', fontWeight: 600 }}
+                  style={{ borderRadius: 8, fontSize: '13px', fontWeight: 600, background: 'var(--bg-surface-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-primary)' }}
                 >
                   Guidelines & SOPs
                 </Button>
@@ -1604,8 +1612,8 @@ export const LandingPage: React.FC = () => {
       <Modal
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 6 }}>
-            <FileTextOutlined style={{ color: '#0f284a', fontSize: '20px' }} aria-hidden="true" />
-            <span style={{ fontSize: '18px', fontWeight: 800, color: '#0f2744' }}>
+            <FileTextOutlined style={{ color: 'var(--color-primary)', fontSize: '20px' }} aria-hidden="true" />
+            <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
               Official MPLADS & PRAHAR Governance Documents
             </span>
           </div>
@@ -1617,33 +1625,49 @@ export const LandingPage: React.FC = () => {
             Close
           </Button>,
         ]}
-        width={720}
+        width={760}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '12px 0' }}>
           {[
             {
               title: 'Revised MPLADS Guidelines 2023',
-              desc: 'Comprehensive framework governing eligibility, sanction procedures, and TSA fund-flow mandates.',
+              desc: 'Official Ministry of Statistics & Programme Implementation (MoSPI) comprehensive framework governing work eligibility, sanction workflows, and TSA fund-flow mandates.',
               date: 'April 2023',
-              size: '2.4 MB PDF',
+              size: '4.1 KB PDF',
+              downloadUrl: '/docs/Revised_MPLADS_Guidelines_2023.pdf',
+              portalUrl: 'https://esakshi.mospi.gov.in/',
+              portalLabel: 'e-SAKSHI Portal',
+              fileName: 'Revised_MPLADS_Guidelines_2023.pdf',
             },
             {
               title: 'TSA (Treasury Single Account) Just-In-Time Fund Procedure',
-              desc: 'Standard Operating Procedure for real-time vendor disbursements via RBI and PFMS integration.',
+              desc: 'Ministry of Finance & Department of Expenditure (DoE) Standard Operating Procedure for real-time vendor disbursements via RBI e-Kuber and PFMS integration.',
               date: 'April 2025',
-              size: '1.8 MB PDF',
+              size: '3.9 KB PDF',
+              downloadUrl: '/docs/TSA_Just_In_Time_Fund_Procedure.pdf',
+              portalUrl: 'https://doe.gov.in/order-circular/procedure-release-funds-under-centrally-sponsored-schemes-and-monitoring-utilization',
+              portalLabel: 'DoE Circular',
+              fileName: 'TSA_Just_In_Time_Fund_Procedure.pdf',
             },
             {
               title: 'PRAHAR Multi-Detector Audit Architecture Whitepaper',
-              desc: 'Technical specification of algorithmic anomaly scoring, Benford distribution checks, and DSR schedule matching.',
+              desc: 'Technical specification of algorithmic anomaly scoring, Benford first-digit distribution checks, vendor cartel graphs, and DSR schedule matching.',
               date: 'September 2026',
-              size: '3.1 MB PDF',
+              size: '3.8 KB PDF',
+              downloadUrl: '/docs/PRAHAR_Audit_Architecture_Whitepaper.pdf',
+              portalUrl: '/api/v1/reports/pdf?scope=NATIONAL',
+              portalLabel: 'Live Audit Report',
+              fileName: 'PRAHAR_Audit_Architecture_Whitepaper.pdf',
             },
             {
               title: 'District Authority Onboarding & Feasibility Checklist',
-              desc: 'Official template for NDAs and IDAs certifying technical estimates and contractor eligibility.',
+              desc: 'Official template for NDAs and IDAs certifying technical estimates, Schedule of Rates (SOR) compliance, and contractor eligibility.',
               date: 'January 2026',
-              size: '850 KB PDF',
+              size: '3.6 KB PDF',
+              downloadUrl: '/docs/District_Authority_Checklist.pdf',
+              portalUrl: 'https://mplads.gov.in/',
+              portalLabel: 'MoSPI MPLADS',
+              fileName: 'District_Authority_Checklist.pdf',
             },
           ].map((doc, idx) => (
             <div
@@ -1653,26 +1677,59 @@ export const LandingPage: React.FC = () => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 padding: '14px 18px',
-                background: '#f8fafc',
+                background: 'var(--bg-secondary)',
                 borderRadius: 8,
-                border: '1px solid #e2e8f0',
+                border: '1px solid var(--border-primary)',
+                gap: 16,
+                flexWrap: 'wrap',
               }}
             >
-              <div>
-                <div style={{ fontWeight: 700, color: '#0f2744', fontSize: '14px' }}>{doc.title}</div>
-                <div style={{ fontSize: '12px', color: '#64748b', marginTop: 3 }}>{doc.desc}</div>
-                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: 4 }}>
+              <div style={{ flex: 1, minWidth: 260 }}>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '14px' }}>{doc.title}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: 3, lineHeight: 1.45 }}>{doc.desc}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 4 }}>
                   Published: {doc.date} • {doc.size}
                 </div>
               </div>
-              <Button
-                icon={<DownloadOutlined />}
-                size="small"
-                onClick={() => message.info(`Downloading ${doc.title}...`)}
-                style={{ fontWeight: 600, color: '#1d4ed8', borderColor: '#bfdbfe' }}
-              >
-                Download
-              </Button>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+                {doc.portalUrl && (
+                  <Button
+                    icon={<ExportOutlined />}
+                    size="small"
+                    href={doc.portalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontWeight: 600,
+                      fontSize: '12px',
+                      color: 'var(--text-secondary)',
+                      borderColor: 'var(--border-primary)',
+                      background: 'var(--bg-surface)',
+                    }}
+                    title={`Visit official resource: ${doc.portalLabel}`}
+                  >
+                    {doc.portalLabel}
+                  </Button>
+                )}
+                <Button
+                  type="primary"
+                  icon={<DownloadOutlined />}
+                  size="small"
+                  href={doc.downloadUrl}
+                  download={doc.fileName}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontWeight: 600,
+                    fontSize: '12px',
+                    background: '#1d4ed8',
+                    borderColor: '#1d4ed8',
+                    color: '#ffffff',
+                  }}
+                >
+                  Download PDF
+                </Button>
+              </div>
             </div>
           ))}
         </div>
@@ -1682,8 +1739,8 @@ export const LandingPage: React.FC = () => {
       <Modal
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 6 }}>
-            <PlayCircleOutlined style={{ color: '#0f284a', fontSize: '20px' }} aria-hidden="true" />
-            <span style={{ fontSize: '18px', fontWeight: 800, color: '#0f2744' }}>
+            <PlayCircleOutlined style={{ color: 'var(--color-primary)', fontSize: '20px' }} aria-hidden="true" />
+            <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
               System Overview & Architecture Video
             </span>
           </div>
@@ -1729,7 +1786,7 @@ export const LandingPage: React.FC = () => {
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 6 }}>
             <UserOutlined style={{ color: '#0d9488' }} aria-hidden="true" />
-            <span style={{ fontSize: '18px', fontWeight: 800, color: '#0f2744' }}>
+            <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
               Citizen Developmental Request Portal
             </span>
           </div>
@@ -1748,12 +1805,12 @@ export const LandingPage: React.FC = () => {
         <div style={{ padding: '8px 0' }}>
           {/* Step 1: Mobile & OTP Authentication */}
           {!isVerified ? (
-            <div style={{ background: '#f8fafc', padding: '24px', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+            <div style={{ background: 'var(--bg-surface)', padding: '24px', borderRadius: 12, border: '1px solid var(--border-primary)' }}>
               <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#0f2744', margin: 0 }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
                   Citizen Mobile Verification (OTP Authentication)
                 </h3>
-                <p style={{ fontSize: '12px', color: '#475569', marginTop: 4 }}>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: 4 }}>
                   As per MoSPI guidelines, citizen proposals require a verified mobile number to prevent automated spam and ensure accountability.
                 </p>
               </div>
@@ -2005,10 +2062,10 @@ export const LandingPage: React.FC = () => {
               ) : (
                 <div style={{ textAlign: 'center', padding: '36px 16px', color: '#64748b' }}>
                   <InfoCircleOutlined style={{ fontSize: '36px', color: '#94a3b8', marginBottom: 14 }} aria-hidden="true" />
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#0f2744' }}>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
                     No Active Requests on This Verified Number
                   </div>
-                  <div style={{ fontSize: '13px', color: '#475569', marginTop: 6, maxWidth: 440, margin: '6px auto 0 auto' }}>
+                  <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: 6, maxWidth: 440, margin: '6px auto 0 auto' }}>
                     Proposals submitted through this portal undergo algorithmic duplicate screening before referral to the District Planning Committee.
                   </div>
                 </div>
@@ -2022,8 +2079,8 @@ export const LandingPage: React.FC = () => {
       <Modal
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 6 }}>
-            <FileProtectOutlined style={{ color: '#1d4ed8', fontSize: '20px' }} aria-hidden="true" />
-            <span style={{ fontSize: '18px', fontWeight: 800, color: '#0f2744' }}>
+            <FileProtectOutlined style={{ color: 'var(--color-primary)', fontSize: '20px' }} aria-hidden="true" />
+            <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
               PRAHAR Sovereign Compliance & Legal Center
             </span>
           </div>
@@ -2045,13 +2102,13 @@ export const LandingPage: React.FC = () => {
               key: 'privacy',
               label: 'Privacy Policy',
               children: (
-                <div style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: 8, fontSize: '13px', lineHeight: 1.7, color: '#334155' }}>
-                  <h4 style={{ color: '#0f2744', fontWeight: 700 }}>1. Data Governance & Statutory Basis</h4>
+                <div style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: 8, fontSize: '13px', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                  <h4 style={{ color: 'var(--text-primary)', fontWeight: 700 }}>1. Data Governance & Statutory Basis</h4>
                   <p>
                     PRAHAR is a sovereign administrative intelligence and audit surveillance system operated under the <b>Ministry of Statistics and Programme Implementation (MoSPI)</b>, Government of India. This Privacy Policy governs the collection, processing, and retention of citizen developmental requests and administrative audit logs pursuant to the <b>Digital Personal Data Protection Act, 2023 (DPDP Act)</b> and the Information Technology Act, 2000.
                   </p>
 
-                  <h4 style={{ color: '#0f2744', fontWeight: 700, marginTop: 16 }}>2. Information Collected & Minimization</h4>
+                  <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginTop: 16 }}>2. Information Collected & Minimization</h4>
                   <p>
                     In accordance with data minimization principles, PRAHAR collects only data strictly necessary for processing local developmental proposals:
                   </p>
@@ -2060,21 +2117,21 @@ export const LandingPage: React.FC = () => {
                     <li><b>Public Audit Telemetry:</b> Anonymized work execution milestones, contractor GSTINs, tender allocations, and public expenditure records sourced directly from the official eSAKSHI repository.</li>
                   </ul>
 
-                  <h4 style={{ color: '#0f2744', fontWeight: 700, marginTop: 16 }}>3. Purpose of Processing</h4>
+                  <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginTop: 16 }}>3. Purpose of Processing</h4>
                   <p>
                     Collected data is processed exclusively to: (a) route citizen developmental recommendations to relevant District Authorities and Parliamentary representatives; (b) prevent sybil attacks and bot submissions; (c) generate aggregate public analytics on constituency needs. No personal data is ever sold, leased, or shared with commercial entities.
                   </p>
 
-                  <h4 style={{ color: '#0f2744', fontWeight: 700, marginTop: 16 }}>4. Data Security & Sovereignty</h4>
+                  <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginTop: 16 }}>4. Data Security & Sovereignty</h4>
                   <p>
                     All datasets are stored on sovereign cloud infrastructure within the territory of India in accordance with CERT-In directives. Encryption at rest (AES-256) and in transit (TLS 1.3) is enforced across all endpoints.
                   </p>
 
-                  <h4 style={{ color: '#0f2744', fontWeight: 700, marginTop: 16 }}>5. Citizen Rights & Contact</h4>
+                  <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginTop: 16 }}>5. Citizen Rights & Contact</h4>
                   <p>
                     Citizens have the right to request access, correction, or deletion of unapproved proposal records. For privacy queries, contact the Nodal Grievance Officer at <code>cna-mplads@mospi.gov.in</code>.
                   </p>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginTop: 12 }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: 12 }}>
                     Last Updated: September 2026 • MoSPI Policy Circular Ref: PRAHAR-DPA-2026-V1
                   </div>
                 </div>
@@ -2084,23 +2141,23 @@ export const LandingPage: React.FC = () => {
               key: 'terms',
               label: 'Terms & Conditions',
               children: (
-                <div style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: 8, fontSize: '13px', lineHeight: 1.7, color: '#334155' }}>
-                  <h4 style={{ color: '#0f2744', fontWeight: 700 }}>1. Acceptance of Terms & Public Charter</h4>
+                <div style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: 8, fontSize: '13px', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                  <h4 style={{ color: 'var(--text-primary)', fontWeight: 700 }}>1. Acceptance of Terms & Public Charter</h4>
                   <p>
                     Access to and use of the PRAHAR portal and its underlying data streams is provided by MoSPI subject to these Terms of Service. By utilizing the platform, you agree to comply with all applicable Union laws and administrative regulations.
                   </p>
 
-                  <h4 style={{ color: '#0f2744', fontWeight: 700, marginTop: 16 }}>2. Nature of Intelligence Analytics</h4>
+                  <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginTop: 16 }}>2. Nature of Intelligence Analytics</h4>
                   <p>
                     PRAHAR’s anomaly detection engines compute probabilistic risk ratings (e.g. split transactions, cost overruns, timeline drift) based on statistical models including Benford’s Law and DSR variances. These flags serve as administrative advisory intelligence for MoSPI and District Collectors; they do not constitute judicial verdicts until verified through formal statutory audit under General Financial Rules (GFR).
                   </p>
 
-                  <h4 style={{ color: '#0f2744', fontWeight: 700, marginTop: 16 }}>3. Acceptable Use & Security Restrictions</h4>
+                  <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginTop: 16 }}>3. Acceptable Use & Security Restrictions</h4>
                   <p>
                     Users shall not: (a) execute automated extraction scripts or denial-of-service attacks; (b) submit frivolous or fabricated citizen proposals; (c) attempt unauthorized credential access to restricted administrative roles. Violations may attract prosecution under Section 66 of the Information Technology Act.
                   </p>
 
-                  <h4 style={{ color: '#0f2744', fontWeight: 700, marginTop: 16 }}>4. Intellectual Property & Open Data</h4>
+                  <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, marginTop: 16 }}>4. Intellectual Property & Open Data</h4>
                   <p>
                     Official scheme data is published under the Government of India Open Data License. Visual interface assets and algorithmic models are proprietary sovereign assets of MoSPI.
                   </p>
@@ -2111,34 +2168,34 @@ export const LandingPage: React.FC = () => {
               key: 'cookies',
               label: 'Cookie Policy',
               children: (
-                <div style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: 8, fontSize: '13px', lineHeight: 1.7, color: '#334155' }}>
-                  <h4 style={{ color: '#0f2744', fontWeight: 700 }}>1. Strictly Necessary Cookies & LocalStorage</h4>
+                <div style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: 8, fontSize: '13px', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                  <h4 style={{ color: 'var(--text-primary)', fontWeight: 700 }}>1. Strictly Necessary Cookies & LocalStorage</h4>
                   <p>
                     PRAHAR does not use commercial marketing, tracking, or cross-site profiling cookies. We store strictly necessary local items to provide accessible user experience:
                   </p>
                   <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 12, marginBottom: 12, fontSize: '12px' }}>
                     <thead>
-                      <tr style={{ background: '#f1f5f9', textAlign: 'left' }}>
-                        <th style={{ padding: '8px', border: '1px solid #e2e8f0' }}>Key Name</th>
-                        <th style={{ padding: '8px', border: '1px solid #e2e8f0' }}>Category</th>
-                        <th style={{ padding: '8px', border: '1px solid #e2e8f0' }}>Purpose & Expiry</th>
+                      <tr style={{ background: 'var(--bg-secondary)', textAlign: 'left' }}>
+                        <th style={{ padding: '8px', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}>Key Name</th>
+                        <th style={{ padding: '8px', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}>Category</th>
+                        <th style={{ padding: '8px', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}>Purpose & Expiry</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr>
-                        <td style={{ padding: '8px', border: '1px solid #e2e8f0' }}><code>prahar_token</code></td>
-                        <td style={{ padding: '8px', border: '1px solid #e2e8f0' }}>Essential</td>
-                        <td style={{ padding: '8px', border: '1px solid #e2e8f0' }}>Maintains secure official session for authorized stakeholders (Session/24h).</td>
+                        <td style={{ padding: '8px', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}><code>prahar_token</code></td>
+                        <td style={{ padding: '8px', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>Essential</td>
+                        <td style={{ padding: '8px', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>Maintains secure official session for authorized stakeholders (Session/24h).</td>
                       </tr>
                       <tr>
-                        <td style={{ padding: '8px', border: '1px solid #e2e8f0' }}><code>prahar_font_offset</code></td>
-                        <td style={{ padding: '8px', border: '1px solid #e2e8f0' }}>Accessibility</td>
-                        <td style={{ padding: '8px', border: '1px solid #e2e8f0' }}>Remembers citizen font enlargement (A-/A+) preferences across visits.</td>
+                        <td style={{ padding: '8px', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}><code>prahar_font_offset</code></td>
+                        <td style={{ padding: '8px', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>Accessibility</td>
+                        <td style={{ padding: '8px', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>Remembers citizen font enlargement (A-/A+) preferences across visits.</td>
                       </tr>
                       <tr>
-                        <td style={{ padding: '8px', border: '1px solid #e2e8f0' }}><code>prahar_cookie_consent</code></td>
-                        <td style={{ padding: '8px', border: '1px solid #e2e8f0' }}>Compliance</td>
-                        <td style={{ padding: '8px', border: '1px solid #e2e8f0' }}>Records user acceptance of data governance policies (Persistent).</td>
+                        <td style={{ padding: '8px', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}><code>prahar_cookie_consent</code></td>
+                        <td style={{ padding: '8px', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>Compliance</td>
+                        <td style={{ padding: '8px', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>Records user acceptance of data governance policies (Persistent).</td>
                       </tr>
                     </tbody>
                   </table>
@@ -2163,21 +2220,21 @@ export const LandingPage: React.FC = () => {
             right: '20px',
             maxWidth: '460px',
             zIndex: 9999,
-            background: 'rgba(255, 255, 255, 0.98)',
+            background: 'var(--glass-bg)',
             backdropFilter: 'blur(16px)',
             borderRadius: 14,
-            border: '1px solid #cbd5e1',
-            boxShadow: '0 12px 36px -4px rgba(15, 23, 42, 0.16)',
+            border: '1px solid var(--border-primary)',
+            boxShadow: 'var(--shadow-lg)',
             padding: '18px 20px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-            <SafetyCertificateOutlined style={{ color: '#1d4ed8', fontSize: '20px', marginTop: 2 }} aria-hidden="true" />
+            <SafetyCertificateOutlined style={{ color: 'var(--color-primary)', fontSize: '20px', marginTop: 2 }} aria-hidden="true" />
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f2744', marginBottom: 4 }}>
+              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
                 Sovereign Privacy & Accessibility Notice
               </div>
-              <p style={{ fontSize: '12px', lineHeight: 1.55, color: '#475569', margin: '0 0 14px 0' }}>
+              <p style={{ fontSize: '12px', lineHeight: 1.55, color: 'var(--text-secondary)', margin: '0 0 14px 0' }}>
                 PRAHAR uses strictly necessary session storage for accessibility preferences and authorized console authentication. No commercial advertising cookies are used. Read our{' '}
                 <button
                   type="button"
@@ -2185,7 +2242,7 @@ export const LandingPage: React.FC = () => {
                   style={{
                     background: 'none',
                     border: 'none',
-                    color: '#1d4ed8',
+                    color: 'var(--color-primary)',
                     textDecoration: 'underline',
                     cursor: 'pointer',
                     padding: 0,
@@ -2202,14 +2259,14 @@ export const LandingPage: React.FC = () => {
                   type="primary"
                   size="small"
                   onClick={() => handleCookieAccept('all')}
-                  style={{ background: '#1d4ed8', borderColor: '#1d4ed8', borderRadius: 6, fontWeight: 600, fontSize: '12px' }}
+                  style={{ borderRadius: 6, fontWeight: 600, fontSize: '12px' }}
                 >
                   Accept All
                 </Button>
                 <Button
                   size="small"
                   onClick={() => handleCookieAccept('essential')}
-                  style={{ borderRadius: 6, fontSize: '12px', color: '#334155' }}
+                  style={{ borderRadius: 6, fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}
                 >
                   Essential Only
                 </Button>
@@ -2217,7 +2274,7 @@ export const LandingPage: React.FC = () => {
                   type="text"
                   size="small"
                   onClick={() => openLegalModal('cookies')}
-                  style={{ fontSize: '12px', color: '#64748b' }}
+                  style={{ fontSize: '12px', color: 'var(--text-muted)' }}
                 >
                   Details
                 </Button>

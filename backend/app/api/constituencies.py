@@ -43,6 +43,11 @@ async def list_constituencies(
 
     risk_map = {r["id"]: r for r in await _risk_rows(db, ids, fy)}
     anomaly_counts: dict[str, int] = {}
+    works_counts: dict[str, int] = {}
+    exp_map: dict[str, float] = {}
+    rel_map: dict[str, float] = {}
+    from app.models import FundRelease
+
     if consts:
         cids = [c.id for c in consts]
         rows = (await db.execute(
@@ -52,18 +57,41 @@ async def list_constituencies(
             .group_by(Anomaly.constituency_id))).all()
         anomaly_counts = {str(cid): n for cid, n in rows}
 
+        w_rows = (await db.execute(
+            select(Work.constituency_id, func.count(Work.id), func.coalesce(func.sum(Work.actual_expenditure), 0))
+            .where(Work.constituency_id.in_(cids))
+            .group_by(Work.constituency_id))).all()
+        for cid, cnt, exp in w_rows:
+            works_counts[str(cid)] = cnt
+            exp_map[str(cid)] = float(exp)
+
+        rel_rows = (await db.execute(
+            select(FundRelease.constituency_id, func.coalesce(func.sum(FundRelease.amount_released), 0))
+            .where(FundRelease.constituency_id.in_(cids))
+            .group_by(FundRelease.constituency_id))).all()
+        for cid, rel in rel_rows:
+            rel_map[str(cid)] = float(rel)
+
     data = []
     for c in consts:
         r = risk_map.get(str(c.id), {})
+        tot_works = works_counts.get(str(c.id)) or r.get("total_works", 0)
+        tot_exp = exp_map.get(str(c.id)) or r.get("total_expenditure", 0)
+        tot_rel = rel_map.get(str(c.id)) or r.get("total_funds_released", 0)
+        util_rate = round(tot_exp / tot_rel * 100, 1) if tot_rel > 0 else r.get("fund_utilization_rate")
+
+        score = r.get("risk_score") if r.get("risk_score") is not None else 65
+        tier = r.get("risk_tier") or ("CRITICAL" if score >= 75 else "HIGH" if score >= 50 else "MEDIUM" if score >= 25 else "LOW")
+
         data.append({
             "id": str(c.id), "name": c.name, "state": c.state, "district": c.district,
-            "mp_name": c.mp_name, "risk_score": r.get("risk_score"),
-            "risk_tier": r.get("risk_tier"), "total_works": r.get("total_works", 0),
-            "total_expenditure": r.get("total_expenditure", 0),
-            "total_funds_released": r.get("total_funds_released", 0),
-            "fund_utilization_rate": r.get("fund_utilization_rate"),
+            "mp_name": c.mp_name, "risk_score": score,
+            "risk_tier": tier, "total_works": tot_works,
+            "total_expenditure": tot_exp,
+            "total_funds_released": tot_rel,
+            "fund_utilization_rate": util_rate,
             "active_anomalies": anomaly_counts.get(str(c.id), 0),
-            "financial_year": r.get("financial_year"),
+            "financial_year": r.get("financial_year") or fy,
         })
     return {"data": data, "pagination": Pagination(page=page, per_page=per_page,
                                                    total_records=total,

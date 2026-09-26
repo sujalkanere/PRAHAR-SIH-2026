@@ -3,6 +3,8 @@ import { Form, Input, Button, Card, Typography, Space, Alert, Tag, Divider } fro
 import { UserOutlined, LockOutlined, SafetyCertificateOutlined, ThunderboltOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
+import { ThemeToggle } from '../components/ThemeToggle'
 
 const { Title, Text, Paragraph } = Typography
 
@@ -16,6 +18,7 @@ const DEMO_ACCOUNTS = [
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth()
+  const { isDark } = useTheme()
   const navigate = useNavigate()
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
@@ -32,7 +35,7 @@ export const LoginPage: React.FC = () => {
         const stateName = loggedUser.scope_value || 'Maharashtra'
         navigate(`/state?state=${encodeURIComponent(stateName)}`)
       } else if (loggedUser.role === 'ROLE_DISTRICT' || loggedUser.role === 'ROLE_MP') {
-        navigate('/alerts')
+        navigate('/dashboard')
       } else {
         navigate('/dashboard')
       }
@@ -55,33 +58,53 @@ export const LoginPage: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+        background: isDark
+          ? 'radial-gradient(ellipse at 50% 30%, #0d1a33 0%, #060c18 60%, #03060d 100%)'
+          : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
         padding: '24px',
+        position: 'relative',
+        transition: 'background 0.3s ease',
       }}
     >
+      {/* Top Right Floating Theme Toggle */}
+      <div style={{ position: 'absolute', top: 20, right: 24, zIndex: 10 }}>
+        <ThemeToggle />
+      </div>
+
       <div style={{ maxWidth: 440, width: '100%' }}>
         {/* Portal Header */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <img
-            src="/prahar-logo.jpg"
-            alt="PRAHAR Logo"
+          <div
             style={{
               width: 88,
               height: 88,
-              objectFit: 'contain',
-              borderRadius: 16,
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
-              marginBottom: 16,
+              margin: '0 auto 16px auto',
+              borderRadius: 18,
               background: '#ffffff',
-              padding: 4,
-              border: '1px solid #e2e8f0',
+              boxShadow: isDark ? '0 0 24px rgba(59, 130, 246, 0.35)' : 'var(--shadow-md)',
+              border: isDark ? '2px solid rgba(59, 130, 246, 0.5)' : '1px solid var(--border-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 6,
             }}
-          />
+          >
+            <img
+              src="/prahar-logo.jpg"
+              alt="PRAHAR Logo"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain',
+                borderRadius: 12,
+              }}
+            />
+          </div>
 
-          <Title level={2} style={{ color: '#0f2744', marginBottom: 4, fontFamily: 'Outfit, sans-serif', fontWeight: 800, letterSpacing: '0.04em' }}>
+          <Title level={2} style={{ color: 'var(--text-primary)', marginBottom: 4, fontFamily: 'Outfit, sans-serif', fontWeight: 800, letterSpacing: '0.04em' }}>
             PRAHAR
           </Title>
-          <Paragraph style={{ color: '#475569', fontSize: '13px', margin: 0 }}>
+          <Paragraph style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: 0 }}>
             Automated Audit & Anomaly Detection for MPLADS Projects
           </Paragraph>
         </div>
@@ -89,12 +112,12 @@ export const LoginPage: React.FC = () => {
         {/* Login Card */}
         <Card
           style={{
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-primary)',
             borderRadius: 16,
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)',
+            boxShadow: 'var(--shadow-md)',
           }}
-          bodyStyle={{ padding: '32px 28px' }}
+          styles={{ body: { padding: '32px 28px' } }}
         >
           {error && (
             <Alert
@@ -116,7 +139,12 @@ export const LoginPage: React.FC = () => {
                 prefix={<UserOutlined style={{ color: '#94a3b8' }} />}
                 placeholder="Username (e.g. admin)"
                 size="large"
-                style={{ borderRadius: 8 }}
+                style={{
+                  borderRadius: 8,
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-primary)',
+                  borderColor: 'var(--border-primary)',
+                }}
               />
             </Form.Item>
 
@@ -128,7 +156,12 @@ export const LoginPage: React.FC = () => {
                 prefix={<LockOutlined style={{ color: '#94a3b8' }} />}
                 placeholder="Password"
                 size="large"
-                style={{ borderRadius: 8 }}
+                style={{
+                  borderRadius: 8,
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-primary)',
+                  borderColor: 'var(--border-primary)',
+                }}
               />
             </Form.Item>
 
@@ -152,8 +185,8 @@ export const LoginPage: React.FC = () => {
             </Form.Item>
           </Form>
 
-          <Divider style={{ borderColor: '#e2e8f0', margin: '24px 0 16px 0' }}>
-            <span style={{ color: '#475569', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <Divider style={{ borderColor: 'var(--border-primary)', margin: '24px 0 16px 0' }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               <ThunderboltOutlined style={{ color: '#d97706', marginRight: 4 }} /> 1-Click Demo Accounts
             </span>
           </Divider>
@@ -168,9 +201,9 @@ export const LoginPage: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  background: '#f8fafc',
-                  borderColor: '#e2e8f0',
-                  color: '#334155',
+                  background: 'var(--bg-secondary)',
+                  borderColor: 'var(--border-primary)',
+                  color: 'var(--text-secondary)',
                   borderRadius: 6,
                   height: '34px',
                   padding: '0 12px',
@@ -193,19 +226,19 @@ export const LoginPage: React.FC = () => {
             ))}
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: 18, paddingTop: 14, borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14 }}>
+          <div style={{ textAlign: 'center', marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--border-secondary)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14 }}>
             <Button
               type="link"
               onClick={() => navigate('/')}
-              style={{ color: '#2563eb', fontSize: '13px', fontWeight: 600, padding: 0 }}
+              style={{ color: 'var(--color-primary)', fontSize: '13px', fontWeight: 600, padding: 0 }}
             >
               &larr; Return to MPLADS Portal
             </Button>
-            <span style={{ color: '#cbd5e1' }}>•</span>
+            <span style={{ color: 'var(--border-primary)' }}>•</span>
             <Button
               type="link"
               onClick={() => navigate('/dashboard')}
-              style={{ color: '#475569', fontSize: '13px', fontWeight: 500, padding: 0 }}
+              style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 500, padding: 0 }}
             >
               Risk Dashboard &rarr;
             </Button>

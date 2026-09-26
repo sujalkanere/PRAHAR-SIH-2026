@@ -44,6 +44,14 @@ async def state_summary(state_name: str, db: AsyncSession = Depends(get_db),
     return await ss(db, user, state_name)
 
 
+@router.get("/district-summary/{district_name}")
+@router.get("/district/{district_name}")
+async def district_summary(district_name: str, db: AsyncSession = Depends(get_db),
+                           user: User | None = Depends(get_optional_current_user)):
+    from app.services.analytics import district_summary as ds
+    return await ds(db, user, district_name)
+
+
 @router.get("/constituency-summary/{constituency_id}")
 async def constituency_summary(constituency_id: str, db: AsyncSession = Depends(get_db),
                                user: User = Depends(require_roles(ROLE_ADMIN, ROLE_MINISTRY,

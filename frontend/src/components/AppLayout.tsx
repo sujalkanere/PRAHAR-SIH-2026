@@ -21,6 +21,7 @@ import { useAuth } from '../context/AuthContext'
 import { ReportExportModal } from './ReportExportModal'
 import { AddWorkModal } from './AddWorkModal'
 import { AIChatbotModal } from './AIChatbotModal'
+import { ThemeToggle } from './ThemeToggle'
 
 const { Sider, Content, Footer } = Layout
 const { Text } = Typography
@@ -29,21 +30,18 @@ const AppFooter: React.FC = () => (
   <Footer
     style={{
       background: 'transparent',
-      borderTop: '1px solid #e2e8f0',
+      borderTop: '1px solid var(--border-primary)',
       padding: '24px 28px',
       textAlign: 'center',
-      color: '#64748b',
+      color: 'var(--text-muted)',
     }}
   >
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
-      <div style={{ fontSize: '13px', fontWeight: 500, color: '#475569' }}>
+      <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>
         Data sourced from official MPLADS portal • Last updated: 9/3/2026 •
       </div>
-      <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
         © 2026 PRAHAR. All rights reserved.
-      </div>
-      <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
-        Made with <HeartFilled style={{ color: '#ef4444', fontSize: '12px' }} /> for India
       </div>
     </div>
   </Footer>
@@ -86,18 +84,43 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   const navItems: NavItem[] = []
 
   if (user && hasRole('ROLE_ADMIN', 'ROLE_MINISTRY', 'ROLE_STATE_NODAL', 'ROLE_DISTRICT', 'ROLE_MP')) {
+    const explorerLabel =
+      user.role === 'ROLE_DISTRICT'
+        ? `District Dashboard (${user.scope_value || 'Pune'})`
+        : user.role === 'ROLE_MP'
+        ? `Constituency Dashboard (${user.scope_value || 'Pune'})`
+        : user.role === 'ROLE_STATE_NODAL'
+        ? `State Explorer (${user.scope_value || 'Maharashtra'})`
+        : 'National Explorer'
+
+    navItems.push({
+      key: '/dashboard',
+      label: explorerLabel,
+      icon: <GlobalOutlined style={{ fontSize: '16px' }} />,
+      onClick: () => navigate('/dashboard'),
+    })
+
+    if (user.role === 'ROLE_MP' || user.role === 'ROLE_DISTRICT') {
+      navItems.push({
+        key: '/constituency/5b79b1d0370a4bdaa94de6a530987de7',
+        label: user.role === 'ROLE_MP' ? 'Constituency Profile' : 'Pune District Works',
+        icon: <ThunderboltOutlined style={{ fontSize: '16px' }} />,
+        onClick: () => navigate('/constituency/5b79b1d0370a4bdaa94de6a530987de7'),
+      })
+    }
+
     navItems.push(
-      {
-        key: '/dashboard',
-        label: 'National Explorer',
-        icon: <GlobalOutlined style={{ fontSize: '16px' }} />,
-        onClick: () => navigate('/dashboard'),
-      },
       {
         key: '/state',
         label: 'State Explorer',
         icon: <CompassOutlined style={{ fontSize: '16px' }} />,
-        onClick: () => navigate('/state'),
+        onClick: () => {
+          const stateQuery =
+            user.role === 'ROLE_STATE_NODAL' || user.role === 'ROLE_DISTRICT' || user.role === 'ROLE_MP'
+              ? '?state=Maharashtra'
+              : ''
+          navigate(`/state${stateQuery}`)
+        },
       },
       {
         key: '/alerts',
@@ -123,8 +146,8 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         key: 'profile',
         label: (
           <div style={{ padding: '6px 8px' }}>
-            <div style={{ fontWeight: 600, color: '#0f172a' }}>{user?.full_name}</div>
-            <div style={{ fontSize: '12px', color: '#64748b' }}>{user?.username}</div>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{user?.full_name}</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{user?.username}</div>
             {user?.scope_value && (
               <div style={{ fontSize: '11px', color: '#1d4ed8', marginTop: 4, fontWeight: 500 }}>
                 Scope: {user.scope_value} ({user.scope_type})
@@ -151,12 +174,12 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
 
   if (isPublicLandingPage) {
     return (
-      <Layout style={{ minHeight: '100vh', background: '#f4f5f8', display: 'flex', flexDirection: 'column' }}>
+      <Layout style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', flexDirection: 'column' }}>
         {/* Landing Page Full-Width Header */}
         <div
           style={{
-            background: '#ffffff',
-            borderBottom: '1px solid #edf0f2',
+            background: 'var(--bg-surface)',
+            borderBottom: '1px solid var(--border-primary)',
             padding: '12px 32px',
             display: 'flex',
             alignItems: 'center',
@@ -164,7 +187,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             position: 'sticky',
             top: 0,
             zIndex: 100,
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
+            boxShadow: 'var(--shadow-sm)',
           }}
         >
           {/* Brand Left */}
@@ -185,9 +208,9 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                 height: 36,
                 borderRadius: 8,
                 objectFit: 'cover',
-                border: '1px solid #e2e8f0',
+                border: '1px solid var(--border-primary)',
                 boxShadow: '0 2px 6px rgba(0, 0, 0, 0.06)',
-                background: '#ffffff',
+                background: 'var(--bg-surface)',
               }}
             />
             <div>
@@ -197,7 +220,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                   fontWeight: 800,
                   fontSize: '18px',
                   letterSpacing: '0.04em',
-                  color: '#0f2744',
+                  color: 'var(--text-primary)',
                   lineHeight: 1.1,
                 }}
               >
@@ -216,32 +239,32 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                 type="text"
                 icon={<GlobalOutlined style={{ color: '#10b981' }} />}
                 onClick={() => navigate('/dashboard')}
-                style={{ fontWeight: 600, color: '#0f172a', background: '#f1f5f9', borderRadius: 8 }}
+                style={{ fontWeight: 600, color: 'var(--text-primary)', background: 'var(--bg-secondary)', borderRadius: 8 }}
               >
                 National Explorer
               </Button>
               <Button
                 type="text"
-                icon={<CompassOutlined style={{ color: '#64748b' }} />}
+                icon={<CompassOutlined style={{ color: 'var(--text-muted)' }} />}
                 onClick={() => navigate('/state')}
-                style={{ fontWeight: 500, color: '#475569', borderRadius: 8 }}
+                style={{ fontWeight: 500, color: 'var(--text-secondary)', borderRadius: 8 }}
               >
                 State Explorer
               </Button>
               <Button
                 type="text"
-                icon={<AlertOutlined style={{ color: '#64748b' }} />}
+                icon={<AlertOutlined style={{ color: 'var(--text-muted)' }} />}
                 onClick={() => navigate('/alerts')}
-                style={{ fontWeight: 500, color: '#475569', borderRadius: 8 }}
+                style={{ fontWeight: 500, color: 'var(--text-secondary)', borderRadius: 8 }}
               >
                 Alert Triage
               </Button>
               {hasRole('ROLE_ADMIN') && (
                 <Button
                   type="text"
-                  icon={<SettingOutlined style={{ color: '#64748b' }} />}
+                  icon={<SettingOutlined style={{ color: 'var(--text-muted)' }} />}
                   onClick={() => navigate('/admin')}
-                  style={{ fontWeight: 500, color: '#475569', borderRadius: 8 }}
+                  style={{ fontWeight: 500, color: 'var(--text-secondary)', borderRadius: 8 }}
                 >
                   Admin Console
                 </Button>
@@ -275,12 +298,12 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               icon={<DownloadOutlined />}
               onClick={() => setReportModalOpen(true)}
               style={{
-                borderColor: '#e2e8f0',
-                color: '#334155',
+                borderColor: 'var(--border-primary)',
+                color: 'var(--text-secondary)',
                 borderRadius: 20,
                 fontWeight: 500,
                 height: 36,
-                background: '#ffffff',
+                background: 'var(--bg-surface)',
               }}
             >
               Export Report
@@ -300,6 +323,9 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             >
               AI Assistant
             </Button>
+
+            {/* Accessible Theme Toggle */}
+            <ThemeToggle />
 
             {!user ? (
               <Button
@@ -328,13 +354,13 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                     gap: 8,
                     padding: '4px 10px',
                     borderRadius: 20,
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-primary)',
                     cursor: 'pointer',
                   }}
                 >
                   <Avatar size="small" icon={<UserOutlined />} style={{ background: '#10b981' }} />
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>{user.username}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{user.username}</span>
                 </div>
               </Dropdown>
             )}
@@ -388,7 +414,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   }
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f4f5f8' }}>
+    <Layout style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
       {/* Sleek Floating-Style Vertical Sidebar */}
       <Sider
         width={230}
@@ -396,13 +422,13 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         collapsed={collapsed}
         trigger={null}
         style={{
-          background: '#ffffff',
-          borderRight: '1px solid #edf0f2',
+          background: 'var(--bg-surface)',
+          borderRight: '1px solid var(--border-primary)',
           position: 'sticky',
           top: 0,
           height: '100vh',
           zIndex: 100,
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
+          boxShadow: 'var(--shadow-sm)',
         }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '16px 12px' }}>
@@ -413,7 +439,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               alignItems: 'center',
               justifyContent: collapsed ? 'center' : 'space-between',
               padding: '8px 6px 20px 6px',
-              borderBottom: '1px solid #f1f3f5',
+              borderBottom: '1px solid var(--border-secondary)',
               marginBottom: 16,
             }}
           >
@@ -435,10 +461,10 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                   height: 38,
                   borderRadius: 8,
                   objectFit: 'cover',
-                  border: '1px solid #e2e8f0',
+                  border: '1px solid var(--border-primary)',
                   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
                   flexShrink: 0,
-                  background: '#ffffff',
+                  background: 'var(--bg-surface)',
                 }}
               />
 
@@ -450,7 +476,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                       fontWeight: 800,
                       fontSize: '18px',
                       letterSpacing: '0.04em',
-                      color: '#0f2744',
+                      color: 'var(--text-primary)',
                       lineHeight: 1.1,
                     }}
                   >
@@ -469,9 +495,9 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                 width: 26,
                 height: 26,
                 borderRadius: 6,
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                color: '#64748b',
+                background: 'var(--bg-surface-elevated)',
+                border: '1px solid var(--border-primary)',
+                color: 'var(--text-muted)',
                 display: collapsed ? 'none' : 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -500,27 +526,27 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                     padding: collapsed ? '12px' : '10px 14px',
                     borderRadius: 12,
                     cursor: 'pointer',
-                    background: isActive ? '#f1f5f9' : 'transparent',
-                    color: isActive ? '#0f172a' : '#64748b',
+                    background: isActive ? 'var(--bg-secondary)' : 'transparent',
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
                     fontWeight: isActive ? 600 : 500,
                     fontSize: '13.5px',
                     transition: 'all 0.15s ease',
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive) {
-                      e.currentTarget.style.background = '#f8fafc'
-                      e.currentTarget.style.color = '#0f172a'
+                      e.currentTarget.style.background = 'var(--bg-surface-hover)'
+                      e.currentTarget.style.color = 'var(--text-primary)'
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isActive) {
                       e.currentTarget.style.background = 'transparent'
-                      e.currentTarget.style.color = '#64748b'
+                      e.currentTarget.style.color = 'var(--text-muted)'
                     }
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span style={{ color: isActive ? '#10b981' : '#64748b' }}>{item.icon}</span>
+                    <span style={{ color: isActive ? '#10b981' : 'var(--text-muted)' }}>{item.icon}</span>
                     {!collapsed && <span>{item.label}</span>}
                   </div>
 
@@ -544,7 +570,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           </div>
 
           {/* Bottom Sider Footer */}
-          <div style={{ borderTop: '1px solid #f1f3f5', paddingTop: 12 }}>
+          <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 12 }}>
             {user ? (
               <Dropdown menu={userMenu} placement="topRight" trigger={['click']}>
                 <div
@@ -554,8 +580,8 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                     gap: 10,
                     padding: '8px 10px',
                     borderRadius: 12,
-                    background: '#f8fafc',
-                    border: '1px solid #e2e8f0',
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-primary)',
                     cursor: 'pointer',
                     justifyContent: collapsed ? 'center' : 'flex-start',
                   }}
@@ -563,8 +589,8 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                   <Avatar size="small" icon={<UserOutlined />} style={{ background: '#10b981', flexShrink: 0 }} />
                   {!collapsed && (
                     <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      <div style={{ fontSize: '12.5px', fontWeight: 600, color: '#0f172a' }}>{user.username}</div>
-                      <div style={{ fontSize: '10.5px', color: '#64748b' }}>{user.role.replace('ROLE_', '')}</div>
+                      <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}>{user.username}</div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>{user.role.replace('ROLE_', '')}</div>
                     </div>
                   )}
                 </div>
@@ -594,7 +620,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       </Sider>
 
       {/* Main Layout Area */}
-      <Layout style={{ background: '#f4f5f8', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Layout style={{ background: 'var(--bg-primary)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         {/* Top Minimal Action Header */}
         <div
           style={{
@@ -630,12 +656,12 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             icon={<DownloadOutlined />}
             onClick={() => setReportModalOpen(true)}
             style={{
-              borderColor: '#e2e8f0',
-              color: '#334155',
+              borderColor: 'var(--border-primary)',
+              color: 'var(--text-secondary)',
               borderRadius: 20,
               fontWeight: 500,
               height: 36,
-              background: '#ffffff',
+              background: 'var(--bg-surface)',
             }}
           >
             Export Report
@@ -655,6 +681,9 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           >
             AI Assistant
           </Button>
+
+          {/* Accessible Theme Toggle */}
+          <ThemeToggle />
 
           {!user && (
             <Button

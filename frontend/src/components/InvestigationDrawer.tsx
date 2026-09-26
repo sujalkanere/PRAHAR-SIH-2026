@@ -152,7 +152,7 @@ export const InvestigationDrawer: React.FC<InvestigationDrawerProps> = ({
         </Space>
       }
       styles={{
-        body: { padding: '24px', background: '#f8fafc' },
+        body: { padding: '24px', background: 'var(--bg-primary)' },
       }}
     >
       {loading ? (
@@ -166,18 +166,18 @@ export const InvestigationDrawer: React.FC<InvestigationDrawerProps> = ({
           {/* Top Summary Card */}
           <Card
             style={{
-              background: '#ffffff',
+              background: 'var(--bg-surface)',
               borderRadius: 12,
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              border: '1px solid var(--border-primary)',
+              boxShadow: 'var(--shadow-sm)',
             }}
           >
             <Row gutter={[16, 16]} align="middle">
               <Col span={16}>
-                <div style={{ fontSize: 13, color: '#475569', fontWeight: 600, textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>
                   {work.constituency_name} ({work.state_name}) • {work.work_category}
                 </div>
-                <Title level={4} style={{ margin: '4px 0 8px 0', color: '#0f172a' }}>
+                <Title level={4} style={{ margin: '4px 0 8px 0', color: 'var(--text-primary)' }}>
                   {work.work_description}
                 </Title>
                 <Space size={8} wrap>
@@ -226,15 +226,15 @@ export const InvestigationDrawer: React.FC<InvestigationDrawerProps> = ({
                     <div
                       style={{
                         padding: '12px 14px',
-                        background: '#f8fafc',
+                        background: 'var(--bg-secondary)',
                         borderRadius: 8,
-                        border: '1px solid #e2e8f0',
+                        border: '1px solid var(--border-primary)',
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                         <Space size={6}>
-                          <Icon size={14} color="#475569" />
-                          <span style={{ fontWeight: 600, fontSize: 13, color: '#1e293b' }}>{dim.label}</span>
+                          <Icon size={14} color="var(--text-muted)" />
+                          <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>{dim.label}</span>
                         </Space>
                         <span style={{ fontWeight: 700, fontSize: 13, color }}>
                           {score > 0 ? `${score}/100` : 'Normal'}
@@ -283,14 +283,14 @@ export const InvestigationDrawer: React.FC<InvestigationDrawerProps> = ({
                       gap: 10,
                       alignItems: 'flex-start',
                       padding: '8px 12px',
-                      background: '#fff7ed',
-                      borderLeft: '3px solid #f97316',
+                      background: 'var(--color-warning-bg)',
+                      borderLeft: '3px solid var(--color-warning)',
                       borderRadius: '0 6px 6px 0',
                       marginBottom: 6,
                     }}
                   >
                     <AlertTriangle size={15} color="#ea580c" style={{ marginTop: 2, flexShrink: 0 }} />
-                    <span style={{ fontSize: 13, color: '#9a3412', fontWeight: 500 }}>{r}</span>
+                    <span style={{ fontSize: 13, color: 'var(--color-warning)', fontWeight: 500 }}>{r}</span>
                   </div>
                 ))}
               </div>
@@ -298,30 +298,30 @@ export const InvestigationDrawer: React.FC<InvestigationDrawerProps> = ({
 
             {explanation?.evidence && explanation.evidence.length > 0 ? (
               <div style={{ marginTop: 12 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 8, textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, textTransform: 'uppercase' }}>
                   Auditable Metrics vs Thresholds
                 </div>
-                <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+                <div style={{ border: '1px solid var(--border-primary)', borderRadius: 8, overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                     <thead>
-                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
-                        <th style={{ padding: '8px 12px', color: '#475569' }}>Dimension</th>
-                        <th style={{ padding: '8px 12px', color: '#475569' }}>Rule ID</th>
-                        <th style={{ padding: '8px 12px', color: '#475569' }}>Value</th>
-                        <th style={{ padding: '8px 12px', color: '#475569' }}>Threshold</th>
-                        <th style={{ padding: '8px 12px', color: '#475569' }}>Confidence</th>
-                        <th style={{ padding: '8px 12px', color: '#475569' }}>Provenance</th>
+                      <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)', textAlign: 'left' }}>
+                        <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Dimension</th>
+                        <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Rule ID</th>
+                        <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Value</th>
+                        <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Threshold</th>
+                        <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Confidence</th>
+                        <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Provenance</th>
                       </tr>
                     </thead>
                     <tbody>
                       {explanation.evidence.map((e: any, idx: number) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '8px 12px', fontWeight: 600, color: '#0f172a' }}>{e.dimension}</td>
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-secondary)' }}>
+                          <td style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text-primary)' }}>{e.dimension}</td>
                           <td style={{ padding: '8px 12px' }}><Tag color="blue">{e.rule_id}</Tag></td>
                           <td style={{ padding: '8px 12px', fontWeight: 600, color: '#b91c1c' }}>{e.value}</td>
-                          <td style={{ padding: '8px 12px', color: '#475569' }}>{e.threshold}</td>
+                          <td style={{ padding: '8px 12px', color: 'var(--text-muted)' }}>{e.threshold}</td>
                           <td style={{ padding: '8px 12px' }}>{Math.round(e.confidence * 100)}%</td>
-                          <td style={{ padding: '8px 12px', color: '#475569' }}>{e.provenance}</td>
+                          <td style={{ padding: '8px 12px', color: 'var(--text-muted)' }}>{e.provenance}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -342,22 +342,22 @@ export const InvestigationDrawer: React.FC<InvestigationDrawerProps> = ({
           </Card>
 
           {/* Financial & Timeline Metrics */}
-          <Card title="Sanction & Financial Verification" style={{ borderRadius: 12, border: '1px solid #e2e8f0' }}>
+          <Card title="Sanction & Financial Verification" style={{ borderRadius: 12, border: '1px solid var(--border-primary)', background: 'var(--bg-surface)' }}>
             <Row gutter={[16, 12]}>
               <Col span={8}>
-                <div style={{ fontSize: 11, color: '#475569' }}>SANCTIONED AMOUNT</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>SANCTIONED AMOUNT</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
                   ₹{(work.sanctioned_amount || 0).toLocaleString()}
                 </div>
               </Col>
               <Col span={8}>
-                <div style={{ fontSize: 11, color: '#475569' }}>ACTUAL EXPENDITURE</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>ACTUAL EXPENDITURE</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
                   ₹{(work.actual_expenditure || 0).toLocaleString()}
                 </div>
               </Col>
               <Col span={8}>
-                <div style={{ fontSize: 11, color: '#475569' }}>COST OVERRUN</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>COST OVERRUN</div>
                 <div
                   style={{
                     fontSize: 16,
@@ -369,16 +369,16 @@ export const InvestigationDrawer: React.FC<InvestigationDrawerProps> = ({
                 </div>
               </Col>
               <Col span={8}>
-                <div style={{ fontSize: 11, color: '#475569' }}>SANCTION DATE</div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{work.sanction_date || 'N/A'}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>SANCTION DATE</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{work.sanction_date || 'N/A'}</div>
               </Col>
               <Col span={8}>
-                <div style={{ fontSize: 11, color: '#475569' }}>EXPECTED COMPLETION</div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{work.expected_completion_date || 'N/A'}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>EXPECTED COMPLETION</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{work.expected_completion_date || 'N/A'}</div>
               </Col>
               <Col span={8}>
-                <div style={{ fontSize: 11, color: '#475569' }}>COMPLETION DATE</div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{work.completion_date || 'In Progress'}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>COMPLETION DATE</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{work.completion_date || 'In Progress'}</div>
               </Col>
             </Row>
           </Card>
@@ -391,11 +391,11 @@ export const InvestigationDrawer: React.FC<InvestigationDrawerProps> = ({
                 <span>Investigator Action & Audit Decision</span>
               </Space>
             }
-            style={{ borderRadius: 12, border: '1px solid #e2e8f0', background: '#ffffff' }}
+            style={{ borderRadius: 12, border: '1px solid var(--border-primary)', background: 'var(--bg-surface)' }}
           >
             <Space orientation="vertical" size={14} style={{ width: '100%' }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 6 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
                   Update Review / Audit Status
                 </div>
                 <Select

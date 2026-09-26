@@ -1,6 +1,7 @@
 import React from 'react'
 import { Card } from 'antd'
 import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons'
+import { useTheme } from '../context/ThemeContext'
 
 export type KPIColorTheme = 'blue' | 'emerald' | 'purple' | 'amber' | 'rose' | 'default'
 
@@ -18,7 +19,7 @@ interface KPICardProps {
   onClick?: () => void
 }
 
-const THEME_STYLES: Record<KPIColorTheme, {
+interface KPIStyleConfig {
   topBar: string
   bgGradient: string
   borderColor: string
@@ -31,7 +32,9 @@ const THEME_STYLES: Record<KPIColorTheme, {
   circleBg: string
   circleColor: string
   glow: string
-}> = {
+}
+
+const THEME_STYLES_LIGHT: Record<KPIColorTheme, KPIStyleConfig> = {
   blue: {
     topBar: 'linear-gradient(90deg, #2563eb, #60a5fa)',
     bgGradient: 'linear-gradient(180deg, #eff6ff 0%, #ffffff 85%)',
@@ -118,6 +121,93 @@ const THEME_STYLES: Record<KPIColorTheme, {
   },
 }
 
+const THEME_STYLES_DARK: Record<KPIColorTheme, KPIStyleConfig> = {
+  blue: {
+    topBar: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+    bgGradient: 'linear-gradient(180deg, rgba(37, 99, 235, 0.18) 0%, #10192d 85%)',
+    borderColor: '#1e3a6a',
+    borderHover: '#3b82f6',
+    titleColor: '#93c5fd',
+    valueColor: '#f8fafc',
+    badgeBg: 'rgba(59, 130, 246, 0.2)',
+    badgeText: '#93c5fd',
+    badgeBorder: '#2563eb',
+    circleBg: 'rgba(59, 130, 246, 0.2)',
+    circleColor: '#60a5fa',
+    glow: 'rgba(37, 99, 235, 0.35)',
+  },
+  emerald: {
+    topBar: 'linear-gradient(90deg, #10b981, #34d399)',
+    bgGradient: 'linear-gradient(180deg, rgba(16, 185, 129, 0.18) 0%, #10192d 85%)',
+    borderColor: '#164e3b',
+    borderHover: '#10b981',
+    titleColor: '#6ee7b7',
+    valueColor: '#f8fafc',
+    badgeBg: 'rgba(16, 185, 129, 0.2)',
+    badgeText: '#6ee7b7',
+    badgeBorder: '#059669',
+    circleBg: 'rgba(16, 185, 129, 0.2)',
+    circleColor: '#34d399',
+    glow: 'rgba(16, 185, 129, 0.35)',
+  },
+  purple: {
+    topBar: 'linear-gradient(90deg, #8b5cf6, #a78bfa)',
+    bgGradient: 'linear-gradient(180deg, rgba(139, 92, 246, 0.18) 0%, #10192d 85%)',
+    borderColor: '#3b2569',
+    borderHover: '#8b5cf6',
+    titleColor: '#c4b5fd',
+    valueColor: '#f8fafc',
+    badgeBg: 'rgba(139, 92, 246, 0.2)',
+    badgeText: '#c4b5fd',
+    badgeBorder: '#7c3aed',
+    circleBg: 'rgba(139, 92, 246, 0.2)',
+    circleColor: '#a78bfa',
+    glow: 'rgba(139, 92, 246, 0.35)',
+  },
+  amber: {
+    topBar: 'linear-gradient(90deg, #f59e0b, #fbbf24)',
+    bgGradient: 'linear-gradient(180deg, rgba(245, 158, 11, 0.18) 0%, #10192d 85%)',
+    borderColor: '#54350c',
+    borderHover: '#f59e0b',
+    titleColor: '#fde68a',
+    valueColor: '#f8fafc',
+    badgeBg: 'rgba(245, 158, 11, 0.2)',
+    badgeText: '#fde68a',
+    badgeBorder: '#d97706',
+    circleBg: 'rgba(245, 158, 11, 0.2)',
+    circleColor: '#fbbf24',
+    glow: 'rgba(245, 158, 11, 0.35)',
+  },
+  rose: {
+    topBar: 'linear-gradient(90deg, #f43f5e, #fb7185)',
+    bgGradient: 'linear-gradient(180deg, rgba(244, 63, 94, 0.18) 0%, #10192d 85%)',
+    borderColor: '#581c2d',
+    borderHover: '#f43f5e',
+    titleColor: '#fecdd3',
+    valueColor: '#f8fafc',
+    badgeBg: 'rgba(244, 63, 94, 0.2)',
+    badgeText: '#fecdd3',
+    badgeBorder: '#e11d48',
+    circleBg: 'rgba(244, 63, 94, 0.2)',
+    circleColor: '#fb7185',
+    glow: 'rgba(244, 63, 94, 0.35)',
+  },
+  default: {
+    topBar: 'transparent',
+    bgGradient: '#10192d',
+    borderColor: '#1e2c45',
+    borderHover: '#3b82f6',
+    titleColor: '#cbd5e1',
+    valueColor: '#f8fafc',
+    badgeBg: '#16223b',
+    badgeText: '#94a3b8',
+    badgeBorder: '#1e2c45',
+    circleBg: '#16223b',
+    circleColor: '#94a3b8',
+    glow: 'rgba(0, 0, 0, 0.3)',
+  },
+}
+
 export const KPICard: React.FC<KPICardProps> = ({
   title,
   value,
@@ -131,18 +221,59 @@ export const KPICard: React.FC<KPICardProps> = ({
   theme = 'default',
   onClick,
 }) => {
-  const t = THEME_STYLES[theme] || THEME_STYLES.default
+  const { isDark } = useTheme()
+  const stylesMap = isDark ? THEME_STYLES_DARK : THEME_STYLES_LIGHT
+  const t = stylesMap[theme] || stylesMap.default
 
   const isPositive = badgeType === 'positive'
   const isNegative = badgeType === 'negative'
 
-  // If theme is default, use standard status colors; if theme is colored, use theme colors
-  const badgeBg = theme !== 'default' ? t.badgeBg : (isPositive ? '#e8f8f0' : isNegative ? '#fef2f2' : '#f1f5f9')
-  const badgeColor = theme !== 'default' ? t.badgeText : (isPositive ? '#15803d' : isNegative ? '#dc2626' : '#475569')
+  const defaultBadgeBg = isDark
+    ? isPositive
+      ? 'rgba(16, 185, 129, 0.2)'
+      : isNegative
+        ? 'rgba(239, 68, 68, 0.2)'
+        : '#16223b'
+    : isPositive
+      ? '#e8f8f0'
+      : isNegative
+        ? '#fef2f2'
+        : '#f1f5f9'
+
+  const defaultBadgeColor = isDark
+    ? isPositive
+      ? '#34d399'
+      : isNegative
+        ? '#f87171'
+        : '#cbd5e1'
+    : isPositive
+      ? '#15803d'
+      : isNegative
+        ? '#dc2626'
+        : '#475569'
+
+  const badgeBg = theme !== 'default' ? t.badgeBg : defaultBadgeBg
+  const badgeColor = theme !== 'default' ? t.badgeText : defaultBadgeColor
   const badgeBorder = theme !== 'default' ? `1px solid ${t.badgeBorder}` : 'none'
 
-  const circleBg = theme !== 'default' ? t.circleBg : (trendDirection === 'up' ? '#ecfdf5' : '#fef2f2')
-  const circleColor = theme !== 'default' ? t.circleColor : (trendDirection === 'up' ? '#10b981' : '#ef4444')
+  const defaultCircleBg = isDark
+    ? trendDirection === 'up'
+      ? 'rgba(16, 185, 129, 0.2)'
+      : 'rgba(239, 68, 68, 0.2)'
+    : trendDirection === 'up'
+      ? '#ecfdf5'
+      : '#fef2f2'
+
+  const defaultCircleColor = isDark
+    ? trendDirection === 'up'
+      ? '#34d399'
+      : '#f87171'
+    : trendDirection === 'up'
+      ? '#10b981'
+      : '#ef4444'
+
+  const circleBg = theme !== 'default' ? t.circleBg : defaultCircleBg
+  const circleColor = theme !== 'default' ? t.circleColor : defaultCircleColor
 
   return (
     <Card
@@ -267,7 +398,7 @@ export const KPICard: React.FC<KPICardProps> = ({
       {subtitle && (
         <div
           style={{
-            color: '#64748b',
+            color: 'var(--text-muted)',
             fontSize: '12px',
             fontWeight: 400,
             marginTop: 4,

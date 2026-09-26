@@ -152,10 +152,10 @@ export const AlertManagementPage: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Page Header */}
       <div>
-        <Title level={3} style={{ margin: 0, fontFamily: 'Outfit, sans-serif', color: '#0f172a' }}>
+        <Title level={3} style={{ margin: 0, fontFamily: 'Outfit, sans-serif', color: 'var(--text-primary)' }}>
           Alert & Anomaly Investigation Management
         </Title>
-        <Text style={{ color: '#475569', fontSize: '13px' }}>
+        <Text style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
           Triage, review, inspect auditable dossiers, and assign verified status transitions
         </Text>
       </div>
@@ -234,7 +234,7 @@ export const AlertManagementPage: React.FC = () => {
           </div>
         }
         styles={{ body: { padding: 0 } }}
-        style={{ borderRadius: 12, border: '1px solid #e2e8f0', background: '#ffffff' }}
+        style={{ borderRadius: 12, border: '1px solid var(--border-primary)', background: 'var(--bg-surface)' }}
       >
         <Table
           dataSource={anomalies}
@@ -252,10 +252,10 @@ export const AlertManagementPage: React.FC = () => {
               title: 'Work Ref / Description',
               render: (_: any, r: Anomaly) => (
                 <div style={{ cursor: r.work_id ? 'pointer' : 'default' }} onClick={() => r.work_id && handleOpenInvestigation(r)}>
-                  <div style={{ fontWeight: 600, color: '#1d4ed8' }}>
+                  <div style={{ fontWeight: 600, color: 'var(--color-primary)' }}>
                     {r.work_ref || 'Constituency Anomaly'}
                   </div>
-                  <Text style={{ color: '#475569', fontSize: '13px' }}>
+                  <Text style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
                     {r.details?.work_description || r.details?.reason || r.details?.message || r.anomaly_type}
                   </Text>
                 </div>
@@ -266,8 +266,8 @@ export const AlertManagementPage: React.FC = () => {
               dataIndex: 'constituency_name',
               render: (val: string, r: Anomaly) => (
                 <div>
-                  <div style={{ color: '#0f172a', fontWeight: 600 }}>{val || 'N/A'}</div>
-                  <Text style={{ color: '#475569', fontSize: '12px' }}>{r.state}</Text>
+                  <div style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{val || 'N/A'}</div>
+                  <Text style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{r.state}</Text>
                 </div>
               ),
             },
@@ -377,15 +377,15 @@ export const AlertManagementPage: React.FC = () => {
           <Form form={updateForm} layout="vertical" style={{ marginTop: 16 }}>
             <div
               style={{
-                background: '#f8fafc',
+                background: 'var(--bg-secondary)',
                 padding: '12px',
                 borderRadius: 8,
-                border: '1px solid #e2e8f0',
+                border: '1px solid var(--border-primary)',
                 marginBottom: 16,
               }}
             >
-              <div style={{ color: '#475569', fontSize: '12px' }}>Current Anomaly:</div>
-              <div style={{ color: '#0f172a', fontWeight: 600 }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Current Anomaly:</div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
                 {updatingAnomaly.work_ref || updatingAnomaly.anomaly_type}
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
@@ -433,14 +433,14 @@ export const AlertManagementPage: React.FC = () => {
         width={480}
         onClose={() => setAuditDrawerOpen(false)}
         open={auditDrawerOpen}
-        styles={{ body: { background: '#f8fafc', padding: '24px' } }}
+        styles={{ body: { background: 'var(--bg-secondary)', padding: '24px' } }}
       >
         {auditLoading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
             <Spin tip="Loading Audit Logs..." />
           </div>
         ) : auditItems.length === 0 ? (
-          <div style={{ color: '#475569', textAlign: 'center', padding: '30px' }}>
+          <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '30px' }}>
             No status transitions recorded yet for this anomaly.
           </div>
         ) : (
@@ -451,23 +451,23 @@ export const AlertManagementPage: React.FC = () => {
               children: (
                 <div
                   style={{
-                    background: '#ffffff',
+                    background: 'var(--bg-surface)',
                     padding: '12px',
                     borderRadius: 8,
-                    border: '1px solid #e2e8f0',
+                    border: '1px solid var(--border-primary)',
                     marginBottom: 12,
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                    boxShadow: 'var(--shadow-sm)',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontWeight: 600, color: '#1d4ed8', fontSize: '13px' }}>{item.action}</span>
-                    <span style={{ color: '#94a3b8', fontSize: '11px' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--color-primary)', fontSize: '13px' }}>{item.action}</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
                       {new Date(item.timestamp).toLocaleString()}
                     </span>
                   </div>
 
-                  <div style={{ fontSize: '12px', color: '#475569', marginBottom: 6 }}>
-                    User: <strong style={{ color: '#0f172a' }}>{item.performed_by || 'System'}</strong>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: 6 }}>
+                    User: <strong style={{ color: 'var(--text-primary)' }}>{item.performed_by || 'System'}</strong>
                   </div>
 
                   {item.new_value?.status && (
@@ -481,13 +481,13 @@ export const AlertManagementPage: React.FC = () => {
                   {item.note && (
                     <div
                       style={{
-                        background: '#f8fafc',
+                        background: 'var(--bg-secondary)',
                         padding: '6px 10px',
                         borderRadius: 6,
-                        color: '#334155',
+                        color: 'var(--text-secondary)',
                         fontSize: '12px',
                         fontStyle: 'italic',
-                        border: '1px solid #e2e8f0',
+                        border: '1px solid var(--border-primary)',
                       }}
                     >
                       &ldquo;{item.note}&rdquo;

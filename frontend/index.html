@@ -6,6 +6,31 @@
   <link rel="icon" type="image/jpeg" href="/prahar-logo.jpg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PRAHAR - MPLADS </title>
+
+  <!-- Anti-FOUT (Flash of Unstyled Theme) Blocking Script -->
+  <script>
+    (function () {
+      try {
+        var storageKey = 'prahar_theme_preference';
+        var stored = localStorage.getItem(storageKey);
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var resolved = stored === 'dark' || (stored !== 'light' && prefersDark) ? 'dark' : 'light';
+        var root = document.documentElement;
+
+        root.setAttribute('data-theme', resolved);
+        if (resolved === 'dark') {
+          root.classList.add('dark');
+          root.classList.remove('light');
+        } else {
+          root.classList.add('light');
+          root.classList.remove('dark');
+        }
+        root.style.colorScheme = resolved;
+      } catch (e) {
+        // Fallback safely if localStorage is restricted
+      }
+    })();
+  </script>
 </head>
 
 <body>
