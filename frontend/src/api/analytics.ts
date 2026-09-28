@@ -21,4 +21,9 @@ export const analyticsApi = {
     const { data } = await apiClient.get('/analytics/trends', { params })
     return data
   },
+
+  getAging: async (params?: { scope?: string; limit?: number }) => {
+    const { data } = await apiClient.get('/analytics/aging', { params })
+    return data
+  },
 }

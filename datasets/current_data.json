@@ -17,7 +17,9 @@
     "pendingWorks": 15217,
     "paymentGap": 38.64530875256279,
     "completedWorksValue": 7595696429.21,
-    "inProgressPayments": 4783993916.48
+    "inProgressPayments": 4783993916.48,
+    "as_of_date": "2026-09-09",
+    "source_dataset_version": "MoSPI-eSAKSHI-2026.09"
   },
   "cached": true,
   "cache_timestamp": "2026-09-09T14:59:23.603Z"

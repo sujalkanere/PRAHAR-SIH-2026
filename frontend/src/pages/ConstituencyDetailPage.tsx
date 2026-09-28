@@ -50,6 +50,8 @@ import { KPICard } from '../components/KPICard'
 import { RiskBadge } from '../components/RiskBadge'
 import { InvestigationDrawer } from '../components/InvestigationDrawer'
 import { DuplicatePairsCard } from '../components/DuplicatePairsCard'
+import { SCSTComplianceCard } from '../components/SCSTComplianceCard'
+import { PredictiveInsightsPanel } from '../components/PredictiveInsightsPanel'
 
 const { Title, Text } = Typography
 
@@ -374,6 +376,13 @@ export const ConstituencyDetailPage: React.FC = () => {
         </Col>
       </Row>
 
+      {/* SC/ST Statutory Allocation Compliance (Q1.5) */}
+      <SCSTComplianceCard data={data.sc_st_compliance} loading={loading} />
+
+      <div style={{ marginTop: 24 }}>
+        <PredictiveInsightsPanel constituencyId={id} />
+      </div>
+
       {/* Duplicate Pairs Component */}
       <DuplicatePairsCard pairs={data.duplicate_pairs || []} />
 
@@ -462,6 +471,15 @@ export const ConstituencyDetailPage: React.FC = () => {
                         title: 'Category',
                         dataIndex: 'work_category',
                         render: (val: string) => <Tag color="blue">{val}</Tag>,
+                      },
+                      {
+                        title: 'Beneficiary',
+                        dataIndex: 'beneficiary_category',
+                        render: (val?: string) => {
+                          const cat = val || 'GENERAL'
+                          const color = cat === 'SC' ? '#7c3aed' : cat === 'ST' ? '#0891b2' : undefined
+                          return <Tag color={color}>{cat}</Tag>
+                        },
                       },
                       {
                         title: 'Sanctioned / Spent',

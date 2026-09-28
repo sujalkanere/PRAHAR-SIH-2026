@@ -17,7 +17,9 @@ import {
   message,
   Timeline,
   Tooltip,
+  Collapse,
 } from 'antd'
+import { InfoCircleOutlined } from '@ant-design/icons'
 import {
   ShieldAlert,
   FileText,
@@ -259,6 +261,43 @@ export const InvestigationDrawer: React.FC<InvestigationDrawerProps> = ({
               })}
             </Row>
           </Card>
+
+          {/* Targeted SHAP Explanability Sub-Panel */}
+          {explanation?.isolation_forest_attribution && (
+            <Collapse ghost size="small" style={{ margin: '-4px 0 8px 0', border: '1px solid #e2e8f0', borderRadius: 12, background: 'var(--bg-surface)' }}>
+              <Collapse.Panel
+                header={
+                  <Space>
+                    <InfoCircleOutlined style={{ color: '#8b5cf6' }} />
+                    <span style={{ fontWeight: 600, color: '#6d28d9', fontSize: 13 }}>Why did the ML model flag this? (Isolation Forest SHAP Attribution)</span>
+                  </Space>
+                }
+                key="shap"
+              >
+                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: 8, border: '1px solid #ede9fe' }}>
+                  <div style={{ fontSize: 12, color: '#475569', marginBottom: 12 }}>
+                    The Isolation Forest model detected this work as anomalous. Below are the top features driving this anomaly score (calculated via Kernel SHAP on demand).
+                  </div>
+                  {explanation.isolation_forest_attribution.top_contributing_features.map((feat: any, idx: number) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, fontSize: 13 }}>
+                      <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>{feat.feature.replace(/_/g, ' ')}</span>
+                      <Space>
+                        <Tag color={feat.direction === 'increases_anomaly' ? 'red' : 'green'} style={{ margin: 0 }}>
+                          {feat.direction === 'increases_anomaly' ? '↑ Anomaly Risk' : '↓ Normalcy'}
+                        </Tag>
+                        <span style={{ fontWeight: 600, minWidth: 50, textAlign: 'right' }}>
+                          {feat.contribution}
+                        </span>
+                      </Space>
+                    </div>
+                  ))}
+                  <div style={{ textAlign: 'right', marginTop: 12, fontSize: 11, color: '#94a3b8' }}>
+                    Method: {explanation.isolation_forest_attribution.method}
+                  </div>
+                </div>
+              </Collapse.Panel>
+            </Collapse>
+          )}
 
           {/* Evidence and Provenance Findings */}
           <Card

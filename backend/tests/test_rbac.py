@@ -106,3 +106,21 @@ async def test_scoped_national_summary(client, login):
     body = r.json()
     assert len(body["state_summaries"]) == 1
     assert body["state_summaries"][0]["state"] == "Maharashtra"
+
+
+async def test_mp_gets_403_on_state_summary(client, login):
+    await _seed_constituencies()
+    h = await login("mp_user", "Mp@12345")
+    r = await client.get("/api/v1/analytics/state-summary/Maharashtra", headers=h)
+    assert r.status_code == 403
+    assert "MP role is restricted" in r.json()["detail"]["message"]
+
+
+async def test_state_user_gets_403_on_other_state_summary(client, login):
+    await _seed_constituencies()
+    h = await login("state_user", "State@1234")
+    # state_user has scope "Maharashtra", requesting "Bihar" must fail with 403
+    r = await client.get("/api/v1/analytics/state-summary/Bihar", headers=h)
+    assert r.status_code == 403
+    assert "cannot access data for other states" in r.json()["detail"]["message"]
+

@@ -207,6 +207,12 @@ def run_risk_scoring(session: Session) -> dict:
         # Base composite score
         base_total = co + dl + dp + pat + fu
 
+        # Add oversight risk for district quota violation (+5 penalty)
+        oversight = 0
+        c_anoms = const_anomalies.get(cid, [])
+        if any(a.anomaly_type == "INSPECTION_QUOTA_VIOLATION" for a in c_anoms):
+            oversight = 5
+
         # If target risk anomalies fire, incorporate into final composite
         addon = 0
         if p_risk > 0:
@@ -216,30 +222,38 @@ def run_risk_scoring(session: Session) -> dict:
         if dur_risk > 0:
             addon += int(round(dur_risk * 0.15))
 
+        addon += oversight
+
         max_dim = max(c_risk, d_risk, dup_risk, p_risk, cmp_risk, dur_risk)
         if max_dim > 0:
             total = min(100, int(round(max_dim * 0.60 + base_total * 0.40 + addon)))
         else:
             total = min(100, base_total + addon)
         tier = tier_for(total)
-        if w.risk_score != total or w.risk_tier != tier or total > 0:
-            w.risk_score = total
-            w.risk_tier = tier
-            w.risk_components = {
-                # 6 Target Dimensions
-                "cost_risk": c_risk,
-                "delay_risk": d_risk,
-                "payment_risk": p_risk,
-                "duplicate_risk": dup_risk,
-                "compliance_risk": cmp_risk,
-                "durability_risk": dur_risk,
-                # Legacy component breakdown preserved for compatibility
-                "cost_overrun": co,
-                "delay": dl,
-                "duplicate": dp,
-                "pattern": pat,
-                "fund_utilization": fu,
-            }
+        existing_aging = int((w.risk_components or {}).get("aging_risk", 0))
+        existing_days_idle = (w.risk_components or {}).get("days_idle")
+        w.risk_score = total
+        w.risk_tier = tier
+        w.risk_components = {
+            # 6 Target Dimensions
+            "cost_risk": c_risk,
+            "delay_risk": d_risk,
+            "payment_risk": p_risk,
+            "duplicate_risk": dup_risk,
+            "compliance_risk": cmp_risk,
+            "durability_risk": dur_risk,
+            "oversight_risk": oversight,
+            # Distinct aging risk component (Q1.6)
+            "aging_risk": existing_aging,
+            # Legacy component breakdown preserved for compatibility
+            "cost_overrun": co,
+            "delay": dl,
+            "duplicate": dp,
+            "pattern": pat,
+            "fund_utilization": fu,
+        }
+        if existing_days_idle is not None:
+            w.risk_components["days_idle"] = existing_days_idle
 
     session.flush()
 
@@ -284,6 +298,17 @@ def run_risk_scoring(session: Session) -> dict:
                 baseline_const_risk + anom_impact + fu_impact
             ))))
             u = util.get((cid, fy), {})
+
+            # Q1.6: aging metrics for unspent / active projects in this constituency and FY
+            active_fy_works = [w for w in fy_works if w.work_status in ("SANCTIONED", "IN_PROGRESS")]
+            idle_days_list = [
+                int((w.risk_components or {}).get("days_idle", 0))
+                for w in active_fy_works
+                if (w.risk_components or {}).get("days_idle") is not None
+            ]
+            avg_unspent = int(round(sum(idle_days_list) / len(idle_days_list))) if idle_days_list else None
+            max_unspent = max(idle_days_list) if idle_days_list else None
+
             session.add(ConstituencyRiskScore(
                 id=uuid.uuid4(), constituency_id=const.id, financial_year=fy,
                 risk_score=cscore, risk_tier=tier_for(cscore),
@@ -292,6 +317,8 @@ def run_risk_scoring(session: Session) -> dict:
                 fund_utilization_rate=round(u.get("rate", 0), 2) if u.get("rate") is not None else None,
                 total_funds_released=round(u.get("released", 0), 2),
                 total_expenditure=round(u.get("expenditure", 0), 2),
+                avg_days_unspent=avg_unspent,
+                max_project_days_unspent=max_unspent,
                 calculated_at=now,
             ))
 

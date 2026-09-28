@@ -124,7 +124,7 @@ def generate_deterministic_explanation(work: Work, anomalies: list[Anomaly]) -> 
     else:
         summary = f"Work {work.work_id} is classified under {tier} risk ({score}/100) driven by {len(key_reasons)} analytical flag(s): " + " ".join(key_reasons[:2])
 
-    return {
+    explanation = {
         "work_id": work.work_id,
         "score": score,
         "tier": tier,
@@ -143,6 +143,17 @@ def generate_deterministic_explanation(work: Work, anomalies: list[Anomaly]) -> 
         "generator": "DETERMINISTIC_LOCAL",
         "auditable": True,
     }
+
+    if any("+ISOLATION_FOREST" in (a.detection_method or "") for a in anomalies):
+        try:
+            from app.services.anomaly_detection.cost_overrun import get_isolation_forest_shap
+            shap_attr = get_isolation_forest_shap(work)
+            if shap_attr:
+                explanation["isolation_forest_attribution"] = shap_attr
+        except Exception as e:
+            pass
+
+    return explanation
 
 
 async def get_work_explanation(db: AsyncSession, work_id: str) -> dict[str, Any] | None:

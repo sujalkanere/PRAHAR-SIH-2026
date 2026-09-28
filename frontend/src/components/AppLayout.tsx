@@ -21,6 +21,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { ReportExportModal } from './ReportExportModal'
 import { AddWorkModal } from './AddWorkModal'
+import { AddInspectionModal } from './AddInspectionModal'
 import { AIChatbotModal } from './AIChatbotModal'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -55,6 +56,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   const [collapsed, setCollapsed] = useState(false)
   const [reportModalOpen, setReportModalOpen] = useState(false)
   const [addWorkModalOpen, setAddWorkModalOpen] = useState(false)
+  const [addInspectionModalOpen, setAddInspectionModalOpen] = useState(false)
   const [chatbotOpen, setChatbotOpen] = useState(false)
 
   const getRoleColor = (role?: string) => {
@@ -94,11 +96,12 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         ? `State Explorer (${user.scope_value || 'Maharashtra'})`
         : 'National Explorer'
 
+    const dashboardRoute = (user.role === 'ROLE_DISTRICT' || user.role === 'ROLE_MP') ? '/local' : '/dashboard'
     navItems.push({
-      key: '/dashboard',
+      key: dashboardRoute,
       label: explorerLabel,
       icon: <GlobalOutlined style={{ fontSize: '16px' }} />,
-      onClick: () => navigate('/dashboard'),
+      onClick: () => navigate(dashboardRoute),
     })
 
     if (user.role === 'ROLE_MP' || user.role === 'ROLE_DISTRICT') {
@@ -110,32 +113,34 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       })
     }
 
-    navItems.push(
-      {
+    if (user.role !== 'ROLE_MP') {
+      navItems.push({
         key: '/state',
         label: 'State Explorer',
         icon: <CompassOutlined style={{ fontSize: '16px' }} />,
         onClick: () => {
           const stateQuery =
-            user.role === 'ROLE_STATE_NODAL' || user.role === 'ROLE_DISTRICT' || user.role === 'ROLE_MP'
+            user.role === 'ROLE_STATE_NODAL' || user.role === 'ROLE_DISTRICT'
               ? '?state=Maharashtra'
               : ''
           navigate(`/state${stateQuery}`)
         },
-      },
-      {
-        key: '/alerts',
-        label: 'Alert Triage',
-        icon: <AlertOutlined style={{ fontSize: '16px' }} />,
-        onClick: () => navigate('/alerts'),
-      },
-      {
-        key: '/compliance',
-        label: 'Compliance Engine',
-        icon: <SafetyCertificateOutlined style={{ fontSize: '16px' }} />,
-        onClick: () => navigate('/compliance'),
-      }
-    )
+      })
+    }
+
+    navItems.push({
+      key: '/alerts',
+      label: 'Alert Triage',
+      icon: <AlertOutlined style={{ fontSize: '16px' }} />,
+      onClick: () => navigate('/alerts'),
+    })
+
+    navItems.push({
+      key: '/compliance',
+      label: 'Compliance Engine',
+      icon: <SafetyCertificateOutlined style={{ fontSize: '16px' }} />,
+      onClick: () => navigate('/compliance'),
+    })
 
     if (hasRole('ROLE_ADMIN')) {
       navItems.push({
@@ -281,7 +286,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
 
           {/* Action Buttons Right */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {user && hasRole('ROLE_ADMIN') && (
+            {user && hasRole('ROLE_ADMIN', 'ROLE_DISTRICT') && (
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
@@ -298,6 +303,24 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                 }}
               >
                 + Add Project
+              </Button>
+            )}
+
+            {user && hasRole('ROLE_ADMIN', 'ROLE_DISTRICT') && (
+              <Button
+                type="primary"
+                onClick={() => setAddInspectionModalOpen(true)}
+                style={{
+                  background: '#d97706',
+                  borderColor: '#d97706',
+                  color: '#fff',
+                  fontWeight: 600,
+                  borderRadius: 20,
+                  padding: '0 16px',
+                  height: 36,
+                }}
+              >
+                Log Inspection
               </Button>
             )}
 
@@ -414,6 +437,10 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         <AddWorkModal
           open={addWorkModalOpen}
           onClose={() => setAddWorkModalOpen(false)}
+        />
+        <AddInspectionModal
+          open={addInspectionModalOpen}
+          onClose={() => setAddInspectionModalOpen(false)}
         />
         <AIChatbotModal open={chatbotOpen} onClose={() => setChatbotOpen(false)} />
       </Layout>
@@ -639,7 +666,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             background: 'transparent',
           }}
         >
-          {user && hasRole('ROLE_ADMIN') && (
+          {user && hasRole('ROLE_ADMIN', 'ROLE_DISTRICT') && (
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -656,6 +683,24 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               }}
             >
               + Add Project
+            </Button>
+          )}
+
+          {user && hasRole('ROLE_ADMIN', 'ROLE_DISTRICT') && (
+            <Button
+              type="primary"
+              onClick={() => setAddInspectionModalOpen(true)}
+              style={{
+                background: '#d97706',
+                borderColor: '#d97706',
+                color: '#fff',
+                fontWeight: 600,
+                borderRadius: 20,
+                padding: '0 16px',
+                height: 36,
+              }}
+            >
+              Log Inspection
             </Button>
           )}
 
@@ -773,6 +818,11 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       <AddWorkModal
         open={addWorkModalOpen}
         onClose={() => setAddWorkModalOpen(false)}
+      />
+
+      <AddInspectionModal
+        open={addInspectionModalOpen}
+        onClose={() => setAddInspectionModalOpen(false)}
       />
 
       {/* OpenRouter AI Chatbot Modal */}

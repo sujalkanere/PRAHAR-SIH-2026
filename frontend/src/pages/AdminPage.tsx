@@ -82,7 +82,7 @@ export const AdminPage: React.FC = () => {
     try {
       setSeedLoading(true)
       const res = await adminApi.seedOfficial()
-      message.success(res.message || 'Official datasets loaded successfully! 25,168 works and ₹3,363.8 Cr metrics restored.')
+      message.success(res.message || 'Official baseline datasets loaded successfully.')
       await loadHistory()
       pollActiveRun()
     } catch (err: any) {
@@ -308,7 +308,7 @@ export const AdminPage: React.FC = () => {
             System Administration & AI Pipelines
           </Title>
           <Text style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
-            Manage official 543 Lok Sabha dataset synchronization, ingest CSV records, and orchestrate ML detection pipelines
+            Manage official parliamentary dataset synchronization (Lok Sabha & Rajya Sabha), ingest CSV records, and orchestrate ML detection pipelines
           </Text>
         </div>
 
@@ -327,7 +327,7 @@ export const AdminPage: React.FC = () => {
               height: 38,
             }}
           >
-            Load Official Datasets (3,363.8 Cr)
+            Load Official Baseline Datasets
           </Button>
 
           <Button

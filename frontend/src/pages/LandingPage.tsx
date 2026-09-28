@@ -111,10 +111,15 @@ export const LandingPage: React.FC = () => {
   // Official live metrics with authentic fallbacks from current_data.json
   const totalAllocatedCr = data?.official_metrics?.total_allocated_cr ?? 3363.8
   const totalExpCr = data?.official_metrics?.total_expenditure_cr ?? 1237.9
-  const totalWorks = data?.kpis?.find((k) => k.key === 'total_works')?.value ?? 25144
+  const rsWorks = data?.official_metrics?.rs_works ?? 6412
+  const lsWorks = data?.official_metrics?.ls_works ?? 18732
+  // Ensure Works Recommended total precisely matches the sum of the chamber bifurcation (Q1.4.1)
+  const totalWorks = (rsWorks + lsWorks)
   const worksCompleted = data?.official_metrics?.works_completed ?? 9927
-  // Total MPs: 543 Lok Sabha + 245 Rajya Sabha = 788 MPs total (Fixed mathematically)
-  const totalMPs = 788
+  // Total MPs: derived dynamically from live database query across both chambers (Q1.1)
+  const totalMPs = data?.official_metrics?.total_mps ?? (data?.kpis?.find((k) => k.key === 'total_mps')?.value ?? 788)
+  const rsMPs = data?.official_metrics?.rs_mps ?? 245
+  const lsMPs = data?.official_metrics?.ls_mps ?? 543
   const worksSanctioned = 22127
 
   const handleSetFontSize = (offset: number) => {
@@ -162,67 +167,67 @@ export const LandingPage: React.FC = () => {
     })
   }
 
-  // 6 Dedicated Detection Engines focusing solely on PRAHAR (Calibrated to Prototype Evaluation Baseline)
+  // 6 Dedicated Detection Engines focusing solely on PRAHAR's verified statutory and analytical modules
   const detectionEngines = [
     {
-      id: 'split-transactions',
-      name: 'Payment & Split Transaction Sentry',
-      badge: '524 Flagged (Evaluation)',
+      id: 'payment-risk',
+      name: 'Payment Risk & Premature Disbursement',
+      badge: 'Statutory Engine',
       color: '#dc2626',
       icon: <DollarOutlined aria-hidden="true" />,
-      desc: 'Detects artificial invoice fragmentation kept just below statutory tender thresholds (₹50,000 / ₹50L) to bypass public bidding, verified with Benford’s Law distribution checks.',
-      metric: '₹48.2 Cr Flagged · Illustrative Run',
-      rule: 'Section 4.2 GFR & Rule 149',
+      desc: 'Detects premature disbursements (>50% released on unstarted works), unreconciled expenditure overflows (>125%), and zero-expenditure ghost completions.',
+      metric: 'Threshold & Ratio Rules · Live Pipeline',
+      rule: 'PAY-001 / PAY-002 / PAY-003 Protocol',
     },
     {
       id: 'cost-overrun',
-      name: 'Cost Overrun & Inflation Engine',
-      badge: '418 Deviations (Evaluation)',
+      name: 'Cost Overrun & ML Inflation Engine',
+      badge: 'Statutory Engine',
       color: '#ea580c',
       icon: <AuditOutlined aria-hidden="true" />,
-      desc: 'Compares proposed and billed item costs against state District Schedule of Rates (DSR), flagging sudden price escalations exceeding permissible 15% inflation tolerances.',
-      metric: '+34.8% Average Drift · Sample Baseline',
-      rule: 'State DSR 2024-25 Benchmark',
+      desc: 'Audits actual expenditure against sanctioned approvals (>15% escalation), peer category Z-score deviations, and multidimensional Isolation Forest anomaly signals.',
+      metric: 'Overrun Brackets + IsoForest · Calibrated',
+      rule: 'Section 6.1 Cost Escalation Standard',
     },
     {
       id: 'sanction-delays',
-      name: 'Execution & Sanction Bottleneck Predictor',
-      badge: '362 Delayed Works',
+      name: 'Project Delay & Stalling Sentinel',
+      badge: 'Statutory Engine',
       color: '#d97706',
       icon: <ClockCircleOutlined aria-hidden="true" />,
-      desc: 'Monitors timeline drift between MP recommendation, District administrative sanction, and field mobilization, identifying administrative roadblocks exceeding the 75-day mandate.',
-      metric: 'Avg 142 Days Lag · Timeline Breach',
-      rule: 'MPLADS Guideline 3.4.1',
-    },
-    {
-      id: 'ghost-vendors',
-      name: 'Ghost Vendor & Shell Network Detector',
-      badge: '47 High-Risk Entities (Sample)',
-      color: '#7c3aed',
-      icon: <ShopOutlined aria-hidden="true" />,
-      desc: 'Cross-verifies vendor GSTIN, active filing history, shared bank accounts, and MCA director records to detect collusive contractor cartels across districts.',
-      metric: '18 Shell Clusters · Prototype Flagged',
-      rule: 'PFMS & MCA21 Cross-Matching',
+      desc: 'Tracks milestone timeline breaches (>90d, >180d, >365d) and flags projects stalled with zero physical progress for more than 365 days since sanction.',
+      metric: 'Chronological Milestones · Live Pipeline',
+      rule: 'MPLADS Guideline 3.4.1 (75-Day Mandate)',
     },
     {
       id: 'duplicate-works',
-      name: 'Duplicate Work & Twin Asset Sentinel',
-      badge: '215 Twin GPS / Title Pairs',
+      name: 'Semantic Duplicate Works Detector',
+      badge: 'NLP Engine',
       color: '#0284c7',
       icon: <EnvironmentOutlined aria-hidden="true" />,
-      desc: 'Validates before/after geotagged asset photographs and work titles using semantic NLP and GIS coordinate proximity (<25m), detecting duplicate claims for previously built works.',
-      metric: '99.2% NLP & GPS Similarity',
-      rule: 'Section 5.1 Asset Tagging',
+      desc: 'Identifies lexically disguised duplicate works and twin allocations within the same constituency using all-MiniLM-L6-v2 semantic embeddings and token overlap.',
+      metric: 'Dense CosSim >0.85 + Jaccard Overlap',
+      rule: 'Section 6.3 Semantic Duplicate Standard',
     },
     {
-      id: 'dormant-funds',
-      name: 'Treasury Single Account (TSA) Idle Fund Rebalancer',
-      badge: '184 Idle Allocations Flagged',
+      id: 'compliance-feasibility',
+      name: 'Regulatory Compliance & Chronology Engine',
+      badge: 'Statutory Engine',
+      color: '#7c3aed',
+      icon: <CheckCircleOutlined aria-hidden="true" />,
+      desc: 'Flags inverted chronology (completion preceding sanction), generic or unmapped implementing agencies, and impossible milestone delivery schedules.',
+      metric: 'CMP-001 / CMP-002 / CMP-003 Rules',
+      rule: 'MoSPI Regulatory Compliance Guidelines',
+    },
+    {
+      id: 'durability-repair',
+      name: 'Durability & Repeat Repair Sentinel',
+      badge: 'Statutory Engine',
       color: '#059669',
-      icon: <BankOutlined aria-hidden="true" />,
-      desc: 'Continuously audits Treasury Single Account (TSA) ledger flows, flagging unutilized parliamentary allocations to trigger Just-In-Time vendor releases and prevent parking of funds.',
-      metric: '₹210.4 Cr Unspent Float · TSA Protocol',
-      rule: 'TSA Just-In-Time Protocol 2025',
+      icon: <SafetyCertificateOutlined aria-hidden="true" />,
+      desc: 'Monitors asset durability by flagging premature repeat repairs, renovation, or re-carpeting sanctioned on the same infrastructure within 365 days.',
+      metric: 'Asset Lifecycle & Category Filtering',
+      rule: 'Section 6.6 Durability & Quality Standard',
     },
   ]
 
@@ -529,7 +534,7 @@ export const LandingPage: React.FC = () => {
                 textShadow: '0 3px 14px rgba(0,0,0,0.65)',
               }}
             >
-              <span style={{ color: '#00c0f0', fontWeight: 900 }}>PRAHAR</span>: Autonomous Integrity Monitoring for MPLADS
+              <span style={{ color: '#00c0f0', fontWeight: 900 }}>PRAHAR</span>: Automated Audit & Anomaly Detection for MPLADS Projects
             </h1>
 
             {/* Subhead */}
@@ -660,8 +665,8 @@ export const LandingPage: React.FC = () => {
                   </div>
                 </div>
                 <div style={{ borderTop: '1px dashed var(--border-primary)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
-                  <span>Rajya Sabha: <b style={{ color: 'var(--text-primary)' }}>245</b></span>
-                  <span>Lok Sabha: <b style={{ color: 'var(--text-primary)' }}>543</b></span>
+                  <span>Rajya Sabha: <b style={{ color: 'var(--text-primary)' }}>{rsMPs}</b></span>
+                  <span>Lok Sabha: <b style={{ color: 'var(--text-primary)' }}>{lsMPs}</b></span>
                 </div>
               </div>
             </Col>
@@ -716,8 +721,8 @@ export const LandingPage: React.FC = () => {
                   </div>
                 </div>
                 <div style={{ borderTop: '1px dashed var(--border-primary)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
-                  <span>RS: <b style={{ color: 'var(--text-primary)' }}>6,412</b></span>
-                  <span>LS: <b style={{ color: 'var(--text-primary)' }}>18,732</b></span>
+                  <span>RS: <b style={{ color: 'var(--text-primary)' }}>{Number(rsWorks).toLocaleString()}</b></span>
+                  <span>LS: <b style={{ color: 'var(--text-primary)' }}>{Number(lsWorks).toLocaleString()}</b></span>
                 </div>
               </div>
             </Col>

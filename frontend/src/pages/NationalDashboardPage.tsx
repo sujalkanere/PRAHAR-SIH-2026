@@ -40,6 +40,8 @@ import { NationalSummaryData } from '../types'
 import { KPICard } from '../components/KPICard'
 import { IndiaMap } from '../components/IndiaMap'
 import { InvestigationDrawer } from '../components/InvestigationDrawer'
+import { FundAgingWidget, FundAgingData } from '../components/FundAgingWidget'
+import { PredictiveInsightsPanel } from '../components/PredictiveInsightsPanel'
 
 const { Title, Text } = Typography
 
@@ -173,6 +175,7 @@ export const NationalDashboardPage: React.FC = () => {
   const { user } = useAuth()
   const { isDark } = useTheme()
   const [data, setData] = useState<NationalSummaryData | null>(null)
+  const [agingData, setAgingData] = useState<FundAgingData | null>(null)
   const [loading, setLoading] = useState(true)
 
 
@@ -200,8 +203,12 @@ export const NationalDashboardPage: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true)
-      const res = await analyticsApi.getNationalSummary()
+      const [res, agingRes] = await Promise.all([
+        analyticsApi.getNationalSummary(),
+        analyticsApi.getAging().catch(() => null),
+      ])
       setData(res)
+      setAgingData(agingRes)
     } catch (err) {
       console.error('Failed to load national summary', err)
     } finally {
@@ -831,6 +838,12 @@ export const NationalDashboardPage: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Fund Aging & Idle Balance Surveillance */}
+      <FundAgingWidget
+        data={agingData}
+        title="National Unspent Balance & Project Aging Surveillance"
+      />
 
       {/* 5. Immersive Anomaly Category Distribution */}
       <Card

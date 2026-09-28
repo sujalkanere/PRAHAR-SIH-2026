@@ -61,7 +61,7 @@ const BLITZ_RESPONSES: Record<string, string> = {
 • Methodology: Bipartite graph clustering, Louvain community detection, and tender volume distribution.
 • Primary Anomaly: Uncovers collusive vendor cartels, shared vendor bank accounts, single-bidder monopolies, and split-tenders positioned just beneath formal e-procurement thresholds (e.g., ₹9.8 Lakhs to avoid ₹10 Lakhs tender rules).`,
 
-  'What is the total fund allocation and expenditure?': `Based on the official reconciled MPLADS national baseline across 231 Rajya Sabha Members of Parliament and 32 States & Union Territories:
+  'What is the total fund allocation and expenditure?': `Based on the official reconciled MPLADS national baseline covering both parliamentary chambers (Rajya Sabha and Lok Sabha) across 32 States & Union Territories:
 
 • Total Funds Allocated: ₹3,363.8 Crore (₹33,638,482,301.82)
 • Total Expenditure Disbursed: ₹1,237.9 Crore (₹12,379,235,852.69)
@@ -195,7 +195,7 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
         {
           role: 'assistant',
           content:
-            '**Temporary Network Notice**: The AI assistant service experienced a connection delay. Official baseline summary: ₹3,363.8 Cr allocated, ₹1,237.9 Cr disbursed (66.1% utilization across 231 MPs).',
+            '**Temporary Network Notice**: The AI assistant service experienced a connection delay. Official baseline summary: ₹3,363.8 Cr allocated, ₹1,237.9 Cr disbursed (66.1% utilization across parliamentary representatives).',
         },
       ])
     } finally {

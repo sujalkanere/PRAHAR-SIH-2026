@@ -130,6 +130,7 @@ async def reset_database(
         DuplicatePair,
         Expenditure,
         FundRelease,
+        SCSTCompliance,
         UploadHistory,
         Work,
     )
@@ -138,6 +139,7 @@ async def reset_database(
     await db.execute(DuplicatePair.__table__.delete())
     await db.execute(Anomaly.__table__.delete())
     await db.execute(ConstituencyRiskScore.__table__.delete())
+    await db.execute(SCSTCompliance.__table__.delete())
     await db.execute(Expenditure.__table__.delete())
     await db.execute(Work.__table__.delete())
     await db.execute(FundRelease.__table__.delete())
@@ -201,10 +203,11 @@ async def _load_dfs_to_db(db: AsyncSession, dfs: dict) -> dict:
     releases_df: pd.DataFrame = dfs["fund_releases"]
 
     # clear existing demo data (fresh dataset) — FK-safe order
-    from app.models import Anomaly, ConstituencyRiskScore, DuplicatePair, Expenditure
+    from app.models import Anomaly, ConstituencyRiskScore, DuplicatePair, Expenditure, SCSTCompliance
     await db.execute(DuplicatePair.__table__.delete())
     await db.execute(Anomaly.__table__.delete())
     await db.execute(ConstituencyRiskScore.__table__.delete())
+    await db.execute(SCSTCompliance.__table__.delete())
     await db.execute(Expenditure.__table__.delete())
     await db.execute(Work.__table__.delete())
     await db.execute(FundRelease.__table__.delete())
@@ -356,7 +359,8 @@ async def detection_runs(db: AsyncSession = Depends(get_db),
     rows = (await db.execute(
         select(DetectionRun).order_by(DetectionRun.started_at.desc()).limit(20))).scalars().all()
     return {"data": [DetectionRunOut(
-        id=str(r.id), status=r.status, anomalies_detected=r.anomalies_detected or 0,
+        id=str(r.id), trigger_type=r.trigger_type or "MANUAL", status=r.status,
+        anomalies_detected=r.anomalies_detected or 0,
         works_analyzed=r.works_analyzed or 0, started_at=r.started_at,
         completed_at=r.completed_at, error_message=r.error_message).model_dump() for r in rows]}
 
@@ -369,7 +373,8 @@ async def detection_run_detail(run_id: str, db: AsyncSession = Depends(get_db),
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={
             "code": "NOT_FOUND", "message": "detection run not found"})
     return DetectionRunOut(
-        id=str(run.id), status=run.status, anomalies_detected=run.anomalies_detected or 0,
+        id=str(run.id), trigger_type=run.trigger_type or "MANUAL", status=run.status,
+        anomalies_detected=run.anomalies_detected or 0,
         works_analyzed=run.works_analyzed or 0, started_at=run.started_at,
         completed_at=run.completed_at, error_message=run.error_message)
 

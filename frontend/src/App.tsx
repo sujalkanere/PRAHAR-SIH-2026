@@ -11,6 +11,7 @@ const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ defaul
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })))
 const NationalDashboardPage = lazy(() => import('./pages/NationalDashboardPage').then(m => ({ default: m.NationalDashboardPage })))
 const StateDashboardPage = lazy(() => import('./pages/StateDashboardPage').then(m => ({ default: m.StateDashboardPage })))
+const LocalDashboardPage = lazy(() => import('./pages/LocalDashboardPage').then(m => ({ default: m.LocalDashboardPage })))
 const ConstituencyDetailPage = lazy(() => import('./pages/ConstituencyDetailPage').then(m => ({ default: m.ConstituencyDetailPage })))
 const AlertManagementPage = lazy(() => import('./pages/AlertManagementPage').then(m => ({ default: m.AlertManagementPage })))
 const ComplianceMonitoringPage = lazy(() => import('./pages/ComplianceMonitoringPage').then(m => ({ default: m.ComplianceMonitoringPage })))
@@ -97,6 +98,14 @@ const ThemedAppContent: React.FC = () => {
                 element={
                   <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_MINISTRY', 'ROLE_STATE_NODAL', 'ROLE_DISTRICT', 'ROLE_MP']}>
                     <StateDashboardPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/local"
+                element={
+                  <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_DISTRICT', 'ROLE_MP']}>
+                    <LocalDashboardPage />
                   </ProtectedRoute>
                 }
               />

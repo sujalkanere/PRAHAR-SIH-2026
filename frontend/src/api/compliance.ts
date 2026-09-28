@@ -124,3 +124,29 @@ export async function rescanCompliance(): Promise<{ status: string; message: str
   const res = await apiClient.post<{ status: string; message: string; summary: ComplianceSummary }>('/compliance/rescan');
   return res.data;
 }
+
+export const complianceApi = {
+  getSummary: fetchComplianceSummary,
+  getRules: fetchComplianceRules,
+  getAlerts: fetchComplianceAlerts,
+  getScStQuotas: fetchScStQuotas,
+  simulateWork: simulateWorkCompliance,
+  rescan: rescanCompliance,
+  getSCST: async (params?: any) => {
+    const res = await apiClient.get('/compliance/sc-st', { params });
+    return res.data;
+  },
+  getInspections: async (params?: any) => {
+    const res = await apiClient.get('/compliance/inspections', { params });
+    return res.data;
+  },
+  createInspection: async (data: any) => {
+    const res = await apiClient.post('/compliance/inspections', data);
+    return res.data;
+  },
+  getCoverage: async (params?: any) => {
+    const res = await apiClient.get('/compliance/inspection-coverage', { params });
+    return res.data;
+  },
+};
+

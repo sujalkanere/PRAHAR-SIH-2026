@@ -1,0 +1,189 @@
+import React, { useState } from 'react'
+import { Card, Typography, Segmented, Space, Empty } from 'antd'
+import { ClockCircleOutlined, DollarOutlined, HourglassOutlined } from '@ant-design/icons'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts'
+
+const { Text } = Typography
+
+export interface RankedAgingItem {
+  id: string
+  name: string
+  state: string
+  district?: string
+  mp_name?: string
+  unspent_balance?: number
+  unspent_balance_cr?: number
+  max_project_days_unspent?: number
+  avg_days_unspent?: number
+  fund_utilization_rate?: number
+}
+
+export interface FundAgingData {
+  financial_year?: string
+  total_unspent_balance?: number
+  total_unspent_balance_cr?: number
+  ranked_by_unspent_balance?: RankedAgingItem[]
+  ranked_by_idle_days?: RankedAgingItem[]
+}
+
+interface Props {
+  data?: FundAgingData | null
+  loading?: boolean
+  style?: React.CSSProperties
+  title?: string
+}
+
+export const FundAgingWidget: React.FC<Props> = ({
+  data,
+  loading,
+  style,
+  title = 'Unspent Fund & Idle Project Tracker',
+}) => {
+  const [metric, setMetric] = useState<'balance' | 'days'>('balance')
+
+  const chartData =
+    metric === 'balance'
+      ? (data?.ranked_by_unspent_balance || []).slice(0, 7).map((item) => ({
+          name: item.name,
+          state: item.state,
+          value: item.unspent_balance_cr ?? 0,
+          label: `₹${(item.unspent_balance_cr ?? 0).toFixed(2)} Cr`,
+        }))
+      : (data?.ranked_by_idle_days || []).slice(0, 7).map((item) => ({
+          name: item.name,
+          state: item.state,
+          value: item.max_project_days_unspent ?? 0,
+          label: `${item.max_project_days_unspent ?? 0}d idle`,
+        }))
+
+  const getBarColor = (val: number) => {
+    if (metric === 'days') {
+      if (val > 730) return '#dc2626' // CRITICAL
+      if (val > 365) return '#ea580c' // HIGH
+      if (val > 180) return '#d97706' // MEDIUM
+      return '#2563eb'
+    }
+    // Balance
+    if (val > 4.0) return '#dc2626'
+    if (val > 2.5) return '#d97706'
+    return '#2563eb'
+  }
+
+  return (
+    <Card
+      loading={loading}
+      style={{
+        background: 'var(--bg-card)',
+        borderRadius: 12,
+        border: '1px solid var(--border-primary)',
+        boxShadow: 'var(--card-shadow)',
+        ...style,
+      }}
+      bodyStyle={{ padding: '20px' }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        <Space>
+          <HourglassOutlined style={{ fontSize: '18px', color: '#f59e0b' }} />
+          <div>
+            <Text strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>
+              {title}
+            </Text>
+            <Text type="secondary" style={{ fontSize: '11px', display: 'block' }}>
+              Worst-first ranking &bull; Stalled allocations (&gt;180d, &gt;365d, &gt;730d)
+            </Text>
+          </div>
+        </Space>
+
+        <Segmented
+          value={metric}
+          onChange={(val) => setMetric(val as 'balance' | 'days')}
+          options={[
+            {
+              label: (
+                <Space size={4}>
+                  <DollarOutlined />
+                  <span>Unspent Funds</span>
+                </Space>
+              ),
+              value: 'balance',
+            },
+            {
+              label: (
+                <Space size={4}>
+                  <ClockCircleOutlined />
+                  <span>Max Idle Days</span>
+                </Space>
+              ),
+              value: 'days',
+            },
+          ]}
+        />
+      </div>
+
+      {chartData.length === 0 ? (
+        <Empty description="No stalled project records found" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+      ) : (
+        <div style={{ height: 260, width: '100%' }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-secondary, rgba(255,255,255,0.06))" horizontal={false} />
+              <XAxis
+                type="number"
+                stroke="var(--text-muted)"
+                fontSize={11}
+                tickFormatter={(val) => (metric === 'balance' ? `₹${val} Cr` : `${val}d`)}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                stroke="var(--text-secondary)"
+                fontSize={11}
+                width={120}
+                tickLine={false}
+              />
+              <RechartsTooltip
+                contentStyle={{
+                  background: 'var(--bg-card)',
+                  borderColor: 'var(--border-primary)',
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                formatter={(val: any) => [
+                  metric === 'balance' ? `₹${Number(val).toFixed(2)} Cr unspent` : `${val} days stalled`,
+                  metric === 'balance' ? 'Unspent Balance' : 'Max Idle Duration',
+                ]}
+              />
+              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getBarColor(entry.value)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </Card>
+  )
+}

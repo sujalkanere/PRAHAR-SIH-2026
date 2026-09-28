@@ -153,7 +153,7 @@ export const AddWorkModal: React.FC<AddWorkModalProps> = ({
               <Select
                 showSearch
                 loading={fetchingConst}
-                placeholder="Search and select from 543 Lok Sabha Constituencies"
+                placeholder="Search and select from Parliamentary Constituencies & States (Lok Sabha & Rajya Sabha)"
                 optionFilterProp="label"
                 options={constituencies.map((c) => ({
                   label: `${c.name} (${c.state}) - MP: ${c.mp_name || 'N/A'}`,

@@ -179,6 +179,47 @@ class DuplicatePairOut(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Compliance (Q1.5 & Q2.1)
+# ---------------------------------------------------------------------------
+class InspectionCreate(BaseModel):
+    work_id: str
+    inspection_date: date
+    inspector_name: Optional[str] = None
+    inspection_outcome: str = Field(..., pattern="^(SATISFACTORY|MINOR_ISSUES|MAJOR_ISSUES|ASSET_FAILURE)$")
+    notes: Optional[str] = None
+    photo_reference: Optional[str] = None
+
+
+class InspectionOut(BaseModel):
+    id: str
+    work_id: str
+    district: str
+    inspection_date: date
+    inspector_name: Optional[str] = None
+    inspection_outcome: str
+    notes: Optional[str] = None
+    photo_reference: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class InspectionCoverageOut(BaseModel):
+    id: str
+    district: str
+    financial_year: str
+    works_in_progress: int
+    works_inspected: int
+    coverage_pct: float
+    status: str
+    calculated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ---------------------------------------------------------------------------
 # Analytics
 # ---------------------------------------------------------------------------
 class KPIItem(BaseModel):
@@ -220,6 +261,7 @@ class SyntheticRequest(BaseModel):
 
 class DetectionRunOut(BaseModel):
     id: str
+    trigger_type: str = "MANUAL"
     status: str
     anomalies_detected: int
     works_analyzed: int

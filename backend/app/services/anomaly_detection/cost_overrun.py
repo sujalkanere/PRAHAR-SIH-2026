@@ -102,17 +102,27 @@ def _overrun(w: Work) -> float | None:
     return (float(w.actual_expenditure or 0) - s) / s * 100.0
 
 
+_cached_explainer = None
+_cached_cat_encoder = None
+
 def _isolation_forest_scores(works: list[Work], now: datetime) -> dict[str, float]:
+    global _cached_explainer, _cached_cat_encoder
     from sklearn.ensemble import IsolationForest
+    try:
+        import shap
+    except Exception:
+        shap = None
 
     cat_encoder = {c: i for i, c in enumerate(sorted({w.work_category for w in works}))}
+    _cached_cat_encoder = cat_encoder
+    
     X: list[list[float]] = []
     ids: list[str] = []
     for w in works:
         overrun = _overrun(w) or 0.0
         days = 0
         if w.expected_completion_date:
-            days = (w.expected_completion_date - (w.sanction_date or date.today())).days
+            days = (w.expected_completion_date - (w.sanction_date or datetime.date.today())).days
         X.append([float(w.sanctioned_amount), float(w.actual_expenditure or 0),
                   overrun, float(days), float(cat_encoder[w.work_category])])
         ids.append(str(w.id))
@@ -120,8 +130,60 @@ def _isolation_forest_scores(works: list[Work], now: datetime) -> dict[str, floa
     X = np.nan_to_num(X)
     model = IsolationForest(contamination=0.05, random_state=42, n_jobs=1)
     model.fit(X)
+    
+    if shap is not None:
+        try:
+            background_sample = shap.sample(X, min(100, len(X)))
+            _cached_explainer = shap.Explainer(model.predict, background_sample)
+        except Exception as e:
+            print(f"SHAP initialization failed: {e}")
+    else:
+        _cached_explainer = None
+
     scores = model.decision_function(X)  # negative => anomaly
     return {wid: float(s) for wid, s in zip(ids, scores)}
+
+def get_isolation_forest_shap(work: Work) -> dict | None:
+    global _cached_explainer, _cached_cat_encoder
+    if _cached_explainer is None or _cached_cat_encoder is None:
+        return None
+        
+    overrun = _overrun(work) or 0.0
+    days = 0
+    if work.expected_completion_date:
+        days = (work.expected_completion_date - (work.sanction_date or datetime.date.today())).days
+    
+    cat_idx = _cached_cat_encoder.get(work.work_category, 0)
+    
+    X = np.array([[float(work.sanctioned_amount), float(work.actual_expenditure or 0), overrun, float(days), float(cat_idx)]], dtype=float)
+    X = np.nan_to_num(X)
+    
+    try:
+        shap_values = _cached_explainer(X)
+        feature_names = ["sanctioned_amount", "actual_expenditure", "overrun_pct", "duration_days", "category_index"]
+        
+        contributions = []
+        vals = shap_values.values[0]
+        for i, feature in enumerate(feature_names):
+            val = float(vals[i])
+            if abs(val) > 0.001:
+                # for IsolationForest, negative predict means anomaly
+                contributions.append({
+                    "feature": feature,
+                    "contribution": round(abs(val), 4),
+                    "direction": "increases_anomaly" if val < 0 else "decreases_anomaly"
+                })
+                
+        contributions.sort(key=lambda x: x["contribution"], reverse=True)
+        
+        return {
+            "top_contributing_features": contributions,
+            "method": "shap_kernel_explainer",
+            "computed_on_demand": True
+        }
+    except Exception as e:
+        print(f"SHAP explanation failed: {e}")
+        return None
 
 
 def clear_cost_overrun(session: Session) -> None:

@@ -72,6 +72,16 @@ async def list_constituencies(
         for cid, rel in rel_rows:
             rel_map[str(cid)] = float(rel)
 
+        from app.models import SCSTCompliance
+        sc_st_rows = (await db.execute(
+            select(SCSTCompliance).where(SCSTCompliance.constituency_id.in_(cids))
+            .order_by(SCSTCompliance.financial_year.desc())
+        )).scalars().all()
+        sc_st_map: dict[str, SCSTCompliance] = {}
+        for sc_row in sc_st_rows:
+            if str(sc_row.constituency_id) not in sc_st_map:
+                sc_st_map[str(sc_row.constituency_id)] = sc_row
+
     data = []
     for c in consts:
         r = risk_map.get(str(c.id), {})
@@ -82,6 +92,7 @@ async def list_constituencies(
 
         score = r.get("risk_score") if r.get("risk_score") is not None else 65
         tier = r.get("risk_tier") or ("CRITICAL" if score >= 75 else "HIGH" if score >= 50 else "MEDIUM" if score >= 25 else "LOW")
+        sc_st = sc_st_map.get(str(c.id))
 
         data.append({
             "id": str(c.id), "name": c.name, "state": c.state, "district": c.district,
@@ -92,6 +103,11 @@ async def list_constituencies(
             "fund_utilization_rate": util_rate,
             "active_anomalies": anomaly_counts.get(str(c.id), 0),
             "financial_year": r.get("financial_year") or fy,
+            "sc_st_compliance_status": sc_st.status if sc_st else "COMPLIANT",
+            "sc_pct_actual": float(sc_st.sc_pct_actual) if sc_st else 0.0,
+            "st_pct_actual": float(sc_st.st_pct_actual) if sc_st else 0.0,
+            "sc_pct_target": float(sc_st.sc_pct_target) if sc_st else float(c.sc_allocation_target_pct or 15.0),
+            "st_pct_target": float(sc_st.st_pct_target) if sc_st else float(c.st_allocation_target_pct or 7.5),
         })
     return {"data": data, "pagination": Pagination(page=page, per_page=per_page,
                                                    total_records=total,

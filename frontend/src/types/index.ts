@@ -55,6 +55,7 @@ export interface Work {
   work_status: string
   implementing_agency: string | null
   financial_year: string
+  beneficiary_category?: string
   latitude: number | null
   longitude: number | null
   risk_score: number
@@ -65,6 +66,8 @@ export interface Work {
     duplicate: number
     pattern: number
     fund_utilization: number
+    aging_risk?: number
+    days_idle?: number
   } | null
 }
 
@@ -94,6 +97,13 @@ export interface ConstituencySummary {
   fund_utilization_rate: number | null
   active_anomalies: number
   financial_year: string | null
+  sc_st_compliance_status?: string
+  sc_pct_actual?: number
+  st_pct_actual?: number
+  sc_pct_target?: number
+  st_pct_target?: number
+  avg_days_unspent?: number | null
+  max_project_days_unspent?: number | null
 }
 
 export interface StateSummaryItem {
@@ -177,6 +187,16 @@ export interface ConstituencyDetailData {
   }>
   duplicate_pairs: DuplicatePair[]
   anomalies: Anomaly[]
+  sc_st_compliance?: {
+    id?: string
+    financial_year: string
+    sc_pct_actual: number
+    sc_pct_target: number
+    st_pct_actual: number
+    st_pct_target: number
+    status: string
+    calculated_at?: string
+  } | null
 }
 
 export interface AuditTrailItem {

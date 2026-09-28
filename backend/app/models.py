@@ -43,6 +43,8 @@ class Constituency(Base):
     district: Mapped[str] = mapped_column(String(100), nullable=True)  # addition (RBAC scope)
     mp_name: Mapped[str] = mapped_column(String(255), nullable=True)
     mp_type: Mapped[str] = mapped_column(String(20), nullable=True)
+    sc_allocation_target_pct: Mapped[float] = mapped_column(Numeric(5, 2), default=15.00)
+    st_allocation_target_pct: Mapped[float] = mapped_column(Numeric(5, 2), default=7.50)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -71,6 +73,7 @@ class Work(Base):
     work_status: Mapped[str] = mapped_column(String(20), nullable=False)
     implementing_agency: Mapped[str] = mapped_column(String(255), nullable=True)
     financial_year: Mapped[str] = mapped_column(String(10), nullable=False)
+    beneficiary_category: Mapped[str] = mapped_column(String(20), nullable=True, default="NA")
     latitude: Mapped[float] = mapped_column(Numeric(10, 7), nullable=True)
     longitude: Mapped[float] = mapped_column(Numeric(10, 7), nullable=True)
     description_embedding: Mapped[list] = mapped_column(Vector(384), nullable=True)
@@ -179,6 +182,63 @@ class ConstituencyRiskScore(Base):
     fund_utilization_rate: Mapped[float] = mapped_column(Numeric(8, 2), nullable=True)
     total_funds_released: Mapped[float] = mapped_column(Numeric(15, 2), default=0)
     total_expenditure: Mapped[float] = mapped_column(Numeric(15, 2), default=0)
+    avg_days_unspent: Mapped[int] = mapped_column(Integer, nullable=True)
+    max_project_days_unspent: Mapped[int] = mapped_column(Integer, nullable=True)
+    calculated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class SCSTCompliance(Base):
+    __tablename__ = "sc_st_compliance"
+    __table_args__ = (
+        UniqueConstraint("constituency_id", "financial_year", name="uq_sc_st_const_fy"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=_uuid)
+    constituency_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("constituencies.id"), nullable=False
+    )
+    financial_year: Mapped[str] = mapped_column(String(10), nullable=False)
+    sc_pct_actual: Mapped[float] = mapped_column(Numeric(5, 2), default=0)
+    sc_pct_target: Mapped[float] = mapped_column(Numeric(5, 2), default=15.00)
+    st_pct_actual: Mapped[float] = mapped_column(Numeric(5, 2), default=0)
+    st_pct_target: Mapped[float] = mapped_column(Numeric(5, 2), default=7.50)
+    status: Mapped[str] = mapped_column(String(20), default="COMPLIANT")
+    calculated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    constituency = relationship("Constituency")
+
+
+class Inspection(Base):
+    __tablename__ = "inspections"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=_uuid)
+    work_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("works.id"), nullable=False
+    )
+    district: Mapped[str] = mapped_column(String(100), nullable=False)
+    inspection_date: Mapped[date] = mapped_column(Date, nullable=False)
+    inspector_name: Mapped[str] = mapped_column(String(255), nullable=True)
+    inspection_outcome: Mapped[str] = mapped_column(String(20), nullable=False)
+    notes: Mapped[str] = mapped_column(Text, nullable=True)
+    photo_reference: Mapped[str] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+    work = relationship("Work")
+
+
+class InspectionCoverage(Base):
+    __tablename__ = "inspection_coverage"
+    __table_args__ = (
+        UniqueConstraint("district", "financial_year", name="uq_inspection_district_fy"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=_uuid)
+    district: Mapped[str] = mapped_column(String(100), nullable=False)
+    financial_year: Mapped[str] = mapped_column(String(10), nullable=False)
+    works_in_progress: Mapped[int] = mapped_column(Integer, default=0)
+    works_inspected: Mapped[int] = mapped_column(Integer, default=0)
+    coverage_pct: Mapped[float] = mapped_column(Numeric(5, 2), default=0)
+    status: Mapped[str] = mapped_column(String(20), default="COMPLIANT")
     calculated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -278,6 +338,9 @@ ANOMALY_CATEGORY_MAP = {
     "PAYMENT_RISK": "PAYMENT_RISK",
     "COMPLIANCE_RISK": "COMPLIANCE_RISK",
     "DURABILITY_RISK": "DURABILITY_RISK",
+    "FUND_AGING": "DELAYED_PROJECT",
+    "SC_ST_VIOLATION": "COMPLIANCE_RISK",
+    "INSPECTION_QUOTA_VIOLATION": "COMPLIANCE_RISK",
 }
 
 SEVERITY_ORDER = {"LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}

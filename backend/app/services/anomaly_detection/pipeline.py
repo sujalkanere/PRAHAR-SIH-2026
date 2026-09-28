@@ -20,9 +20,12 @@ from .cost_overrun import clear_cost_overrun, detect_cost_overrun
 from .delay_detection import clear_delays, detect_delays
 from .duplicate_detection import clear_duplicates, detect_duplicates
 from .durability_detection import clear_durability_risk, detect_durability_risk
+from .fund_aging import clear_fund_aging, detect_fund_aging
 from .fund_utilization import clear_fund_utilization, detect_fund_utilization
 from .pattern_detection import clear_patterns, detect_patterns
 from .payment_detection import clear_payment_risk, detect_payment_risk
+from .sc_st_compliance import clear_sc_st_compliance, detect_sc_st_compliance
+from .inspection_quota import clear_inspection_quota, detect_inspection_quota
 
 
 def reference_date() -> date:
@@ -75,7 +78,8 @@ def run_detection_pipeline(
         # clear previous detections (idempotent re-runs across all detectors)
         for clear in (clear_cost_overrun, clear_delays, clear_duplicates,
                       clear_fund_utilization, clear_patterns, clear_payment_risk,
-                      clear_compliance_risk, clear_durability_risk):
+                      clear_compliance_risk, clear_durability_risk,
+                      clear_fund_aging, clear_sc_st_compliance, clear_inspection_quota):
             clear(session)
 
         counts = {
@@ -86,6 +90,9 @@ def run_detection_pipeline(
             "COMPLIANCE_RISK": detect_compliance_risk(session, ref),
             "DURABILITY_RISK": detect_durability_risk(session, ref),
             "FUND_UTILIZATION": detect_fund_utilization(session, ref),
+            "FUND_AGING": detect_fund_aging(session, ref),
+            "SC_ST_COMPLIANCE": detect_sc_st_compliance(session, ref),
+            "INSPECTION_QUOTA": detect_inspection_quota(session, ref),
             "PATTERNS": detect_patterns(session, ref),
         }
         works_analyzed = session.execute(select(func.count(Work.id))).scalar() or 0

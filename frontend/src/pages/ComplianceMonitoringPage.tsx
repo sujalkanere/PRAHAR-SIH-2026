@@ -503,10 +503,10 @@ export const ComplianceMonitoringPage: React.FC = () => {
                         }`,
                       }}
                     >
-                      <Space justify="space-between" style={{ width: '100%', marginBottom: 8 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: 8 }}>
                         <Tag color="purple" style={{ fontWeight: 700 }}>{rule.guideline_section}</Tag>
                         {getSeverityTag(rule.severity)}
-                      </Space>
+                      </div>
 
                       <Title level={4} style={{ margin: '8px 0', fontSize: 16 }}>
                         {rule.name} <Text type="secondary" style={{ fontSize: 12 }}>({rule.id})</Text>
@@ -641,10 +641,10 @@ export const ComplianceMonitoringPage: React.FC = () => {
                             <Title level={5} style={{ color: '#dc2626' }}>Violated Guideline Clauses:</Title>
                             {simResult.violations.map((v, idx) => (
                               <Card key={idx} size="small" style={{ marginBottom: 12, borderLeft: '4px solid #dc2626' }}>
-                                <Space justify="space-between" style={{ width: '100%' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                                   <Text strong>{v.name} ({v.rule_id})</Text>
                                   <Tag color="purple">{v.guideline_section}</Tag>
-                                </Space>
+                                </div>
                                 <div style={{ fontSize: 12, color: '#dc2626', marginTop: 4 }}>
                                   <b>Reason:</b> {v.reason}
                                 </div>

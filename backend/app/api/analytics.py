@@ -23,17 +23,36 @@ async def national_summary(db: AsyncSession = Depends(get_db),
 @router.get("/current-data")
 async def official_metrics(db: AsyncSession = Depends(get_db),
                            user: User | None = Depends(get_optional_current_user)):
+    as_of = "2026-09-09"
+    version = "MoSPI-eSAKSHI-2026.09"
     from app.services.official_dataset_seeder import load_all_datasets
     try:
         ds = load_all_datasets()
         cd = ds.get("current_data", {})
         if cd:
-            return {"success": True, "data": cd}
+            data_payload = cd.get("data", cd)
+            if isinstance(data_payload, dict):
+                data_payload.setdefault("as_of_date", as_of)
+                data_payload.setdefault("source_dataset_version", version)
+            return {
+                "success": True,
+                "data": data_payload,
+                "as_of_date": as_of,
+                "source_dataset_version": version,
+            }
     except Exception:
         pass
     from app.services.analytics import national_summary as ns
     ns_data = await ns(db, user)
-    return {"success": True, "data": ns_data.get("official_metrics", {})}
+    om = ns_data.get("official_metrics", {})
+    om["as_of_date"] = as_of
+    om["source_dataset_version"] = version
+    return {
+        "success": True,
+        "data": om,
+        "as_of_date": as_of,
+        "source_dataset_version": version,
+    }
 
 
 @router.get("/state-summary/{state_name}")
@@ -110,3 +129,43 @@ async def trends(
         rows2 = (await db.execute(q)).all()
         out = [{"financial_year": fy, "value": round(float(v) / 1e7, 2)} for fy, v in rows2]
     return out
+
+
+@router.get("/predictions")
+async def get_predictions(
+    state: str | None = None,
+    district: str | None = None,
+    constituency_id: str | None = None,
+    financial_year: str = "2023-24",
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_roles(ROLE_ADMIN, ROLE_MINISTRY, ROLE_STATE_NODAL, ROLE_DISTRICT, ROLE_MP))
+):
+    from app.services.predictive_insights import get_predictive_insights
+    
+    # Enforce RBAC filtering
+    actual_state = state
+    actual_district = district
+    actual_constituency = constituency_id
+    
+    if user.role == "ROLE_STATE_NODAL":
+        actual_state = user.scope_value
+    elif user.role == "ROLE_DISTRICT":
+        actual_district = user.scope_value
+    elif user.role == "ROLE_MP":
+        actual_constituency = user.scope_value
+
+    insights = get_predictive_insights(db, state=actual_state, district=actual_district, constituency_id=actual_constituency, financial_year=financial_year)
+    return {"predictions": insights}
+
+
+
+@router.get("/aging")
+async def aging_analytics(
+    scope: str | None = None,
+    limit: int = Query(10, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_optional_current_user),
+):
+    from app.services.analytics import fund_aging_analytics
+    return await fund_aging_analytics(db, user, scope=scope, limit=limit)
+

@@ -393,11 +393,14 @@ def generate_synthetic(params: GeneratorParams | None = None) -> dict[str, pd.Da
 
                 cat = categories[(w_idx + cidx) % len(categories)]
                 desc_tpl = rng.choice(CATEGORY_DESCRIPTIONS[cat])
-                loc = rng.choice(LOCALITIES)
+                loc = f"{rng.choice(LOCALITIES)}, {dist}"
                 desc = desc_tpl.format(loc=loc)
 
                 sanc_date = fy_start + timedelta(days=rng.randint(15, 300))
-                sanc_amount = round(rng.uniform(5, 50), 1) * 100000.0
+                # Realistic continuous variance across works (Q1.4.3)
+                base_val = round(rng.uniform(500000.0, 5000000.0), 2)
+                paisa_jitter = round(rng.uniform(100.0, 9999.0) + rng.random(), 2)
+                sanc_amount = round(base_val + paisa_jitter, 2)
 
                 # Duration 3 to 8 months
                 exp_comp_date = sanc_date + timedelta(days=rng.randint(90, 240))
@@ -444,12 +447,12 @@ def generate_synthetic(params: GeneratorParams | None = None) -> dict[str, pd.Da
                             desc = f"Repair and patch work of {desc.lower()}"
                             injected_anomalies.append("DURABILITY_RISK")
                         else:
-                            sanc_amount = 1000000.0  # Cluster at 10 Lakhs
+                            sanc_amount = round(1000000.0 + rng.uniform(-50.0, 50.0), 2)  # Cluster around 10 Lakhs with minor variance
                             injected_anomalies.append("AMOUNT_CLUSTERING")
 
                 else:
-                    # Clean work
-                    mult = rng.uniform(0.92, 1.00)
+                    # Clean work with natural variance
+                    mult = rng.uniform(0.915, 0.995)
                     act_exp = round(sanc_amount * mult, 2)
                     delay_days = rng.randint(-15, 0)
                     comp_date = exp_comp_date + timedelta(days=delay_days)

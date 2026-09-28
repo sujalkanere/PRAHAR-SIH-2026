@@ -53,6 +53,7 @@ from app.models import (  # noqa: E402
     DuplicatePair,
     FundRelease,
     RefreshToken,
+    SCSTCompliance,
     UploadHistory,
     User,
     Work,
@@ -65,6 +66,8 @@ from sqlalchemy import delete  # noqa: E402
 @pytest.fixture(scope="session", autouse=True)
 def _database():
     """Create the test schema once per session."""
+    from app.models import Base
+    Base.metadata.drop_all(sync_engine)
     init_db_sync()
     yield
     sync_engine.dispose()
@@ -77,7 +80,7 @@ async def _clean_db(_database):
     login_limiter.reset()
     with SyncSessionLocal() as s:
         for model in (AuditLog, RefreshToken, UploadHistory, DuplicatePair, Anomaly,
-                      ConstituencyRiskScore, FundRelease, Work, Constituency, DetectionRun, User):
+                      ConstituencyRiskScore, SCSTCompliance, FundRelease, Work, Constituency, DetectionRun, User):
             s.execute(delete(model))
         s.commit()
     await seed_users()

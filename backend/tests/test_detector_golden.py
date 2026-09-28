@@ -1,10 +1,14 @@
-"""
-Golden unit tests for new analytical detectors:
+"""zero false negatives on known synthetic-injected anomalies (golden set).
+
+Golden unit tests for analytical detectors:
 - Payment detection (PAY-001, PAY-002, PAY-003)
 - Compliance detection (CMP-001, CMP-002, CMP-003)
 - Durability detection (DUR-001)
 - Explainability service (generate_deterministic_explanation)
 """
+# NOTE: The golden set evaluated in this module is generated via synthetic_generator.py's
+# parametric anomaly injection mechanisms with known ground-truth labels. It is not sourced
+# from real historical audits or externally-confirmed fraud cases.
 
 import uuid
 from datetime import date, datetime, timedelta
