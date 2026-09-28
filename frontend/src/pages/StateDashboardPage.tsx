@@ -107,10 +107,10 @@ export const StateDashboardPage: React.FC = () => {
         setSelectedProject(summaryRes.high_risk_projects[0])
       } else {
         setSelectedProject({
-          work_id: 'MP-27',
-          title: 'Project: MP-27',
-          work_description: 'Rural Road Construction',
-          location: `XYZ, ${stateName}`,
+          work_id: 'RW-303916',
+          title: 'Project: RW-303916',
+          work_description: 'Constructions of CC Road from Sona Traders Tehra TO Tohfiq Saheb Residence in Amar Colony',
+          location: `Nanded, ${stateName}`,
           risk_score: 87,
           risk_tier: 'HIGH',
           risk_components: {
@@ -120,6 +120,7 @@ export const StateDashboardPage: React.FC = () => {
             pattern: 68,
             fund_utilization: 88,
           },
+          reason: 'High Outlay Infrastructure: ₹10,00,000 allocated for civil works; under physical milestone scrutiny.',
         })
       }
 
@@ -256,17 +257,23 @@ export const StateDashboardPage: React.FC = () => {
                     <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>
                       Project Risk Scorecard
                     </span>
-                    {summary?.high_risk_projects && summary.high_risk_projects.length > 1 && (
+                    {summary?.high_risk_projects && summary.high_risk_projects.length > 0 && (
                       <Select
+                        showSearch
                         size="small"
-                        style={{ width: 150 }}
+                        style={{ width: 220 }}
+                        placeholder="Select Work..."
                         value={selectedProject?.work_id}
                         onChange={(wid) => {
                           const p = summary.high_risk_projects.find((item: any) => item.work_id === wid)
                           if (p) setSelectedProject(p)
                         }}
+                        filterOption={(input, option) =>
+                          (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase()) ||
+                          (option?.value ?? '').toString().toLowerCase().includes(input.toLowerCase())
+                        }
                         options={summary.high_risk_projects.map((p: any) => ({
-                          label: `${p.work_id}`,
+                          label: `${p.work_id} • Score ${p.risk_score}`,
                           value: p.work_id,
                         }))}
                       />

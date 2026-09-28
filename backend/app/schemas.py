@@ -193,6 +193,7 @@ class InspectionCreate(BaseModel):
 class InspectionOut(BaseModel):
     id: str
     work_id: str
+    official_work_id: Optional[str] = None
     district: str
     inspection_date: date
     inspector_name: Optional[str] = None

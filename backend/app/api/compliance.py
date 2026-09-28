@@ -219,7 +219,21 @@ async def get_inspections(
         .offset((page - 1) * per_page)
         .limit(per_page)
     )
-    items = [InspectionOut.model_validate(r).model_dump() for r in records.scalars().all()]
+    inspections = records.scalars().all()
+    work_uuids = [i.work_id for i in inspections if i.work_id]
+    wid_map: dict[Any, str] = {}
+    if work_uuids:
+        w_res = await db.execute(select(Work.id, Work.work_id).where(Work.id.in_(work_uuids)))
+        wid_map = {row[0]: row[1] for row in w_res.all()}
+
+    items = []
+    for r in inspections:
+        d = InspectionOut.model_validate(r).model_dump()
+        official_wid = wid_map.get(r.work_id, str(r.work_id))
+        d["work_id"] = official_wid
+        d["official_work_id"] = official_wid
+        items.append(d)
+
     return {
         "data": items,
         "pagination": {
@@ -237,21 +251,58 @@ async def create_inspection(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_roles(ROLE_ADMIN, ROLE_DISTRICT, ROLE_STATE_NODAL)),
 ) -> Dict[str, Any]:
-    work_res = await db.execute(select(Work).where(Work.id == payload.work_id))
-    work = work_res.scalar_one_or_none()
+    raw_id = str(payload.work_id).strip()
+
+    # Check if raw_id is a UUID or official Work ID (e.g., RW-303916, CW-266550)
+    work = None
+    is_uuid = False
+    try:
+        uuid.UUID(raw_id)
+        is_uuid = True
+    except (ValueError, AttributeError):
+        is_uuid = False
+
+    if is_uuid:
+        work_res = await db.execute(select(Work).where((Work.id == raw_id) | (Work.work_id == raw_id)))
+        work = work_res.scalars().first()
+    else:
+        # Match official work_id with prefix or raw number
+        candidates = [raw_id, f"RW-{raw_id}", f"CW-{raw_id}"]
+        work_res = await db.execute(select(Work).where(Work.work_id.in_(candidates)))
+        work = work_res.scalars().first()
+        if not work:
+            # Substring / ilike search
+            sub_res = await db.execute(select(Work).where(Work.work_id.ilike(f"%{raw_id}%")).limit(1))
+            work = sub_res.scalars().first()
+
     if not work:
-        raise HTTPException(status_code=404, detail="Work not found")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Work '{raw_id}' not found in official MPLADS dataset. Please specify an official ID like 'RW-303916'."
+        )
+
+    # Resolve district
+    district_name = getattr(work, "district", None)
+    if not district_name or district_name == "District Authority":
+        c_res = await db.execute(select(Constituency).where(Constituency.id == work.constituency_id))
+        c_obj = c_res.scalar_one_or_none()
+        if c_obj and c_obj.district:
+            district_name = c_obj.district
+        elif c_obj:
+            district_name = c_obj.name
+        else:
+            district_name = "District Authority"
 
     if current_user.role == ROLE_DISTRICT and current_user.scope_value:
-        if current_user.scope_value.lower() not in (work.district or "").lower():
+        if current_user.scope_value.lower() not in (district_name or "").lower():
             raise HTTPException(status_code=403, detail="Cannot log inspection outside assigned district")
 
     inspection = Inspection(
-        id=str(uuid.uuid4()),
+        id=uuid.uuid4(),
         work_id=work.id,
-        district=work.district or "Unknown",
+        district=district_name,
         inspection_date=payload.inspection_date,
-        inspector_name=payload.inspector_name,
+        inspector_name=payload.inspector_name or (current_user.username if current_user else "District Planning Officer"),
         inspection_outcome=payload.inspection_outcome,
         notes=payload.notes,
         photo_reference=payload.photo_reference,
@@ -259,7 +310,11 @@ async def create_inspection(
     db.add(inspection)
     await db.commit()
     await db.refresh(inspection)
-    return InspectionOut.model_validate(inspection).model_dump()
+
+    out = InspectionOut.model_validate(inspection).model_dump()
+    out["work_id"] = work.work_id  # Return official ID like RW-303916!
+    out["official_work_id"] = work.work_id
+    return out
 
 
 @router.get("/inspection-coverage", summary="Get District Inspection Coverage Records")
