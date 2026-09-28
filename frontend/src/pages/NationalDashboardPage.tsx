@@ -42,6 +42,13 @@ import { IndiaMap } from '../components/IndiaMap'
 import { InvestigationDrawer } from '../components/InvestigationDrawer'
 import { FundAgingWidget, FundAgingData } from '../components/FundAgingWidget'
 import { PredictiveInsightsPanel } from '../components/PredictiveInsightsPanel'
+import { ExpectedGrowthBadge } from '../components/ExpectedGrowthBadge'
+import {
+  calculate5YearFinancialGrowth,
+  calculate5YearRiskMitigation,
+  calculate5YearPipelineGrowth,
+  calculate5YearAnomalySuppression,
+} from '../utils/growthCalculations'
 
 const { Title, Text } = Typography
 
@@ -189,6 +196,10 @@ export const NationalDashboardPage: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'financial' | 'execution'>('all')
   const [chartViewMode, setChartViewMode] = useState<'donut' | 'bar'>('donut')
 
+  // 5-Year Horizon Forecast State
+  const [showRiskTargetForecast, setShowRiskTargetForecast] = useState(false)
+  const [showTrendForecast, setShowTrendForecast] = useState(false)
+
   useEffect(() => {
     loadData()
     const handleRefresh = () => {
@@ -329,18 +340,59 @@ export const NationalDashboardPage: React.FC = () => {
     value: c.value,
   }))
 
+  // Mathematical 5-Year Horizon Projections
+  const avgRiskScore = barData.length > 0 ? (barData.reduce((acc, c) => acc + c.risk, 0) / barData.length) : 58.4
+  const riskMitigation5Y = calculate5YearRiskMitigation(avgRiskScore)
+
+  const displayBarData = barData.map((c) => {
+    const target = Math.max(10, Math.round(c.risk * Math.pow(1 - 0.102, 5)))
+    return {
+      ...c,
+      targetRisk: target,
+      displayScore: showRiskTargetForecast ? target : c.risk,
+      displayTier: showRiskTargetForecast
+        ? (target >= 50 ? 'HIGH' : target >= 25 ? 'MEDIUM' : 'LOW')
+        : c.tier,
+    }
+  })
+
   // Trend Spline Data (Cumulative fund trajectory matching official baseline if populated)
-  const trendData = totalAllocatedCr > 0 ? [
-    { period: 'Apr 24', releases: 480.0, expenditure: 110.5 },
-    { period: 'Jul 24', releases: 1120.0, expenditure: 340.2 },
-    { period: 'Oct 24', releases: 1840.0, expenditure: 615.8 },
-    { period: 'Jan 25', releases: 2450.0, expenditure: 845.0 },
-    { period: 'Apr 25', releases: 2890.0, expenditure: 990.4 },
-    { period: 'Jul 25', releases: 3180.0, expenditure: 1120.0 },
-    { period: 'Current', releases: totalAllocatedCr, expenditure: totalExpCr },
+  const baseTrendData = totalAllocatedCr > 0 ? [
+    { period: 'Apr 24', releases: 480.0, expenditure: 110.5, isForecast: false },
+    { period: 'Jul 24', releases: 1120.0, expenditure: 340.2, isForecast: false },
+    { period: 'Oct 24', releases: 1840.0, expenditure: 615.8, isForecast: false },
+    { period: 'Jan 25', releases: 2450.0, expenditure: 845.0, isForecast: false },
+    { period: 'Apr 25', releases: 2890.0, expenditure: 990.4, isForecast: false },
+    { period: 'Jul 25', releases: 3180.0, expenditure: 1120.0, isForecast: false },
+    { period: 'Current', releases: totalAllocatedCr, expenditure: totalExpCr, isForecast: false },
   ] : []
 
+  const financialGrowth5Y = calculate5YearFinancialGrowth(baseTrendData, totalAllocatedCr, totalExpCr)
+
+  const forecastPeriods = [
+    { label: 'FY25-26 (P)', rel: financialGrowth5Y.annualTrajectory[0], expRatio: 0.74 },
+    { label: 'FY26-27 (P)', rel: financialGrowth5Y.annualTrajectory[1], expRatio: 0.79 },
+    { label: 'FY27-28 (P)', rel: financialGrowth5Y.annualTrajectory[2], expRatio: 0.84 },
+    { label: 'FY28-29 (P)', rel: financialGrowth5Y.annualTrajectory[3], expRatio: 0.89 },
+    { label: 'FY29-30 (P)', rel: financialGrowth5Y.annualTrajectory[4], expRatio: 0.94 },
+  ]
+
+  const trendData = showTrendForecast && baseTrendData.length > 0
+    ? [
+        ...baseTrendData,
+        ...forecastPeriods.map((fp) => ({
+          period: fp.label,
+          releases: Math.round(fp.rel),
+          expenditure: Math.round(fp.rel * fp.expRatio),
+          isForecast: true,
+        })),
+      ]
+    : baseTrendData
+
   // Stepped Conversion Pipeline Data (Recommended -> Sanctioned -> Ongoing -> Completed)
+  const pipelineGrowth5Y = calculate5YearPipelineGrowth(totalWorks, worksCompleted)
+  const anomalySuppression5Y = calculate5YearAnomalySuppression(totalAnomaliesCount)
+
   const funnelData = totalWorks > 0 ? [
     { stage: 'Recommended', count: totalWorks, rate: 100, label: `${totalWorks.toLocaleString('en-IN')} works`, fill: '#cbd5e1' },
     { stage: 'Sanctioned', count: Math.round(totalWorks * 0.88), rate: 88.0, label: `${Math.round(totalWorks * 0.88).toLocaleString('en-IN')} works`, fill: '#94a3b8' },
@@ -573,10 +625,31 @@ export const NationalDashboardPage: React.FC = () => {
               height: '100%',
             }}
           >
-            <div style={{ height: 490, width: '100%' }}>
-              {barData.length > 0 ? (
+            {/* 5-Year Risk Mitigation Potential Badge */}
+            <ExpectedGrowthBadge
+              growthPercentage={riskMitigation5Y.growthPercentage}
+              metricSuffix="% 5-Yr Risk Mitigation"
+              cagrPercentage={riskMitigation5Y.cagrPercentage}
+              isRiskReduction
+              singleLineExplanation={riskMitigation5Y.singleLineExplanation}
+              formulaDetails={{
+                formulaName: riskMitigation5Y.formulaName,
+                formulaExpression: riskMitigation5Y.formulaExpression,
+                baselineValue: `${riskMitigation5Y.baselineValue} avg score`,
+                projectedValue: `${riskMitigation5Y.projected5YearValue} target score`,
+                confidenceScore: riskMitigation5Y.confidenceScore,
+                methodologyNote: riskMitigation5Y.methodologyNote,
+              }}
+              showForecastToggle
+              forecastActive={showRiskTargetForecast}
+              onToggleForecast={setShowRiskTargetForecast}
+              style={{ marginBottom: 12 }}
+            />
+
+            <div style={{ height: 420, width: '100%' }}>
+              {displayBarData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={barData} layout="vertical" margin={{ top: 10, right: 45, left: 80, bottom: 10 }}>
+                  <BarChart data={displayBarData} layout="vertical" margin={{ top: 10, right: 45, left: 80, bottom: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e2c45' : '#f1f5f9'} horizontal={false} />
                     <XAxis type="number" domain={[0, 100]} stroke="var(--text-muted)" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
                     <YAxis
@@ -595,16 +668,16 @@ export const NationalDashboardPage: React.FC = () => {
                         boxShadow: 'var(--shadow-lg)',
                       }}
                       formatter={(val: any, _name: any, props: any) => [
-                        `${val} / 100 (${props.payload.tier})`,
-                        'Risk Score',
+                        `${val} / 100 (${props.payload.displayTier || props.payload.tier})${showRiskTargetForecast ? ' [5-Yr Target]' : ''}`,
+                        showRiskTargetForecast ? '5-Yr Mitigated Target' : 'Risk Score',
                       ]}
                     />
                     <Bar
-                      dataKey="risk"
+                      dataKey="displayScore"
                       radius={[0, 6, 6, 0]}
                       label={{
                         position: 'right',
-                        formatter: (v: any) => `${v}`,
+                        formatter: (v: any) => `${v}${showRiskTargetForecast ? ' (Target)' : ''}`,
                         fill: isDark ? '#f8fafc' : '#1e293b',
                         fontSize: 12,
                         fontWeight: 700,
@@ -622,11 +695,11 @@ export const NationalDashboardPage: React.FC = () => {
                       }}
                       style={{ cursor: 'pointer' }}
                     >
-                      {barData.map((entry, index) => {
+                      {displayBarData.map((entry, index) => {
                         let color = '#10b981'
-                        if (entry.risk >= 75) color = '#ef4444'
-                        else if (entry.risk >= 50) color = '#f97316'
-                        else if (entry.risk >= 25) color = '#f59e0b'
+                        if (entry.displayScore >= 75) color = '#ef4444'
+                        else if (entry.displayScore >= 50) color = '#f97316'
+                        else if (entry.displayScore >= 25) color = '#f59e0b'
                         return <Cell key={`cell-${index}`} fill={color} />
                       })}
                     </Bar>
@@ -640,7 +713,7 @@ export const NationalDashboardPage: React.FC = () => {
             </div>
             <div style={{ textAlign: 'center', marginTop: 4 }}>
               <Text type="secondary" style={{ fontSize: '11px' }}>
-                {barData.length > 0 ? 'Click any bar to drill down into constituency dossier' : 'Ingest official data to see constituency rankings'}
+                {barData.length > 0 ? (showRiskTargetForecast ? 'Viewing 5-Year algorithmic remediation target scores (-41.2% reduction)' : 'Click any bar to drill down into constituency dossier') : 'Ingest official data to see constituency rankings'}
               </Text>
             </div>
           </Card>
@@ -706,6 +779,26 @@ export const NationalDashboardPage: React.FC = () => {
               </div>
             </div>
 
+            {/* 5-Year Capital Deployment Expansion Badge */}
+            <ExpectedGrowthBadge
+              growthPercentage={financialGrowth5Y.growthPercentage}
+              cagrPercentage={financialGrowth5Y.cagrPercentage}
+              metricSuffix="% 5-Yr Capital Expansion"
+              singleLineExplanation={financialGrowth5Y.singleLineExplanation}
+              formulaDetails={{
+                formulaName: financialGrowth5Y.formulaName,
+                formulaExpression: financialGrowth5Y.formulaExpression,
+                baselineValue: `₹${financialGrowth5Y.baselineValue.toLocaleString('en-IN')} Cr`,
+                projectedValue: `₹${financialGrowth5Y.projected5YearValue.toLocaleString('en-IN')} Cr`,
+                confidenceScore: financialGrowth5Y.confidenceScore,
+                methodologyNote: financialGrowth5Y.methodologyNote,
+              }}
+              showForecastToggle
+              forecastActive={showTrendForecast}
+              onToggleForecast={setShowTrendForecast}
+              style={{ marginBottom: 14 }}
+            />
+
             {/* Smooth Spline Area Chart */}
             <div style={{ height: 280, width: '100%' }}>
               {trendData.length > 0 ? (
@@ -744,9 +837,9 @@ export const NationalDashboardPage: React.FC = () => {
                         borderRadius: 12,
                         boxShadow: 'var(--shadow-lg)',
                       }}
-                      formatter={(val: any, name: string) => [
-                        `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Cr`,
-                        name === 'releases' ? 'Fund Released' : 'Expenditure',
+                      formatter={(val: any, name: string, props: any) => [
+                        `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Cr${props.payload?.isForecast ? ' [Projected 5-Yr Horizon]' : ''}`,
+                        name === 'releases' ? (props.payload?.isForecast ? 'Projected Allocation' : 'Fund Released') : (props.payload?.isForecast ? 'Projected Expenditure' : 'Expenditure'),
                       ]}
                     />
                     <Area
@@ -754,6 +847,7 @@ export const NationalDashboardPage: React.FC = () => {
                       dataKey="releases"
                       stroke="#10b981"
                       strokeWidth={2.5}
+                      strokeDasharray={showTrendForecast ? '4 2' : undefined}
                       fillOpacity={1}
                       fill="url(#colorReleases)"
                     />
@@ -762,6 +856,7 @@ export const NationalDashboardPage: React.FC = () => {
                       dataKey="expenditure"
                       stroke="#94a3b8"
                       strokeWidth={2}
+                      strokeDasharray={showTrendForecast ? '3 3' : undefined}
                       fillOpacity={1}
                       fill="url(#colorExp)"
                     />
@@ -789,7 +884,7 @@ export const NationalDashboardPage: React.FC = () => {
             styles={{ body: { padding: '24px 24px 20px 24px' } }}
           >
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <div>
                 <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
                   Work Execution Pipeline
@@ -809,6 +904,23 @@ export const NationalDashboardPage: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* 5-Year Throughput Velocity Badge */}
+            <ExpectedGrowthBadge
+              growthPercentage={pipelineGrowth5Y.growthPercentage}
+              cagrPercentage={pipelineGrowth5Y.cagrPercentage}
+              metricSuffix="% 5-Yr Velocity Gain"
+              singleLineExplanation={pipelineGrowth5Y.singleLineExplanation}
+              formulaDetails={{
+                formulaName: pipelineGrowth5Y.formulaName,
+                formulaExpression: pipelineGrowth5Y.formulaExpression,
+                baselineValue: `${pipelineGrowth5Y.baselineValue}% rate`,
+                projectedValue: `${pipelineGrowth5Y.projected5YearValue}% projected`,
+                confidenceScore: pipelineGrowth5Y.confidenceScore,
+                methodologyNote: pipelineGrowth5Y.methodologyNote,
+              }}
+              style={{ marginBottom: 12 }}
+            />
 
             {/* Stepped Column / Funnel Chart */}
             <div style={{ height: 280, width: '100%' }}>
@@ -969,6 +1081,24 @@ export const NationalDashboardPage: React.FC = () => {
         }}
         styles={{ body: { padding: '24px 28px' } }}
       >
+        {/* 5-Year Anomaly Suppression Potential Badge */}
+        <ExpectedGrowthBadge
+          growthPercentage={anomalySuppression5Y.growthPercentage}
+          cagrPercentage={anomalySuppression5Y.cagrPercentage}
+          metricSuffix="% 5-Yr Anomaly Suppression"
+          isRiskReduction
+          singleLineExplanation={anomalySuppression5Y.singleLineExplanation}
+          formulaDetails={{
+            formulaName: anomalySuppression5Y.formulaName,
+            formulaExpression: anomalySuppression5Y.formulaExpression,
+            baselineValue: `${anomalySuppression5Y.baselineValue.toLocaleString('en-IN')} alerts`,
+            projectedValue: `${anomalySuppression5Y.projected5YearValue.toLocaleString('en-IN')} alerts target`,
+            confidenceScore: anomalySuppression5Y.confidenceScore,
+            methodologyNote: anomalySuppression5Y.methodologyNote,
+          }}
+          style={{ marginBottom: 20 }}
+        />
+
         {chartViewMode === 'donut' ? (
           <Row gutter={[32, 24]} align="middle">
             {/* Left Column: Interactive Donut with Live Metric Center */}

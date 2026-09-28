@@ -2,6 +2,9 @@ import { apiClient } from './client'
 import { Work } from '../types'
 
 export interface WorkListParams {
+  state?: string
+  district?: string
+  constituency?: string
   constituency_id?: string
   work_category?: string
   work_status?: string
