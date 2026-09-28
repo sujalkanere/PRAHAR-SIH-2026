@@ -364,12 +364,13 @@ export const LandingPage: React.FC = () => {
           {/* Left: Emblem + 3-line Government of India typography */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <img
-              src="/emblem-white.svg"
-              alt="National Emblem of India"
+              src="/ashok-stambh.png"
+              alt="Ashok Stambh - National Emblem of India"
               style={{
-                width: 38,
-                height: 48,
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))',
+                height: 52,
+                width: 'auto',
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
               }}
             />
             <div style={{ color: '#ffffff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
@@ -464,6 +465,22 @@ export const LandingPage: React.FC = () => {
               }}
             >
               Dashboard
+            </a>
+            <a
+              href="/compliance"
+              onClick={(e) => {
+                e.preventDefault()
+                navigate('/compliance')
+              }}
+              style={{
+                color: '#ffffff',
+                fontWeight: 600,
+                textDecoration: 'none',
+                fontSize: '13.5px',
+                letterSpacing: '0.01em',
+              }}
+            >
+              Compliance
             </a>
           </nav>
 

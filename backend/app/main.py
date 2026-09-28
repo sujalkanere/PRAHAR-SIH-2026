@@ -81,7 +81,7 @@ async def rate_limit_middleware(request: Request, call_next):
 
 
 from fastapi.responses import JSONResponse, RedirectResponse
-from app.api import admin, analytics, anomalies, auth, chat, constituencies, reports, works  # noqa: E402
+from app.api import admin, analytics, anomalies, auth, chat, compliance, constituencies, reports, works  # noqa: E402
 
 app.include_router(auth.router)
 app.include_router(works.router)
@@ -90,6 +90,7 @@ app.include_router(anomalies.router)
 app.include_router(analytics.router)
 app.include_router(admin.router)
 app.include_router(reports.router)
+app.include_router(compliance.router)
 app.include_router(chat.router)
 app.include_router(chat.v1_router)
 

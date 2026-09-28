@@ -14,6 +14,7 @@ import {
   RightOutlined,
   ThunderboltOutlined,
   LoginOutlined,
+  SafetyCertificateOutlined,
   HeartFilled,
 } from '@ant-design/icons'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -127,6 +128,12 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         label: 'Alert Triage',
         icon: <AlertOutlined style={{ fontSize: '16px' }} />,
         onClick: () => navigate('/alerts'),
+      },
+      {
+        key: '/compliance',
+        label: 'Compliance Engine',
+        icon: <SafetyCertificateOutlined style={{ fontSize: '16px' }} />,
+        onClick: () => navigate('/compliance'),
       }
     )
 

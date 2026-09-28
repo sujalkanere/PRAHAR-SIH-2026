@@ -13,6 +13,7 @@ const NationalDashboardPage = lazy(() => import('./pages/NationalDashboardPage')
 const StateDashboardPage = lazy(() => import('./pages/StateDashboardPage').then(m => ({ default: m.StateDashboardPage })))
 const ConstituencyDetailPage = lazy(() => import('./pages/ConstituencyDetailPage').then(m => ({ default: m.ConstituencyDetailPage })))
 const AlertManagementPage = lazy(() => import('./pages/AlertManagementPage').then(m => ({ default: m.AlertManagementPage })))
+const ComplianceMonitoringPage = lazy(() => import('./pages/ComplianceMonitoringPage').then(m => ({ default: m.ComplianceMonitoringPage })))
 const AdminPage = lazy(() => import('./pages/AdminPage').then(m => ({ default: m.AdminPage })))
 
 const LoadingFallback: React.FC = () => (
@@ -113,6 +114,14 @@ const ThemedAppContent: React.FC = () => {
                   <ProtectedRoute allowedRoles={['ROLE_ADMIN', 'ROLE_MINISTRY', 'ROLE_STATE_NODAL', 'ROLE_DISTRICT', 'ROLE_MP']}>
                     <AlertManagementPage />
                   </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/compliance"
+                element={
+                  <AppLayout>
+                    <ComplianceMonitoringPage />
+                  </AppLayout>
                 }
               />
               <Route
