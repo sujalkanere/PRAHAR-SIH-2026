@@ -265,7 +265,7 @@ export const AIChatbotModal: React.FC<AIChatbotModalProps> = ({
                   PRAHAR AI Assistant
                 </span>
                 <Tag color="success" style={{ borderRadius: 12, fontSize: '11px', fontWeight: 600, margin: 0 }}>
-                  Deepseek V4 (local model)
+                  Deepseek V4 (local model using Ollama for  data privacy)
                 </Tag>
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>

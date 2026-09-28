@@ -45,6 +45,7 @@ import {
   ThunderboltOutlined,
   FileTextOutlined,
   ReloadOutlined,
+  BarcodeOutlined,
 } from '@ant-design/icons';
 import {
   ComplianceAlert,
@@ -60,6 +61,10 @@ import {
   rescanCompliance,
   simulateWorkCompliance,
 } from '../api/compliance';
+import {
+  OfficialComplianceSlipModal,
+  printOfficialSlip,
+} from '../components/OfficialComplianceSlipModal';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -87,6 +92,7 @@ export const ComplianceMonitoringPage: React.FC = () => {
   const [simLoading, setSimLoading] = useState<boolean>(false);
   const [simResult, setSimResult] = useState<SimulateWorkResult | null>(null);
   const [simForm] = Form.useForm();
+  const [slipModalVisible, setSlipModalVisible] = useState<boolean>(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -771,91 +777,214 @@ export const ComplianceMonitoringPage: React.FC = () => {
                       {simResult ? (
                         <div
                           style={{
-                            border: `2px solid ${simResult.is_compliant ? '#059669' : '#DC2626'}`,
-                            borderRadius: 14,
+                            border: `3px double ${simResult.is_compliant ? '#059669' : '#DC2626'}`,
+                            borderRadius: 10,
                             padding: '24px',
-                            background: simResult.is_compliant ? '#F0FDF4' : '#FEF2F2',
-                            boxShadow: '0 8px 30px rgba(0,0,0,0.06)',
+                            background: '#FFFFFF',
+                            boxShadow: '0 10px 30px rgba(10, 37, 64, 0.08)',
+                            position: 'relative',
+                            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                           }}
                         >
-                          {/* Certificate Header */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: 16, marginBottom: 16 }}>
+                          {/* Slip Header & Letterhead */}
+                          <div style={{ textAlign: 'center', borderBottom: '2px solid #0A2540', paddingBottom: 12, marginBottom: 16 }}>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 800,
+                                color: '#475569',
+                                letterSpacing: '0.1em',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              GOVERNMENT OF INDIA • भारत सरकार • MoSPI
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 16,
+                                fontWeight: 800,
+                                color: '#0A2540',
+                                letterSpacing: '-0.01em',
+                                margin: '3px 0',
+                              }}
+                            >
+                              MPLADS STATUTORY PRE-SANCTION CLEARANCE SLIP
+                            </div>
+                            <div
+                              style={{
+                                fontSize: 11.5,
+                                color: '#0284C7',
+                                fontWeight: 700,
+                                letterSpacing: '0.04em',
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              FORM PS-1 • eSAKSHI DIGITAL AUDIT CLEARANCE MEMORANDUM
+                            </div>
+                          </div>
+
+                          {/* Certificate Title & Action Buttons Bar */}
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              background: '#F8FAFC',
+                              border: '1px solid #E2E8F0',
+                              borderRadius: 6,
+                              padding: '10px 14px',
+                              marginBottom: 16,
+                              flexWrap: 'wrap',
+                              gap: 8,
+                            }}
+                          >
                             <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <FileProtectOutlined style={{ fontSize: 24, color: simResult.is_compliant ? '#059669' : '#DC2626' }} />
-                                <span style={{ fontWeight: 800, fontSize: 16, color: '#0A2540' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <FileProtectOutlined style={{ fontSize: 18, color: simResult.is_compliant ? '#059669' : '#DC2626' }} />
+                                <span style={{ fontWeight: 800, fontSize: 13, color: '#0A2540' }}>
                                   PRE-SANCTION COMPLIANCE FEASIBILITY CERTIFICATE
                                 </span>
                               </div>
-                              <Text type="secondary" style={{ fontSize: 12, marginTop: 2, display: 'block' }}>
-                                Reference: <b>{simResult.certificate_id}</b> | Evaluated at: {new Date(simResult.evaluated_at).toLocaleString('en-IN')}
+                              <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 2 }}>
+                                Ref: <b style={{ fontFamily: 'monospace', color: '#0A2540' }}>{simResult.certificate_id}</b> | Evaluated: {new Date(simResult.evaluated_at).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                               </Text>
                             </div>
-                            <Button
-                              icon={<PrinterOutlined />}
-                              size="small"
-                              onClick={() => window.print()}
-                              style={{ borderRadius: 6 }}
-                            >
-                              Print Slip
-                            </Button>
+                            <Space size={8}>
+                              <Button
+                                icon={<FileTextOutlined />}
+                                size="small"
+                                onClick={() => setSlipModalVisible(true)}
+                                style={{ borderRadius: 6, fontWeight: 600, color: '#0A2540', borderColor: '#CBD5E1' }}
+                              >
+                                View Official Slip
+                              </Button>
+                              <Button
+                                type="primary"
+                                icon={<PrinterOutlined />}
+                                size="small"
+                                onClick={() => printOfficialSlip(simResult, simForm.getFieldsValue())}
+                                style={{
+                                  borderRadius: 6,
+                                  background: '#0A2540',
+                                  borderColor: '#0A2540',
+                                  fontWeight: 700,
+                                }}
+                              >
+                                Print Slip
+                              </Button>
+                            </Space>
                           </div>
 
-                          {/* Verdict Box */}
+                          {/* Particulars Summary Table */}
+                          <div style={{ marginBottom: 14 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#0A2540', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '1px solid #CBD5E1', paddingBottom: 3, marginBottom: 8 }}>
+                              1. Proposal Particulars
+                            </div>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                              <tbody>
+                                <tr>
+                                  <td style={{ width: '25%', background: '#F8FAFC', border: '1px solid #CBD5E1', padding: '5px 8px', fontWeight: 600 }}>Work Title:</td>
+                                  <td colSpan={3} style={{ border: '1px solid #CBD5E1', padding: '5px 8px', fontWeight: 700, color: '#0A2540' }}>
+                                    {simForm.getFieldValue('work_description') || 'Work Proposal'}
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', padding: '5px 8px', fontWeight: 600 }}>Category:</td>
+                                  <td style={{ border: '1px solid #CBD5E1', padding: '5px 8px' }}>
+                                    {simForm.getFieldValue('work_category') || 'Community Infrastructure'}
+                                  </td>
+                                  <td style={{ width: '22%', background: '#F8FAFC', border: '1px solid #CBD5E1', padding: '5px 8px', fontWeight: 600 }}>Estimated Outlay:</td>
+                                  <td style={{ border: '1px solid #CBD5E1', padding: '5px 8px', fontWeight: 700, color: '#0A2540' }}>
+                                    ₹ {(Number(simForm.getFieldValue('sanctioned_amount') || 1500000) / 100000).toFixed(2)} Lakhs
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', padding: '5px 8px', fontWeight: 600 }}>Beneficiary:</td>
+                                  <td style={{ border: '1px solid #CBD5E1', padding: '5px 8px' }}>
+                                    {simForm.getFieldValue('beneficiary_type') || 'Panchayat / Local Body'}
+                                  </td>
+                                  <td style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', padding: '5px 8px', fontWeight: 600 }}>Land Status:</td>
+                                  <td style={{ border: '1px solid #CBD5E1', padding: '5px 8px' }}>
+                                    {simForm.getFieldValue('land_status') === 'PRIVATE_LAND' ? (
+                                      <span style={{ color: '#DC2626', fontWeight: 700 }}>Private Land (Ineligible)</span>
+                                    ) : (
+                                      'Public / Govt Land'
+                                    )}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+
+                          {/* Verdict Box with Embossed Stamp */}
                           <div
                             style={{
-                              background: '#FFFFFF',
-                              borderRadius: 10,
-                              padding: '16px 20px',
-                              marginBottom: 16,
-                              border: '1px solid #E2E8F0',
+                              background: simResult.is_compliant ? '#F0FDF4' : '#FEF2F2',
+                              border: `2px solid ${simResult.is_compliant ? '#86EFAC' : '#FCA5A5'}`,
+                              borderRadius: 8,
+                              padding: '14px 18px',
+                              marginBottom: 14,
                               display: 'flex',
                               justifyContent: 'space-between',
                               alignItems: 'center',
                             }}
                           >
                             <div>
-                              <Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              <Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
                                 Official Scheme Verdict
                               </Text>
-                              <div style={{ fontSize: 20, fontWeight: 800, color: simResult.is_compliant ? '#059669' : '#DC2626' }}>
+                              <div style={{ fontSize: 18, fontWeight: 900, color: simResult.is_compliant ? '#059669' : '#DC2626' }}>
                                 {simResult.verdict}
                               </div>
-                              <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
-                                {simResult.rules_passed} of {simResult.total_rules_checked} statutory criteria satisfied
+                              <div style={{ fontSize: 12, color: '#475569', marginTop: 2 }}>
+                                {simResult.rules_passed} of {simResult.total_rules_checked} statutory criteria satisfied. {simResult.rules_violated} violation(s).
                               </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
-                              <Tag color={simResult.is_compliant ? 'green' : 'red'} style={{ fontSize: 14, padding: '4px 12px', borderRadius: 6, fontWeight: 700 }}>
-                                {simResult.is_compliant ? 'PASSED' : 'REJECTED'}
-                              </Tag>
+                              <div
+                                style={{
+                                  display: 'inline-block',
+                                  padding: '6px 14px',
+                                  border: `3px dashed ${simResult.is_compliant ? '#059669' : '#DC2626'}`,
+                                  color: simResult.is_compliant ? '#059669' : '#DC2626',
+                                  fontSize: 13,
+                                  fontWeight: 900,
+                                  textTransform: 'uppercase',
+                                  letterSpacing: '0.08em',
+                                  transform: 'rotate(-3deg)',
+                                  borderRadius: 4,
+                                  background: '#FFFFFF',
+                                }}
+                              >
+                                {simResult.is_compliant ? 'APPROVED' : 'REJECTED'}
+                              </div>
                             </div>
                           </div>
 
                           {/* Quota Impact */}
-                          <div style={{ background: '#FFFFFF', borderRadius: 10, padding: '14px 18px', marginBottom: 16, border: '1px solid #E2E8F0' }}>
-                            <Text strong style={{ color: '#0A2540', fontSize: 13 }}>Statutory Quota Entitlement: </Text>
-                            <Tag color="cyan" style={{ fontWeight: 600, borderRadius: 4 }}>{simResult.sc_st_credit}</Tag>
+                          <div style={{ background: '#F8FAFC', borderRadius: 6, padding: '10px 14px', marginBottom: 14, border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text strong style={{ color: '#0A2540', fontSize: 12 }}>Statutory Quota Entitlement: </Text>
+                            <Tag color="cyan" style={{ fontWeight: 600, borderRadius: 4, margin: 0 }}>{simResult.sc_st_credit}</Tag>
                           </div>
 
                           {/* Clause Checklist */}
-                          <div style={{ background: '#FFFFFF', borderRadius: 10, padding: '16px 20px', marginBottom: 16, border: '1px solid #E2E8F0' }}>
-                            <div style={{ fontWeight: 700, fontSize: 13, color: '#0A2540', marginBottom: 12 }}>
-                              Statutory Clause Verification Checklist:
+                          <div style={{ background: '#FFFFFF', borderRadius: 8, padding: '14px 16px', marginBottom: 14, border: '1px solid #CBD5E1' }}>
+                            <div style={{ fontWeight: 700, fontSize: 12, color: '#0A2540', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                              2. Statutory Clause Verification Checklist:
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                               {simResult.checklist?.map((item, idx) => (
-                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, paddingBottom: 6, borderBottom: idx < (simResult.checklist?.length || 0) - 1 ? '1px solid #F1F5F9' : 'none' }}>
                                   <Space size={8}>
                                     {item.status === 'PASSED' ? (
                                       <CheckCircleOutlined style={{ color: '#059669', fontSize: 14 }} />
                                     ) : (
                                       <CloseCircleOutlined style={{ color: '#DC2626', fontSize: 14 }} />
                                     )}
-                                    <span style={{ fontWeight: 500, color: '#1E293B' }}>{item.clause}</span>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>({item.citation})</Text>
+                                    <span style={{ fontWeight: 600, color: '#1E293B' }}>{item.clause}</span>
+                                    <Text type="secondary" style={{ fontSize: 11, fontFamily: 'monospace' }}>({item.citation})</Text>
                                   </Space>
-                                  <Tag color={item.status === 'PASSED' ? 'success' : 'error'} style={{ fontSize: 11, margin: 0 }}>
+                                  <Tag color={item.status === 'PASSED' ? 'success' : 'error'} style={{ fontSize: 11, margin: 0, fontWeight: 700 }}>
                                     {item.status}
                                   </Tag>
                                 </div>
@@ -865,36 +994,67 @@ export const ComplianceMonitoringPage: React.FC = () => {
 
                           {/* Violations / Actions if any */}
                           {simResult.violations && simResult.violations.length > 0 && (
-                            <div>
-                              <div style={{ fontWeight: 700, fontSize: 13, color: '#DC2626', marginBottom: 8 }}>
-                                Broken Guidelines & Mandatory Rejections:
+                            <div style={{ marginBottom: 14 }}>
+                              <div style={{ fontWeight: 800, fontSize: 12, color: '#DC2626', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                3. Broken Guidelines & Mandatory Rejections:
                               </div>
                               {simResult.violations.map((v, i) => (
                                 <div
                                   key={i}
                                   style={{
-                                    background: '#FFFFFF',
-                                    borderRadius: 8,
-                                    padding: '12px 16px',
-                                    marginBottom: 8,
+                                    background: '#FEF2F2',
+                                    borderRadius: 6,
+                                    padding: '10px 14px',
+                                    marginBottom: 6,
                                     borderLeft: '4px solid #DC2626',
                                     border: '1px solid #FCA5A5',
                                   }}
                                 >
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: '#DC2626', fontSize: 13 }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#DC2626', fontSize: 12 }}>
                                     <span>{v.name}</span>
                                     <Tag color="purple">{v.guideline_section}</Tag>
                                   </div>
-                                  <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>
+                                  <div style={{ fontSize: 11.5, color: '#475569', marginTop: 3 }}>
                                     <b>Reason:</b> {v.reason}
                                   </div>
-                                  <div style={{ fontSize: 12, color: '#0A2540', marginTop: 2, fontWeight: 600 }}>
+                                  <div style={{ fontSize: 11.5, color: '#0A2540', marginTop: 2, fontWeight: 600 }}>
                                     <b>Remedy:</b> {v.action}
                                   </div>
                                 </div>
                               ))}
                             </div>
                           )}
+
+                          {/* Perforated Slip Footer */}
+                          <div
+                            style={{
+                              borderTop: '2px dashed #94A3B8',
+                              paddingTop: 12,
+                              marginTop: 14,
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              fontSize: 10.5,
+                              color: '#64748B',
+                            }}
+                          >
+                            <div>
+                              <BarcodeOutlined style={{ fontSize: 24, color: '#0A2540', display: 'block' }} />
+                              <span>* {simResult.certificate_id} *</span>
+                            </div>
+                            <div style={{ textAlign: 'center' }}>
+                              <span style={{ fontWeight: 700, color: '#0A2540', display: 'block' }}>
+                                eSAKSHI DIGITAL AUDIT SEAL
+                              </span>
+                              <span>MoSPI Compliance Engine v2026.09</span>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <span style={{ display: 'block', fontWeight: 700, color: '#059669' }}>
+                                VERIFIED INSTRUMENT
+                              </span>
+                              <span>Valid for Sanction Docket</span>
+                            </div>
+                          </div>
                         </div>
                       ) : (
                         <div
@@ -1312,6 +1472,13 @@ export const ComplianceMonitoringPage: React.FC = () => {
           ]}
         />
       </div>
+
+      <OfficialComplianceSlipModal
+        visible={slipModalVisible}
+        onClose={() => setSlipModalVisible(false)}
+        result={simResult}
+        formData={simForm.getFieldsValue()}
+      />
     </div>
   );
 };
