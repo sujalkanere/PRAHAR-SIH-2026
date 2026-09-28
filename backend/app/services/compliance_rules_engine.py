@@ -306,6 +306,34 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
                         "detected_at": now.isoformat(),
                     })
 
+            # RULE-ELIG-002: Vehicle Purchase Restriction under Para 3.33 (Prohibited unless medical/disability exempt)
+            if not is_exempt:
+                v_match = VEHICLE_REGEX.search(desc_lower) or VEHICLE_REGEX.search(cat_lower)
+                if v_match:
+                    rule_id = "RULE-ELIG-002"
+                    rule_violation_counts[rule_id] += 1
+                    clean_v = v_match.group(0).strip()
+                    alerts.append({
+                        "alert_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
+                        "work_id": str(w.id),
+                        "work_code": w.work_id,
+                        "work_title": w.work_description[:100],
+                        "constituency_id": str(w.constituency_id),
+                        "constituency_name": c_name,
+                        "state": state,
+                        "mp_name": mp_name,
+                        "rule_id": rule_id,
+                        "rule_name": "Vehicle Purchase Restriction & Medical Exemption Check",
+                        "pillar": "Eligibility",
+                        "category": "Sanction",
+                        "severity": "HIGH",
+                        "guideline_section": "Section 3.33 & Annexure-IIA",
+                        "violation_details": f"Work description references restricted vehicle purchase matching '{clean_v}' without recognized medical/disability exemption.",
+                        "amount_involved": amt,
+                        "suggested_action": "Cancel administrative sanction. Verify if ambulance/mobile clinic under Annexure-IIA.",
+                        "detected_at": now.isoformat(),
+                    })
+
         # RULE-ELIG-003: Single Work Sanction Cap (> ₹1.00 Crore Norm)
         if amt > 10000000:
             rule_id = "RULE-ELIG-003"
@@ -409,19 +437,61 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
             sc_passed = sc_pct >= 15.0
             st_passed = st_pct >= 7.5
 
+        # Calculate exact monetary shortfalls
+        sc_shortfall_rupees = max(0.0, (15.0 - sc_pct) / 100.0 * tot_sanctioned)
+        st_shortfall_rupees = max(0.0, (7.5 - st_pct) / 100.0 * tot_sanctioned)
+
         if sc_passed:
             total_constituencies_sc_compliant += 1
         else:
-            rule_violation_counts["RULE-QUOTA-001"] += 1
+            rule_id = "RULE-QUOTA-001"
+            rule_violation_counts[rule_id] += 1
+            alerts.append({
+                "alert_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
+                "work_id": f"CONST-{c_id_str}",
+                "work_code": f"SC-QUOTA-{c.name[:4].upper()}",
+                "work_title": f"Mandatory 15% SC Allocation Shortfall in {c.name} ({c.state})",
+                "constituency_id": c_id_str,
+                "constituency_name": c.name,
+                "state": c.state,
+                "mp_name": c.mp_name or "Hon'ble MP",
+                "rule_id": rule_id,
+                "rule_name": "Mandatory Scheduled Caste (SC) Area Allocation (Min 15%)",
+                "pillar": "Social Equity",
+                "category": "Allocation",
+                "severity": "HIGH",
+                "guideline_section": "Section 2.5",
+                "violation_details": f"Allocated only {sc_pct}% to SC habitations against statutory 15.0% mandate. Shortfall: ₹{(sc_shortfall_rupees/100000):.1f} Lakhs.",
+                "amount_involved": sc_shortfall_rupees,
+                "suggested_action": f"Prioritize next ₹{(sc_shortfall_rupees/100000):.1f} Lakhs of recommendations for designated SC habitations.",
+                "detected_at": now.isoformat(),
+            })
 
         if st_passed:
             total_constituencies_st_compliant += 1
         else:
-            rule_violation_counts["RULE-QUOTA-002"] += 1
-
-        # Calculate exact monetary shortfalls
-        sc_shortfall_rupees = max(0.0, (15.0 - sc_pct) / 100.0 * tot_sanctioned)
-        st_shortfall_rupees = max(0.0, (7.5 - st_pct) / 100.0 * tot_sanctioned)
+            rule_id = "RULE-QUOTA-002"
+            rule_violation_counts[rule_id] += 1
+            alerts.append({
+                "alert_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
+                "work_id": f"CONST-{c_id_str}",
+                "work_code": f"ST-QUOTA-{c.name[:4].upper()}",
+                "work_title": f"Mandatory 7.5% ST Allocation Shortfall in {c.name} ({c.state})",
+                "constituency_id": c_id_str,
+                "constituency_name": c.name,
+                "state": c.state,
+                "mp_name": c.mp_name or "Hon'ble MP",
+                "rule_id": rule_id,
+                "rule_name": "Mandatory Scheduled Tribe (ST) Area Allocation (Min 7.5%)",
+                "pillar": "Social Equity",
+                "category": "Allocation",
+                "severity": "HIGH",
+                "guideline_section": "Section 2.5",
+                "violation_details": f"Allocated only {st_pct}% to ST habitations against statutory 7.5% mandate. Shortfall: ₹{(st_shortfall_rupees/100000):.1f} Lakhs.",
+                "amount_involved": st_shortfall_rupees,
+                "suggested_action": f"Prioritize next ₹{(st_shortfall_rupees/100000):.1f} Lakhs of recommendations for designated tribal hamlets.",
+                "detected_at": now.isoformat(),
+            })
 
         remedy_text = "Statutory quotas fulfilled."
         if not sc_passed and not st_passed:
@@ -483,6 +553,10 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
         1
     )
 
+    # Sort alerts: CRITICAL first, then HIGH, then MEDIUM
+    severity_order = {"CRITICAL": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3}
+    alerts.sort(key=lambda a: severity_order.get(a.get("severity", "LOW"), 4))
+
     # Format Rulebook with Live Statistics
     rulebook_with_stats = []
     for r in RULEBOOK:
@@ -499,7 +573,7 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
             "failed_works": total_works_scanned - passed_works,
             "compliance_pass_rate_pct": pass_rate_pct,
             "composite_health_index": composite_health_index,
-            "total_active_alerts": total_alerts,
+            "total_active_alerts": len(alerts),
             "total_amount_at_risk": total_amount_at_risk,
             "sc_quota_compliance_pct": sc_quota_pct,
             "st_quota_compliance_pct": st_quota_pct,
@@ -510,7 +584,7 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
             "last_scanned_at": now.isoformat(),
         },
         "rulebook": rulebook_with_stats,
-        "alerts": alerts[:300],  # Return up to 300 active alerts
+        "alerts": alerts[:500],  # Return active alerts in priority order
         "sc_st_quotas": sc_st_summary,  # Full constituency breakdown
     }
     _COMPLIANCE_SCAN_CACHE = result

@@ -93,6 +93,7 @@ export const ComplianceMonitoringPage: React.FC = () => {
   const [simResult, setSimResult] = useState<SimulateWorkResult | null>(null);
   const [simForm] = Form.useForm();
   const [slipModalVisible, setSlipModalVisible] = useState<boolean>(false);
+  const [activeTabKey, setActiveTabKey] = useState<string>('simulator');
 
   const loadData = async (forceRefresh: boolean = false) => {
     let hasCachedData = false;
@@ -478,12 +479,15 @@ export const ComplianceMonitoringPage: React.FC = () => {
             {/* Pillar 3 & 4: Active Alerts & Funds at Risk */}
             <Col xs={24} sm={12} lg={6}>
               <Card
+                onClick={() => setActiveTabKey('alerts')}
                 style={{
                   borderRadius: 14,
                   border: '1px solid #E2E8F0',
                   boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
                   background: '#FFFFFF',
                   height: '100%',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
                 }}
                 styles={{ body: { padding: '20px' } }}
               >
@@ -508,7 +512,7 @@ export const ComplianceMonitoringPage: React.FC = () => {
                   size={['100%', 6]}
                 />
                 <div style={{ marginTop: 10, fontSize: 12, color: '#DC2626', fontWeight: 500 }}>
-                  Immediate administrative review required
+                  Click to inspect live alerts queue →
                 </div>
               </Card>
             </Col>
@@ -517,7 +521,8 @@ export const ComplianceMonitoringPage: React.FC = () => {
 
         {/* Main Compliance Engine Workstations */}
         <Tabs
-          defaultActiveKey="simulator"
+          activeKey={activeTabKey}
+          onChange={setActiveTabKey}
           type="line"
           size="large"
           tabBarStyle={{
@@ -1393,6 +1398,24 @@ export const ComplianceMonitoringPage: React.FC = () => {
                               </Tag>
                             </Col>
                           </Row>
+
+                          {rule.violations_detected > 0 && (
+                            <div style={{ marginTop: 10, textAlign: 'right' }}>
+                              <Button
+                                type="link"
+                                size="small"
+                                style={{ padding: 0, fontSize: 12, fontWeight: 600, color: '#DC2626' }}
+                                onClick={() => {
+                                  setActiveTabKey('alerts');
+                                  setSeverityFilter('ALL');
+                                  setPillarFilter('ALL');
+                                  setSearchQuery(rule.id);
+                                }}
+                              >
+                                View {rule.violations_detected} Alerts in Queue →
+                              </Button>
+                            </div>
+                          )}
                         </Card>
                       </Col>
                     ))}
