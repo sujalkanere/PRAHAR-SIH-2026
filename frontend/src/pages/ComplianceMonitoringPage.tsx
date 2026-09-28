@@ -495,6 +495,133 @@ export const ComplianceMonitoringPage: React.FC = () => {
                         </Text>
                       </div>
 
+                      <div style={{ background: '#F1F5F9', padding: '12px 16px', borderRadius: 10, marginBottom: 16 }}>
+                        <Text type="secondary" style={{ fontSize: 11, fontWeight: 700, display: 'block', marginBottom: 8, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                          ⚡ Evaluator Benchmark Quick-Tests (Click to Load):
+                        </Text>
+                        <Space wrap size={[6, 6]}>
+                          <Button
+                            size="small"
+                            icon={<CheckCircleOutlined style={{ color: '#059669' }} />}
+                            onClick={() => {
+                              simForm.setFieldsValue({
+                                work_description: 'Construction of Community Hall and RO Drinking Water Plant in Ward 4, Haveli',
+                                work_category: 'Community Infrastructure',
+                                beneficiary_type: 'PANCHAYAT',
+                                land_status: 'GOVERNMENT_OWNED',
+                                sanctioned_amount: 1500000,
+                                is_sc_area: true,
+                                is_st_area: false,
+                                has_tech_clearance: true,
+                                annual_cumulative_sanctions: 25000000,
+                              });
+                            }}
+                          >
+                            Valid Community RO (PASS)
+                          </Button>
+                          <Button
+                            size="small"
+                            danger
+                            icon={<CloseCircleOutlined />}
+                            onClick={() => {
+                              simForm.setFieldsValue({
+                                work_description: 'Purchase of luxury air-conditioned SUV for Hon\'ble MP Office Transport',
+                                work_category: 'Office Vehicle & Transport',
+                                beneficiary_type: 'GOVERNMENT',
+                                land_status: 'GOVERNMENT_OWNED',
+                                sanctioned_amount: 2800000,
+                                is_sc_area: false,
+                                is_st_area: false,
+                                has_tech_clearance: false,
+                                annual_cumulative_sanctions: 30000000,
+                              });
+                            }}
+                          >
+                            Prohibited Vehicle (SUV)
+                          </Button>
+                          <Button
+                            size="small"
+                            danger
+                            icon={<CloseCircleOutlined />}
+                            onClick={() => {
+                              simForm.setFieldsValue({
+                                work_description: 'Establishment of Private Retail Shopping Complex and Commercial Stalls',
+                                work_category: 'Community Infrastructure',
+                                beneficiary_type: 'COMMERCIAL',
+                                land_status: 'PRIVATE_LAND',
+                                sanctioned_amount: 4500000,
+                                is_sc_area: false,
+                                is_st_area: false,
+                                has_tech_clearance: false,
+                                annual_cumulative_sanctions: 20000000,
+                              });
+                            }}
+                          >
+                            Commercial Shopping Complex
+                          </Button>
+                          <Button
+                            size="small"
+                            danger
+                            icon={<CloseCircleOutlined />}
+                            onClick={() => {
+                              simForm.setFieldsValue({
+                                work_description: 'Extensive Renovation and Marble Flooring of Ancient Temple Shrine Complex',
+                                work_category: 'Community Infrastructure',
+                                beneficiary_type: 'RELIGIOUS_BODY',
+                                land_status: 'GOVERNMENT_OWNED',
+                                sanctioned_amount: 3500000,
+                                is_sc_area: false,
+                                is_st_area: false,
+                                has_tech_clearance: false,
+                                annual_cumulative_sanctions: 25000000,
+                              });
+                            }}
+                          >
+                            Place of Worship (Temple)
+                          </Button>
+                          <Button
+                            size="small"
+                            danger
+                            icon={<CloseCircleOutlined />}
+                            onClick={() => {
+                              simForm.setFieldsValue({
+                                work_description: 'Construction of Elevated Flyover Link Road without Technical Clearance',
+                                work_category: 'Community Infrastructure',
+                                beneficiary_type: 'PANCHAYAT',
+                                land_status: 'GOVERNMENT_OWNED',
+                                sanctioned_amount: 7500000,
+                                is_sc_area: false,
+                                is_st_area: false,
+                                has_tech_clearance: false,
+                                annual_cumulative_sanctions: 20000000,
+                              });
+                            }}
+                          >
+                            Cap Breach (&gt; ₹50L No TS)
+                          </Button>
+                          <Button
+                            size="small"
+                            danger
+                            icon={<CloseCircleOutlined />}
+                            onClick={() => {
+                              simForm.setFieldsValue({
+                                work_description: 'Construction of Multipurpose Sports Stadium in District Headquarters',
+                                work_category: 'Community Infrastructure',
+                                beneficiary_type: 'PANCHAYAT',
+                                land_status: 'GOVERNMENT_OWNED',
+                                sanctioned_amount: 40000000,
+                                is_sc_area: false,
+                                is_st_area: false,
+                                has_tech_clearance: true,
+                                annual_cumulative_sanctions: 45000000,
+                              });
+                            }}
+                          >
+                            Ceiling Breach (&gt; ₹5 Cr FY)
+                          </Button>
+                        </Space>
+                      </div>
+
                       <Form
                         form={simForm}
                         layout="vertical"

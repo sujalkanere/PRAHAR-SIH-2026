@@ -195,18 +195,32 @@ RULEBOOK: List[Dict[str, Any]] = [
 ]
 
 # Keywords prohibited under Annexure-II (Items 1-9)
-PROHIBITED_KEYWORDS = [
-    r"\bprivate property\b", r"\bcommercial complex\b", r"\bshopping mall\b",
-    r"\btemple\b", r"\bchurch\b", r"\bmosque\b", r"\bmasjid\b", r"\bgurudwara\b",
-    r"\breligious\b", r"\boffice building\b", r"\bstaff quarters\b", r"\bresidential flat\b",
-    r"\bofficial residence\b", r"\bmemorial statue\b", r"\bstatue of\b",
-    r"\bcash grant\b", r"\bloan\b", r"\bfuel purchase\b", r"\bprivate office\b"
+ANNEXURE_II_BANNED_KEYWORDS = [
+    r"\btemple\b", r"\bmandir\b", r"\bmosque\b", r"\bmasjid\b", r"\bchurch\b",
+    r"\bgurudwara\b", r"\breligious\b", r"\bidol\b", r"\bshrine\b", r"\bprayer hall\b",
+    r"\bcommercial complex\b", r"\bshopping mall\b", r"\bshopping complex\b", r"\bprivate shop\b",
+    r"\bprivate office\b", r"\bprivate property\b", r"\bprivate land\b",
+    r"\boffice building\b", r"\bstaff quarters\b", r"\bresidential flat\b",
+    r"\bofficial residence\b", r"\bbungalow\b", r"\bguest house\b",
+    r"\bmemorial statue\b", r"\bstatue of\b", r"\bpersonal memorial\b", r"\bmonument to\b",
+    r"\bcash grant\b", r"\bcash assistance\b", r"\bloan\b", r"\bscholarship\b",
+    r"\bpersonal gift\b", r"\bdole\b",
+    r"\bfuel purchase\b", r"\bpetrol\b", r"\bdiesel\b", r"\boffice stationery\b"
+]
+PROHIBITED_KEYWORDS = ANNEXURE_II_BANNED_KEYWORDS
+
+# Vehicles restricted under Para 3.33 (Prohibited unless medical/disability exempt)
+VEHICLE_KEYWORDS = [
+    r"\bcar\b", r"\bvehicle\b", r"\bsuv\b", r"\bjeep\b", r"\bbus\b",
+    r"\bofficial car\b", r"\bluxury vehicle\b", r"\btransport vehicle\b",
+    r"\bpassenger van\b", r"\bmotorcycle\b"
 ]
 
 # Medical & disability exceptions permitted under Annexure-IIA
 PERMISSIBLE_EXEMPTIONS = [
-    "ambulance", "mobile dispensary", "mobile health", "hearse", "tricycle",
-    "disability", "disabled", "prosthetic", "life support", "dialysis"
+    "ambulance", "mobile dispensary", "mobile health", "mobile clinic",
+    "hearse", "tricycle", "disability", "disabled", "prosthetic",
+    "life support", "dialysis", "special children"
 ]
 
 _COMPLIANCE_SCAN_CACHE: Dict[str, Any] | None = None
@@ -508,33 +522,131 @@ def simulate_proposed_work_compliance(payload: Dict[str, Any]) -> Dict[str, Any]
     advisories: List[Dict[str, Any]] = []
     checklist: List[Dict[str, Any]] = []
 
-    # 1. Annexure-II Prohibited Check
-    is_exempt = any(ex in title for ex in PERMISSIBLE_EXEMPTIONS)
+    # 1. Annexure-II Prohibited Asset Check
+    is_exempt = any(ex in title or ex in category for ex in PERMISSIBLE_EXEMPTIONS)
     hit_prohibited = False
-    if not is_exempt:
-        for kw in PROHIBITED_KEYWORDS:
-            if re.search(kw, title) or re.search(kw, category):
-                hit_prohibited = True
-                clean_kw = kw.replace(r"\b", "")
-                violations.append({
-                    "rule_id": "RULE-ELIG-001",
-                    "name": "Annexure-II Prohibited Works & Ineligible Assets",
-                    "severity": "CRITICAL",
-                    "guideline_section": "Section 3.2 & Annexure-II",
-                    "reason": f"Proposal matches prohibited category keyword '{clean_kw}'.",
-                    "action": "Sanction Cannot Be Granted: Work falls under Annexure-II prohibited works list.",
-                })
-                break
+    matched_prohibited_kw = None
 
-    checklist.append({
-        "clause": "Annexure-II Prohibited List",
-        "description": "Verification against commercial, religious, and non-durable banned assets",
-        "status": "FAILED" if hit_prohibited else "PASSED",
-        "citation": "Section 3.2 & Annexure-II",
-    })
+    for kw in ANNEXURE_II_BANNED_KEYWORDS:
+        if re.search(kw, title) or re.search(kw, category):
+            hit_prohibited = True
+            matched_prohibited_kw = kw.replace(r"\b", "")
+            break
 
-    # 2. Land Ownership Verification (Section 3.1)
-    if land_status == "PRIVATE_LAND":
+    if hit_prohibited:
+        violations.append({
+            "rule_id": "RULE-ELIG-001",
+            "name": "Annexure-II Prohibited Works & Ineligible Assets",
+            "severity": "CRITICAL",
+            "guideline_section": "Section 3.2 & Annexure-II",
+            "reason": f"Proposal matches prohibited category keyword '{matched_prohibited_kw}'.",
+            "action": "Sanction Cannot Be Granted: Work falls under Annexure-II prohibited works list.",
+        })
+        checklist.append({
+            "clause": "Annexure-II Prohibited List",
+            "description": "Verification against commercial, religious, and non-durable banned assets",
+            "status": "FAILED",
+            "citation": "Section 3.2 & Annexure-II",
+        })
+    else:
+        checklist.append({
+            "clause": "Annexure-II Prohibited List",
+            "description": "Verification against commercial, religious, and non-durable banned assets",
+            "status": "PASSED",
+            "citation": "Section 3.2 & Annexure-II",
+        })
+
+    # 2. Vehicle Purchase Restriction (Para 3.33)
+    is_vehicle_proposal = (
+        "vehicle" in category
+        or "transport" in category
+        or any(re.search(vkw, title) or re.search(vkw, category) for vkw in VEHICLE_KEYWORDS)
+    )
+    if is_vehicle_proposal:
+        if not is_exempt:
+            violations.append({
+                "rule_id": "RULE-ELIG-002",
+                "name": "Vehicle Purchase Prohibition (Para 3.33)",
+                "severity": "CRITICAL",
+                "guideline_section": "Para 3.33 & Annexure-IIA",
+                "reason": "Purchase of passenger cars, SUVs, official vehicles, or commercial transport is strictly prohibited.",
+                "action": "Reject Sanction: Only ambulances and mobile medical units are permissible under Annexure-IIA.",
+            })
+            checklist.append({
+                "clause": "Vehicle Purchase Restriction",
+                "description": "Cars/SUVs/passenger transport prohibited under Para 3.33",
+                "status": "FAILED",
+                "citation": "Para 3.33",
+            })
+        else:
+            advisories.append({
+                "rule_id": "RULE-ELIG-002",
+                "message": "Permissible movable medical/disability asset: Verify Annexure-IIA registration and ensure asset ownership vests with Government Hospital or Local Body.",
+            })
+            checklist.append({
+                "clause": "Vehicle Purchase Restriction",
+                "description": "Medical ambulance / disability transport permitted under Annexure-IIA",
+                "status": "PASSED",
+                "citation": "Annexure-IIA",
+            })
+    else:
+        checklist.append({
+            "clause": "Vehicle Purchase Restriction",
+            "description": "Standard infrastructure work — no prohibited transport vehicle",
+            "status": "PASSED",
+            "citation": "Para 3.33",
+        })
+
+    # 3. Commercial & Private Profit Entity Check (Annexure-II, Item 4)
+    if beneficiary_type in ("COMMERCIAL", "PRIVATE_COMPANY", "PRIVATE_INDIVIDUAL") or "commercial" in title:
+        violations.append({
+            "rule_id": "RULE-ELIG-001",
+            "name": "Commercial & Profit-Making Entity Assistance Prohibition",
+            "severity": "CRITICAL",
+            "guideline_section": "Annexure-II (Item 4)",
+            "reason": "Assistance to commercial, trading, or private profit-making entities is strictly prohibited under MPLADS.",
+            "action": "Reject Sanction: Public funds cannot be diverted to commercial/private profit entities.",
+        })
+        checklist.append({
+            "clause": "Non-Commercial Entity Verification",
+            "description": "No assistance to commercial or private profit enterprises",
+            "status": "FAILED",
+            "citation": "Annexure-II (Item 4)",
+        })
+    else:
+        checklist.append({
+            "clause": "Non-Commercial Entity Verification",
+            "description": "Eligible public / community beneficiary entity",
+            "status": "PASSED",
+            "citation": "Annexure-II (Item 4)",
+        })
+
+    # 4. Secular Asset & Religious Entity Mandate (Annexure-II, Item 2)
+    if beneficiary_type == "RELIGIOUS_BODY" or any(re.search(rkw, title) for rkw in [r"\btemple\b", r"\bchurch\b", r"\bmosque\b", r"\bgurudwara\b"]):
+        violations.append({
+            "rule_id": "RULE-ELIG-001",
+            "name": "Places of Worship & Religious Entities Prohibition",
+            "severity": "CRITICAL",
+            "guideline_section": "Annexure-II (Item 2)",
+            "reason": "Direct funding to places of worship, religious trusts, or religious monuments is explicitly prohibited.",
+            "action": "Sanction Prohibited: Reject proposal under Annexure-II (Item 2).",
+        })
+        checklist.append({
+            "clause": "Secular Asset Mandate",
+            "description": "No funding to places of worship or religious entities",
+            "status": "FAILED",
+            "citation": "Annexure-II (Item 2)",
+        })
+    else:
+        checklist.append({
+            "clause": "Secular Asset Mandate",
+            "description": "Compliant secular public community asset",
+            "status": "PASSED",
+            "citation": "Annexure-II (Item 2)",
+        })
+
+    # 5. Land Ownership Verification (Section 3.1)
+    if land_status == "PRIVATE_LAND" or "private land" in title:
         violations.append({
             "rule_id": "RULE-ELIG-001",
             "name": "Prohibition of Works on Private Land",
@@ -557,8 +669,8 @@ def simulate_proposed_work_compliance(payload: Dict[str, Any]) -> Dict[str, Any]
             "citation": "Section 3.1",
         })
 
-    # 3. Trust & Society Sanction Cap (Section 3.3)
-    if beneficiary_type in ("TRUST", "SOCIETY", "REGISTERED_TRUST_SOCIETY"):
+    # 6. Trust & Society Sanction Cap (Section 3.3)
+    if beneficiary_type in ("TRUST", "SOCIETY", "REGISTERED_TRUST_SOCIETY") or "trust" in title:
         if amount > 5000000:
             violations.append({
                 "rule_id": "RULE-ELIG-004",
@@ -585,35 +697,20 @@ def simulate_proposed_work_compliance(payload: Dict[str, Any]) -> Dict[str, Any]
                 "status": "PASSED",
                 "citation": "Section 3.3",
             })
-    elif beneficiary_type == "RELIGIOUS_BODY":
-        violations.append({
-            "rule_id": "RULE-ELIG-001",
-            "name": "Places of Worship & Religious Entities Prohibition",
-            "severity": "CRITICAL",
-            "guideline_section": "Annexure-II (Item 2)",
-            "reason": "Direct funding to places of worship or religious trusts is explicitly prohibited under MPLADS.",
-            "action": "Sanction Prohibited: Reject proposal under Annexure-II (Item 2).",
-        })
-        checklist.append({
-            "clause": "Secular Asset Mandate",
-            "description": "No funding to places of worship or religious entities",
-            "status": "FAILED",
-            "citation": "Annexure-II (Item 2)",
-        })
 
-    # 4. Single Work Sanction Cap (Section 2.4)
-    if amount > 10000000 and not has_tech_clearance:
+    # 7. Single Work Sanction Cap & Technical Sanction Norm (Section 2.4)
+    if amount > 5000000 and not has_tech_clearance:
         violations.append({
             "rule_id": "RULE-ELIG-003",
-            "name": "Single Work Outlay Norm Exceeded (> ₹1.00 Crore)",
+            "name": "Single Work Outlay Norm Exceeded (> ₹50.00 Lakhs)",
             "severity": "HIGH",
             "guideline_section": "Section 2.4",
-            "reason": f"Proposed cost of ₹{(amount/10000000):.2f} Cr exceeds standard single work threshold without attached Technical Sanction.",
-            "action": "Technical Sanction Required: Attach District Technical Committee clearance before approval.",
+            "reason": f"Proposed cost of ₹{(amount/100000):.2f} Lakhs exceeds standard ₹50.00 Lakh single work norm without attached Technical Sanction.",
+            "action": "Technical Sanction Required: Attach District Technical Committee appraisal before approval.",
         })
         checklist.append({
             "clause": "Technical Sanction Norm",
-            "description": "Works > ₹1.00 Cr require formal District Technical Committee appraisal",
+            "description": "Works > ₹50L require formal District Technical Committee appraisal",
             "status": "FAILED",
             "citation": "Section 2.4",
         })
@@ -625,7 +722,7 @@ def simulate_proposed_work_compliance(payload: Dict[str, Any]) -> Dict[str, Any]
             "citation": "Section 2.4",
         })
 
-    # 5. Annual Entitlement Ceiling (Section 2.1)
+    # 8. Annual Entitlement Ceiling (Section 2.1)
     if annual_cum_sanction > 50000000:
         violations.append({
             "rule_id": "RULE-FIN-001",
