@@ -94,8 +94,32 @@ export const ComplianceMonitoringPage: React.FC = () => {
   const [simForm] = Form.useForm();
   const [slipModalVisible, setSlipModalVisible] = useState<boolean>(false);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (forceRefresh: boolean = false) => {
+    let hasCachedData = false;
+    // Fast Stale-While-Revalidate: instantly hydrate UI if cache exists
+    if (!forceRefresh) {
+      try {
+        const cached = sessionStorage.getItem('prahar_compliance_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && parsed.summary && parsed.rules) {
+            setSummary(parsed.summary);
+            setRules(parsed.rules);
+            setAlerts(parsed.alerts || []);
+            setQuotas(parsed.quotas || []);
+            setLoading(false);
+            hasCachedData = true;
+          }
+        }
+      } catch (e) {
+        console.warn('Cache parse error', e);
+      }
+    }
+
+    if (!hasCachedData) {
+      setLoading(true);
+    }
+
     try {
       const [sumData, rulesData, alertsData, quotasData] = await Promise.all([
         fetchComplianceSummary(),
@@ -107,9 +131,24 @@ export const ComplianceMonitoringPage: React.FC = () => {
       setRules(rulesData.rules);
       setAlerts(alertsData.alerts);
       setQuotas(quotasData.quotas);
+      try {
+        sessionStorage.setItem(
+          'prahar_compliance_cache',
+          JSON.stringify({
+            summary: sumData,
+            rules: rulesData.rules,
+            alerts: alertsData.alerts,
+            quotas: quotasData.quotas,
+          })
+        );
+      } catch (e) {
+        // quota limit fallback
+      }
     } catch (err: any) {
       console.error('Failed to load compliance data', err);
-      message.error('Failed to connect to Automated Compliance Engine');
+      if (!hasCachedData) {
+        message.error('Failed to connect to Automated Compliance Engine');
+      }
     } finally {
       setLoading(false);
     }
@@ -128,6 +167,19 @@ export const ComplianceMonitoringPage: React.FC = () => {
       setRules(rulesData.rules);
       setAlerts(alertsData.alerts);
       setQuotas(quotasData.quotas);
+      try {
+        sessionStorage.setItem(
+          'prahar_compliance_cache',
+          JSON.stringify({
+            summary: rescanRes.summary,
+            rules: rulesData.rules,
+            alerts: alertsData.alerts,
+            quotas: quotasData.quotas,
+          })
+        );
+      } catch (e) {
+        // quota limit fallback
+      }
       message.success(rescanRes.message || 'Compliance Rulebook scan complete across all works!');
     } catch (err: any) {
       console.error('Rescan failed', err);
@@ -1096,7 +1148,7 @@ export const ComplianceMonitoringPage: React.FC = () => {
                 </span>
               ),
               children: (
-                <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '0 0 14px 14px', border: '1px solid #E2E8F0', borderTop: 'none' }}>
+                <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '0 0 14px 14px', border: '1px solid #E2E8F0', borderTop: 'none', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
                   <Alert
                     type="info"
                     showIcon
@@ -1140,6 +1192,7 @@ export const ComplianceMonitoringPage: React.FC = () => {
                     dataSource={filteredQuotas}
                     rowKey="constituency_id"
                     pagination={{ pageSize: 10, showSizeChanger: true }}
+                    scroll={{ x: 950 }}
                     columns={[
                       {
                         title: 'Constituency & State',
@@ -1357,7 +1410,7 @@ export const ComplianceMonitoringPage: React.FC = () => {
                 </span>
               ),
               children: (
-                <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '0 0 14px 14px', border: '1px solid #E2E8F0', borderTop: 'none' }}>
+                <div style={{ background: '#FFFFFF', padding: '24px', borderRadius: '0 0 14px 14px', border: '1px solid #E2E8F0', borderTop: 'none', width: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
                   <Row justify="space-between" align="middle" style={{ marginBottom: 18 }} gutter={[16, 16]}>
                     <Col xs={24} md={14}>
                       <Space size={12} wrap>
@@ -1392,12 +1445,13 @@ export const ComplianceMonitoringPage: React.FC = () => {
                     dataSource={filteredAlerts}
                     rowKey="alert_id"
                     pagination={{ pageSize: 10, showSizeChanger: true }}
+                    scroll={{ x: 1100 }}
                     columns={[
                       {
                         title: 'Clause & Rule',
                         dataIndex: 'guideline_section',
                         key: 'guideline_section',
-                        width: 170,
+                        width: 160,
                         render: (val, record) => (
                           <div>
                             <Tag color="purple" style={{ fontWeight: 600, borderRadius: 4 }}>{val}</Tag>
@@ -1411,8 +1465,9 @@ export const ComplianceMonitoringPage: React.FC = () => {
                         title: 'Work Title & Code',
                         dataIndex: 'work_title',
                         key: 'work_title',
+                        width: 260,
                         render: (val, record) => (
-                          <div>
+                          <div style={{ wordBreak: 'break-word', maxWidth: 260 }}>
                             <Text strong style={{ color: '#0A2540', fontSize: 13 }}>{val}</Text>
                             <div style={{ fontSize: 11, color: '#0284C7', marginTop: 2, fontFamily: 'monospace' }}>
                               CODE: {record.work_code}
@@ -1424,7 +1479,7 @@ export const ComplianceMonitoringPage: React.FC = () => {
                         title: 'Constituency & MP',
                         dataIndex: 'constituency_name',
                         key: 'constituency_name',
-                        width: 220,
+                        width: 200,
                         render: (val, record) => (
                           <div>
                             <Text style={{ fontSize: 13, fontWeight: 500 }}>{val} ({record.state})</Text>
@@ -1436,15 +1491,16 @@ export const ComplianceMonitoringPage: React.FC = () => {
                         title: 'Severity',
                         dataIndex: 'severity',
                         key: 'severity',
-                        width: 110,
+                        width: 100,
                         render: (sev) => getSeverityTag(sev),
                       },
                       {
                         title: 'Violation & Prescribed Action',
                         dataIndex: 'violation_details',
                         key: 'violation_details',
+                        width: 280,
                         render: (val, record) => (
-                          <div>
+                          <div style={{ wordBreak: 'break-word', maxWidth: 280 }}>
                             <div style={{ fontSize: 12, color: '#1E293B', fontWeight: 500 }}>{val}</div>
                             <div style={{ fontSize: 11, color: '#991B1B', marginTop: 3 }}>
                               <b>Action:</b> {record.suggested_action}

@@ -12,6 +12,8 @@ import {
   RobotOutlined,
   LeftOutlined,
   RightOutlined,
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
   ThunderboltOutlined,
   LoginOutlined,
   SafetyCertificateOutlined,
@@ -470,11 +472,13 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           <div
             style={{
               display: 'flex',
+              flexDirection: collapsed ? 'column' : 'row',
               alignItems: 'center',
               justifyContent: collapsed ? 'center' : 'space-between',
-              padding: '8px 6px 20px 6px',
+              padding: collapsed ? '8px 4px 16px 4px' : '8px 6px 20px 6px',
               borderBottom: '1px solid var(--border-secondary)',
               marginBottom: 16,
+              gap: collapsed ? 8 : 0,
             }}
           >
             {/* Logo / Brand */}
@@ -523,25 +527,28 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               )}
             </div>
 
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: 6,
-                background: 'var(--bg-surface-elevated)',
-                border: '1px solid var(--border-primary)',
-                color: 'var(--text-muted)',
-                display: collapsed ? 'none' : 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                fontSize: '11px',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <LeftOutlined />
-            </button>
+            <Tooltip title={collapsed ? 'Reopen Sidebar' : 'Collapse Sidebar'} placement={collapsed ? 'right' : 'bottom'}>
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                aria-label={collapsed ? 'Reopen Sidebar' : 'Collapse Sidebar'}
+                style={{
+                  width: collapsed ? 32 : 26,
+                  height: collapsed ? 24 : 26,
+                  borderRadius: 6,
+                  background: 'var(--bg-surface-elevated)',
+                  border: '1px solid var(--border-primary)',
+                  color: 'var(--text-secondary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {collapsed ? <RightOutlined /> : <LeftOutlined />}
+              </button>
+            </Tooltip>
           </div>
 
           {/* Nav Items List */}
@@ -661,11 +668,38 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             padding: '14px 28px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'flex-end',
+            justifyContent: 'space-between',
             gap: 12,
             background: 'transparent',
           }}
         >
+          {/* Left: Reopen sidebar icon button when collapsed */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {collapsed && (
+              <Tooltip title="Reopen Navigation Sidebar">
+                <Button
+                  icon={<MenuUnfoldOutlined style={{ fontSize: 16, color: 'var(--text-primary)' }} />}
+                  onClick={() => setCollapsed(false)}
+                  style={{
+                    borderRadius: 8,
+                    background: 'var(--bg-surface)',
+                    borderColor: 'var(--border-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontWeight: 600,
+                    height: 36,
+                    color: 'var(--text-primary)',
+                    boxShadow: 'var(--shadow-sm)',
+                  }}
+                >
+                  <span style={{ fontSize: 12 }}>Open Menu</span>
+                </Button>
+              </Tooltip>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {user && hasRole('ROLE_ADMIN', 'ROLE_DISTRICT') && (
             <Button
               type="primary"
@@ -756,6 +790,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               Official Sign In
             </Button>
           )}
+          </div>
         </div>
 
         {/* Content Body */}

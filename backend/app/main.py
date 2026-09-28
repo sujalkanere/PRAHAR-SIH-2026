@@ -32,6 +32,16 @@ async def lifespan(app: FastAPI):
         import asyncio
         from app.services.embeddings import get_embedding_service
         asyncio.create_task(asyncio.to_thread(get_embedding_service))
+
+        # pre-warm compliance rules engine scan for instant opening of Compliance Engine
+        from app.services.compliance_rules_engine import run_compliance_scan
+        def _warm_compliance():
+            try:
+                with SyncSessionLocal() as s:
+                    run_compliance_scan(s)
+            except Exception as e:
+                print(f"[startup] Compliance scan warm-up notice: {e}")
+        asyncio.create_task(asyncio.to_thread(_warm_compliance))
     except Exception as exc:  # pragma: no cover
         print(f"[startup] DB init failed: {exc}")
     yield

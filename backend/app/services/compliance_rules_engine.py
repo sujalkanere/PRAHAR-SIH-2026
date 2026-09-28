@@ -11,7 +11,9 @@ Evaluates four statutory governance pillars:
 """
 from __future__ import annotations
 
+import collections
 import re
+import threading
 import uuid
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
@@ -209,12 +211,16 @@ ANNEXURE_II_BANNED_KEYWORDS = [
 ]
 PROHIBITED_KEYWORDS = ANNEXURE_II_BANNED_KEYWORDS
 
+# Pre-compile regexes for ultra-fast, single-pass keyword detection
+PROHIBITED_REGEX = re.compile("|".join(PROHIBITED_KEYWORDS), re.IGNORECASE)
+
 # Vehicles restricted under Para 3.33 (Prohibited unless medical/disability exempt)
 VEHICLE_KEYWORDS = [
     r"\bcar\b", r"\bvehicle\b", r"\bsuv\b", r"\bjeep\b", r"\bbus\b",
     r"\bofficial car\b", r"\bluxury vehicle\b", r"\btransport vehicle\b",
     r"\bpassenger van\b", r"\bmotorcycle\b"
 ]
+VEHICLE_REGEX = re.compile("|".join(VEHICLE_KEYWORDS), re.IGNORECASE)
 
 # Medical & disability exceptions permitted under Annexure-IIA
 PERMISSIBLE_EXEMPTIONS = [
@@ -224,6 +230,7 @@ PERMISSIBLE_EXEMPTIONS = [
 ]
 
 _COMPLIANCE_SCAN_CACHE: Dict[str, Any] | None = None
+_SCAN_LOCK = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
@@ -235,41 +242,49 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
     if _COMPLIANCE_SCAN_CACHE is not None and not force_refresh:
         return _COMPLIANCE_SCAN_CACHE
 
-    now = datetime.now(timezone.utc)
-    works = list(session.execute(select(Work)).scalars().all())
-    constituencies = list(session.execute(select(Constituency)).scalars().all())
-    expenditures = list(session.execute(select(Expenditure)).scalars().all())
-    
-    # Load statutory tables
-    sc_st_records = list(session.execute(select(SCSTCompliance)).scalars().all())
-    sc_st_by_const = {str(r.constituency_id): r for r in sc_st_records}
+    with _SCAN_LOCK:
+        if _COMPLIANCE_SCAN_CACHE is not None and not force_refresh:
+            return _COMPLIANCE_SCAN_CACHE
 
-    inspection_coverages = list(session.execute(select(InspectionCoverage)).scalars().all())
-    coverage_by_dist = {r.district.lower(): r for r in inspection_coverages}
+        now = datetime.now(timezone.utc)
+        works = list(session.execute(select(Work)).scalars().all())
+        constituencies = list(session.execute(select(Constituency)).scalars().all())
+        expenditures = list(session.execute(select(Expenditure)).scalars().all())
+        
+        # Load statutory tables
+        sc_st_records = list(session.execute(select(SCSTCompliance)).scalars().all())
+        sc_st_by_const = {str(r.constituency_id): r for r in sc_st_records}
 
-    const_map = {c.id: c for c in constituencies}
-    alerts: List[Dict[str, Any]] = []
-    rule_violation_counts: Dict[str, int] = {r["id"]: 0 for r in RULEBOOK}
+        inspection_coverages = list(session.execute(select(InspectionCoverage)).scalars().all())
+        coverage_by_dist = {r.district.lower(): r for r in inspection_coverages}
 
-    # 1. Evaluate Works against Sanction, Permissibility & Execution Rules
-    for w in works:
-        c = const_map.get(w.constituency_id)
-        c_name = c.name if c else "Unknown"
-        state = c.state if c else "Unknown"
-        mp_name = c.mp_name if c else "Hon'ble MP"
-        amt = float(w.sanctioned_amount or 0)
-        exp = float(w.actual_expenditure or 0)
-        desc_lower = (w.work_description or "").lower()
-        cat_lower = (w.work_category or "").lower()
+        const_map = {c.id: c for c in constituencies}
+        alerts: List[Dict[str, Any]] = []
+        rule_violation_counts: Dict[str, int] = {r["id"]: 0 for r in RULEBOOK}
 
-        # RULE-ELIG-001: Annexure-II Prohibited Asset Check (with exemption check)
-        is_exempt = any(ex in desc_lower for ex in PERMISSIBLE_EXEMPTIONS)
-        if not is_exempt:
-            for kw in PROHIBITED_KEYWORDS:
-                if re.search(kw, desc_lower) or re.search(kw, cat_lower):
+        # Pre-group works by constituency in a single pass O(N) instead of O(N*M)
+        works_by_const: Dict[Any, List[Work]] = collections.defaultdict(list)
+
+        # 1. Evaluate Works against Sanction, Permissibility & Execution Rules
+        for w in works:
+            works_by_const[w.constituency_id].append(w)
+            c = const_map.get(w.constituency_id)
+            c_name = c.name if c else "Unknown"
+            state = c.state if c else "Unknown"
+            mp_name = c.mp_name if c else "Hon'ble MP"
+            amt = float(w.sanctioned_amount or 0)
+            exp = float(w.actual_expenditure or 0)
+            desc_lower = (w.work_description or "").lower()
+            cat_lower = (w.work_category or "").lower()
+
+            # RULE-ELIG-001: Annexure-II Prohibited Asset Check (single-pass compiled regex)
+            is_exempt = any(ex in desc_lower for ex in PERMISSIBLE_EXEMPTIONS)
+            if not is_exempt:
+                match = PROHIBITED_REGEX.search(desc_lower) or PROHIBITED_REGEX.search(cat_lower)
+                if match:
                     rule_id = "RULE-ELIG-001"
                     rule_violation_counts[rule_id] += 1
-                    clean_kw = kw.replace(r"\b", "")
+                    clean_kw = match.group(0).strip()
                     alerts.append({
                         "alert_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
                         "work_id": str(w.id),
@@ -290,7 +305,6 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
                         "suggested_action": "Cancel administrative sanction immediately. Refuse fund release under Annexure-II mandate.",
                         "detected_at": now.isoformat(),
                     })
-                    break
 
         # RULE-ELIG-003: Single Work Sanction Cap (> ₹1.00 Crore Norm)
         if amt > 10000000:
@@ -378,7 +392,7 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
     for c in constituencies:
         c_id_str = str(c.id)
         statutory_record = sc_st_by_const.get(c_id_str)
-        c_works = [w for w in works if w.constituency_id == c.id]
+        c_works = works_by_const.get(c.id, [])
         tot_sanctioned = sum(float(w.sanctioned_amount or 0) for w in c_works)
 
         if statutory_record:
