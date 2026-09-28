@@ -32,8 +32,11 @@ class SimulateWorkRequest(BaseModel):
     work_description: str = Field(..., example="Construction of SC community hall in Ward 12")
     work_category: str = Field(..., example="Community Infra")
     sanctioned_amount: float = Field(..., example=1500000.0)
+    beneficiary_type: Optional[str] = Field("PANCHAYAT", example="PANCHAYAT")
+    land_status: Optional[str] = Field("GOVERNMENT_OWNED", example="GOVERNMENT_OWNED")
     is_sc_area: bool = Field(False, example=True)
     is_st_area: bool = Field(False, example=False)
+    has_tech_clearance: bool = Field(False, example=False)
     annual_cumulative_sanctions: float = Field(0.0, example=32000000.0)
 
 
