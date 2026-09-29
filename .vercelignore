@@ -7,7 +7,6 @@ cloudflared.exe
 datasets/
 assets/
 *.csv
-keys/
 
 # Backend large folders & caches
 backend/venv/

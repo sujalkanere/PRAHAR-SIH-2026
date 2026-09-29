@@ -7,17 +7,20 @@ from pydantic_settings import BaseSettings
 BASE_DIR = Path(__file__).resolve().parent.parent  # backend/
 
 
+import os
+
+_IS_VERCEL = bool(os.getenv("VERCEL"))
+_DEFAULT_DB = "sqlite+aiosqlite:////tmp/mplads.db" if _IS_VERCEL else "postgresql+asyncpg://mplads:mplads_secure_password@localhost:5432/mplads_sentinel"
+_DEFAULT_SYNC_DB = "sqlite:////tmp/mplads.db" if _IS_VERCEL else "postgresql://mplads:mplads_secure_password@localhost:5432/mplads_sentinel"
+
+
 class Settings(BaseSettings):
     environment: str = "production"
     log_level: str = "INFO"
 
     # Database (SRS 5.2 / Appendix B)
-    database_url: str = (
-        "postgresql+asyncpg://mplads:mplads_secure_password@localhost:5432/mplads_sentinel"
-    )
-    sync_database_url: str = (
-        "postgresql://mplads:mplads_secure_password@localhost:5432/mplads_sentinel"
-    )
+    database_url: str = _DEFAULT_DB
+    sync_database_url: str = _DEFAULT_SYNC_DB
     redis_url: str = "redis://localhost:6379/0"
 
     # JWT (RS256)

@@ -17,21 +17,32 @@ ALGORITHM = "RS256"
 def _ensure_keys() -> tuple[str, str]:
     priv_path = Path(settings.jwt_private_key_path)
     pub_path = Path(settings.jwt_public_key_path)
-    if not priv_path.exists() or not pub_path.exists():
+    if priv_path.exists() and pub_path.exists():
+        try:
+            return priv_path.read_text(), pub_path.read_text()
+        except Exception:
+            pass
+
+    key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    priv_pem = key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode("utf-8")
+    pub_pem = key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    ).decode("utf-8")
+
+    try:
         priv_path.parent.mkdir(parents=True, exist_ok=True)
-        key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        priv_pem = key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=serialization.NoEncryption(),
-        )
-        pub_pem = key.public_key().public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo,
-        )
-        priv_path.write_bytes(priv_pem)
-        pub_path.write_bytes(pub_pem)
-    return priv_path.read_text(), pub_path.read_text()
+        priv_path.write_text(priv_pem)
+        pub_path.write_text(pub_pem)
+    except Exception:
+        # On Vercel / serverless, filesystem is read-only; keep keys safely in memory
+        pass
+
+    return priv_pem, pub_pem
 
 
 _PRIVATE_KEY, _PUBLIC_KEY = _ensure_keys()

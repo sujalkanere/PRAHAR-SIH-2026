@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.jwt_handler import (create_access_token, create_refresh_token, decode_token)
-from app.auth.password import verify_password
+from app.auth.password import hash_password, verify_password
 from app.auth.rate_limit import login_limiter
 from app.database import get_db
 from app.models import RefreshToken, User

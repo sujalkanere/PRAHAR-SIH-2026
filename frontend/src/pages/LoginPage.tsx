@@ -41,7 +41,9 @@ export const LoginPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err)
-      setError(err.response?.data?.detail?.message || 'Invalid username or password')
+      const detail = err.response?.data?.detail
+      const msg = typeof detail === 'string' ? detail : detail?.message || err.message || 'Invalid username or password'
+      setError(msg)
     } finally {
       setLoading(false)
     }

@@ -80,8 +80,28 @@ if is_sqlite_sync:
             pass
 
 
+_tables_initialized = False
+
+
+async def ensure_db_initialized() -> None:
+    global _tables_initialized
+    if not _tables_initialized:
+        await init_db()
+        try:
+            from app.scripts_helpers import seed_users
+            await seed_users()
+        except Exception as e:
+            print(f"[ensure_db_initialized] seed notice: {e}")
+        _tables_initialized = True
+
+
 async def get_db():
     """FastAPI dependency yielding an async session."""
+    if not _tables_initialized:
+        try:
+            await ensure_db_initialized()
+        except Exception as e:
+            print(f"[get_db] ensure_db_initialized notice: {e}")
     async with AsyncSessionLocal() as session:
         yield session
 
