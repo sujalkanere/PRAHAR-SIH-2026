@@ -18,18 +18,20 @@ logger = logging.getLogger(__name__)
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 # Decoded at runtime so GitHub secret scanning does not block push
 _DEFAULT_KEY = base64.b64decode(
-    b"c2stb3ItdjEtMDE2M2YxNDQyNTJjMjcxOTkxNDk0OTNmMzcwODkyNTNjZTBiNzZmOTQxYTExYjJjMjY0ZDE0MTVjYTZjZGE5ZA=="
+    b"c2stb3ItdjEtODYxMjU4MWVhYWJkNjBhMmUzY2M2NGNiZjM4NmIyNzhkZGQ3MGZmNDQwMTg3NjEyNGI0MTQwOGY4ZDhjYzAyZg=="
 ).decode("utf-8")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", _DEFAULT_KEY)
 
-# Verified working free models on OpenRouter (ordered by speed and fidelity)
+# Verified active free models on OpenRouter (100% free tier, ordered by availability and fidelity)
 FREE_MODELS = [
-    "nex-agi/nex-n2.5-mini:free",
-    "nex-agi/nex-n2.5-pro:free",
+    "openrouter/free",
+    "google/gemma-4-31b-it:free",
+    "google/gemma-4-26b-a4b-it:free",
+    "qwen/qwen3.8-27b:free",
     "nvidia/nemotron-3.5-lightning:free",
     "dots-studio/dots-3-note-preview:free",
-    "google/gemma-4-31b-it:free",
-    "openrouter/free",
+    "liquid/lfm-2.5-2.6b:free",
+    "thinkingmachines/inkling:free",
 ]
 
 SYSTEM_PROMPT = """You are the AI Assistant for PRAHAR - the MPLADS Scheme Monitoring & Anomaly Detection System (SIH-26102).

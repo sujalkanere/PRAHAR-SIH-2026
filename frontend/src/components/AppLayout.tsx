@@ -93,10 +93,10 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       user.role === 'ROLE_DISTRICT'
         ? `District Dashboard (${user.scope_value || 'Pune'})`
         : user.role === 'ROLE_MP'
-        ? `Constituency Dashboard (${user.scope_value || 'Pune'})`
-        : user.role === 'ROLE_STATE_NODAL'
-        ? `State Explorer (${user.scope_value || 'Maharashtra'})`
-        : 'National Explorer'
+          ? `Constituency Dashboard (${user.scope_value || 'Pune'})`
+          : user.role === 'ROLE_STATE_NODAL'
+            ? `State Explorer (${user.scope_value || 'Maharashtra'})`
+            : 'National Explorer'
 
     const dashboardRoute = (user.role === 'ROLE_DISTRICT' || user.role === 'ROLE_MP') ? '/local' : '/dashboard'
     navItems.push({
@@ -313,8 +313,8 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                 type="primary"
                 onClick={() => setAddInspectionModalOpen(true)}
                 style={{
-                  background: '#d97706',
-                  borderColor: '#d97706',
+                  background: '#ffbf00ff',
+                  borderColor: '#ffbf00ff',
                   color: '#fff',
                   fontWeight: 600,
                   borderRadius: 20,
@@ -700,96 +700,96 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {user && hasRole('ROLE_ADMIN', 'ROLE_DISTRICT') && (
+            {user && hasRole('ROLE_ADMIN', 'ROLE_DISTRICT') && (
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setAddWorkModalOpen(true)}
+                style={{
+                  background: '#10b981',
+                  borderColor: '#10b981',
+                  color: '#fff',
+                  fontWeight: 600,
+                  borderRadius: 20,
+                  padding: '0 16px',
+                  height: 36,
+                  boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)',
+                }}
+              >
+                + Add Project
+              </Button>
+            )}
+
+            {user && hasRole('ROLE_ADMIN', 'ROLE_DISTRICT') && (
+              <Button
+                type="primary"
+                onClick={() => setAddInspectionModalOpen(true)}
+                style={{
+                  background: '#d97706',
+                  borderColor: '#d97706',
+                  color: '#fff',
+                  fontWeight: 600,
+                  borderRadius: 20,
+                  padding: '0 16px',
+                  height: 36,
+                }}
+              >
+                Log Inspection
+              </Button>
+            )}
+
             <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setAddWorkModalOpen(true)}
+              icon={<DownloadOutlined />}
+              onClick={() => setReportModalOpen(true)}
               style={{
-                background: '#10b981',
-                borderColor: '#10b981',
-                color: '#fff',
-                fontWeight: 600,
+                borderColor: 'var(--border-primary)',
+                color: 'var(--text-secondary)',
                 borderRadius: 20,
-                padding: '0 16px',
+                fontWeight: 500,
                 height: 36,
-                boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)',
+                background: 'var(--bg-surface)',
               }}
             >
-              + Add Project
+              Export Report
             </Button>
-          )}
 
-          {user && hasRole('ROLE_ADMIN', 'ROLE_DISTRICT') && (
             <Button
-              type="primary"
-              onClick={() => setAddInspectionModalOpen(true)}
+              icon={<RobotOutlined style={{ color: '#10b981' }} />}
+              onClick={() => setChatbotOpen(true)}
               style={{
-                background: '#d97706',
-                borderColor: '#d97706',
-                color: '#fff',
-                fontWeight: 600,
+                borderColor: '#bbf7d0',
+                color: '#15803d',
                 borderRadius: 20,
-                padding: '0 16px',
+                fontWeight: 600,
                 height: 36,
+                background: '#f0fdf4',
               }}
             >
-              Log Inspection
+              AI Assistant
             </Button>
-          )}
 
-          <Button
-            icon={<DownloadOutlined />}
-            onClick={() => setReportModalOpen(true)}
-            style={{
-              borderColor: 'var(--border-primary)',
-              color: 'var(--text-secondary)',
-              borderRadius: 20,
-              fontWeight: 500,
-              height: 36,
-              background: 'var(--bg-surface)',
-            }}
-          >
-            Export Report
-          </Button>
+            {/* Accessible Theme Toggle */}
+            <ThemeToggle />
 
-          <Button
-            icon={<RobotOutlined style={{ color: '#10b981' }} />}
-            onClick={() => setChatbotOpen(true)}
-            style={{
-              borderColor: '#bbf7d0',
-              color: '#15803d',
-              borderRadius: 20,
-              fontWeight: 600,
-              height: 36,
-              background: '#f0fdf4',
-            }}
-          >
-            AI Assistant
-          </Button>
-
-          {/* Accessible Theme Toggle */}
-          <ThemeToggle />
-
-          {!user && (
-            <Button
-              type="primary"
-              icon={<LoginOutlined />}
-              onClick={() => navigate('/login')}
-              style={{
-                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                borderColor: '#1d4ed8',
-                color: '#fff',
-                fontWeight: 600,
-                borderRadius: 20,
-                padding: '0 18px',
-                height: 36,
-                boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
-              }}
-            >
-              Official Sign In
-            </Button>
-          )}
+            {!user && (
+              <Button
+                type="primary"
+                icon={<LoginOutlined />}
+                onClick={() => navigate('/login')}
+                style={{
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                  borderColor: '#1d4ed8',
+                  color: '#fff',
+                  fontWeight: 600,
+                  borderRadius: 20,
+                  padding: '0 18px',
+                  height: 36,
+                  boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
+                }}
+              >
+                Official Sign In
+              </Button>
+            )}
           </div>
         </div>
 

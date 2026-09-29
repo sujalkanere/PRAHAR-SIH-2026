@@ -59,7 +59,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()] or ["*"],
+    allow_origins=[o.strip() for o in settings.cors_origins.split(",") if o.strip()],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -118,6 +119,8 @@ async def docs_redirect():
 
 
 @app.get("/health")
+@app.get("/api/health")
+@app.get("/api/v1/health")
 async def health():
     """Health endpoint (NFR-REL-006)."""
     db_ok = False
