@@ -1,0 +1,26 @@
+# Git & Agent artifacts
+.git
+.agents
+
+# Large local files & binaries
+cloudflared.exe
+datasets/
+assets/
+*.csv
+keys/
+
+# Backend large folders & caches
+backend/venv/
+backend/.pytest_cache/
+backend/tests/
+backend/models/
+backend/reports/*.pdf
+backend/reports/*.csv
+backend/reports/*.png
+backend/data/*.db
+backend/data/*.csv
+backend/mplads_sentinel.db
+
+# Frontend local node_modules
+node_modules/
+frontend/node_modules/

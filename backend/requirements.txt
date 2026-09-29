@@ -14,13 +14,8 @@ python-multipart
 pandas
 numpy
 scikit-learn
-sentence-transformers
 reportlab
 matplotlib
 openpyxl
 pgvector
 httpx
-pytest
-pytest-asyncio
-pytest-cov
-shap

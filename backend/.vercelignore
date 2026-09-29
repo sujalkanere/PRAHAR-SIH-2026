@@ -1,0 +1,10 @@
+venv/
+.pytest_cache/
+tests/
+models/
+reports/*.pdf
+reports/*.csv
+reports/*.png
+data/*.db
+data/*.csv
+mplads_sentinel.db
