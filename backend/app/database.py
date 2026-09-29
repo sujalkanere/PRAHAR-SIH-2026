@@ -139,7 +139,7 @@ if is_sqlite_sync and sync_engine is not None:
             pass
 
 
-_tables_initialized = False
+_tables_initialized = not is_sqlite_async
 
 
 async def ensure_db_initialized() -> None:

@@ -14,35 +14,40 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # startup: create tables + seed users (idempotent; docker also runs alembic)
-    try:
-        await init_db()
-        from app.scripts_helpers import seed_users
-        await seed_users()
-        # mark detection runs orphaned by a restart as FAILED
-        from app.database import SyncSessionLocal
-        from sqlalchemy import update
-        from app.models import DetectionRun
-        with SyncSessionLocal() as s:
-            s.execute(update(DetectionRun).where(DetectionRun.status == "RUNNING").values(
-                status="FAILED", error_message="interrupted by service restart"))
-            s.commit()
-        # pre-warm NLP embedding service in background thread for instant response on create_work
-        import asyncio
-        from app.services.embeddings import get_embedding_service
-        asyncio.create_task(asyncio.to_thread(get_embedding_service))
-
-        # pre-warm compliance rules engine scan for instant opening of Compliance Engine
-        from app.services.compliance_rules_engine import run_compliance_scan
-        def _warm_compliance():
-            try:
+    # On serverless (Vercel), startup must be instantaneous (<100ms) to avoid cold-start timeouts
+    import os
+    _IS_SERVERLESS = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME") or os.getenv("VERCEL_ENV"))
+    if not _IS_SERVERLESS:
+        try:
+            await init_db()
+            from app.scripts_helpers import seed_users
+            await seed_users()
+            # mark detection runs orphaned by a restart as FAILED
+            from app.database import SyncSessionLocal
+            if SyncSessionLocal is not None:
+                from sqlalchemy import update
+                from app.models import DetectionRun
                 with SyncSessionLocal() as s:
-                    run_compliance_scan(s)
-            except Exception as e:
-                print(f"[startup] Compliance scan warm-up notice: {e}")
-        asyncio.create_task(asyncio.to_thread(_warm_compliance))
-    except Exception as exc:  # pragma: no cover
-        print(f"[startup] DB init failed: {exc}")
+                    s.execute(update(DetectionRun).where(DetectionRun.status == "RUNNING").values(
+                        status="FAILED", error_message="interrupted by service restart"))
+                    s.commit()
+            # pre-warm NLP embedding service in background thread for instant response on create_work
+            import asyncio
+            from app.services.embeddings import get_embedding_service
+            asyncio.create_task(asyncio.to_thread(get_embedding_service))
+
+            # pre-warm compliance rules engine scan for instant opening of Compliance Engine
+            from app.services.compliance_rules_engine import run_compliance_scan
+            def _warm_compliance():
+                try:
+                    if SyncSessionLocal is not None:
+                        with SyncSessionLocal() as s:
+                            run_compliance_scan(s)
+                except Exception as e:
+                    print(f"[startup] Compliance scan warm-up notice: {e}")
+            asyncio.create_task(asyncio.to_thread(_warm_compliance))
+        except Exception as exc:  # pragma: no cover
+            print(f"[startup] DB init failed: {exc}")
     yield
 
 
