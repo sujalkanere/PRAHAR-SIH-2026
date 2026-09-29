@@ -38,8 +38,22 @@ def _sanitize_sqlite_url(url: str) -> str:
     return url
 
 
+def _fix_unencoded_at(url: str) -> str:
+    """If password contains unencoded '@', e.g. postgres://user:pass@word@host, encode password '@' as %40."""
+    if "@" not in url or "://" not in url:
+        return url
+    prefix, rest = url.split("://", 1)
+    if rest.count("@") > 1:
+        creds, host_part = rest.rsplit("@", 1)
+        if ":" in creds:
+            user, pwd = creds.split(":", 1)
+            pwd = pwd.replace("@", "%40")
+            rest = f"{user}:{pwd}@{host_part}"
+    return f"{prefix}://{rest}"
+
+
 def _normalize_async_url(raw_url: str) -> str:
-    url = _sanitize_sqlite_url((raw_url or "").strip())
+    url = _fix_unencoded_at(_sanitize_sqlite_url((raw_url or "").strip()))
     if url.startswith("postgres://"):
         url = "postgresql+asyncpg://" + url[len("postgres://"):]
     elif url.startswith("postgresql://") and not url.startswith("postgresql+"):
@@ -54,7 +68,7 @@ def _normalize_async_url(raw_url: str) -> str:
 
 
 def _normalize_sync_url(raw_url: str, fallback_async_url: str = "") -> str:
-    url = _sanitize_sqlite_url((raw_url or "").strip())
+    url = _fix_unencoded_at(_sanitize_sqlite_url((raw_url or "").strip()))
     # If sync url is unconfigured or defaulting to localhost/sqlite while async points to cloud (e.g. Supabase)
     if not url or (("localhost" in url or "sqlite" in url) and ("postgres" in fallback_async_url and "localhost" not in fallback_async_url)):
         url = fallback_async_url.strip()
@@ -99,15 +113,20 @@ async_engine = create_async_engine(
 )
 AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
 
-sync_engine = create_engine(
-    SYNC_DB_URL,
-    echo=False,
-    connect_args={"timeout": 60} if is_sqlite_sync else {},
-    **({} if is_sqlite_sync else {"pool_size": 5, "pool_pre_ping": True, "pool_recycle": 300})
-)
-SyncSessionLocal = sessionmaker(bind=sync_engine, expire_on_commit=False)
+try:
+    sync_engine = create_engine(
+        SYNC_DB_URL,
+        echo=False,
+        connect_args={"timeout": 60} if is_sqlite_sync else {},
+        **({} if is_sqlite_sync else {"pool_size": 5, "pool_pre_ping": True, "pool_recycle": 300})
+    )
+    SyncSessionLocal = sessionmaker(bind=sync_engine, expire_on_commit=False)
+except Exception as _sync_err:
+    print(f"[database] sync_engine init warning: {_sync_err}")
+    sync_engine = None
+    SyncSessionLocal = None
 
-if is_sqlite_sync:
+if is_sqlite_sync and sync_engine is not None:
     @event.listens_for(sync_engine, "connect")
     def set_sqlite_pragma(dbapi_connection, connection_record):
         try:
