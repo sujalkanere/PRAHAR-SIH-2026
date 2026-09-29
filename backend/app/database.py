@@ -18,8 +18,28 @@ class Base(DeclarativeBase):
     pass
 
 
+import os
+import tempfile
+from pathlib import Path
+
+
+def _sanitize_sqlite_url(url: str) -> str:
+    if "sqlite" not in url:
+        return url
+    # On non-Windows (e.g. Linux / Vercel), if the URL contains Windows paths or relative paths into read-only dirs,
+    # redirect to /tmp/mplads.db
+    is_unix_or_cloud = (os.name != "nt") or bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME") or os.getenv("VERCEL_ENV"))
+    if is_unix_or_cloud:
+        url_lower = url.lower()
+        if "c:" in url_lower or "users" in url_lower or "\\ " in url or "/data/" in url or "backend" in url_lower:
+            tmp_db = Path(tempfile.gettempdir()) / "mplads.db"
+            prefix = "sqlite+aiosqlite:///" if "+aiosqlite" in url else "sqlite:///"
+            return f"{prefix}{tmp_db.as_posix()}"
+    return url
+
+
 def _normalize_async_url(raw_url: str) -> str:
-    url = (raw_url or "").strip()
+    url = _sanitize_sqlite_url((raw_url or "").strip())
     if url.startswith("postgres://"):
         url = "postgresql+asyncpg://" + url[len("postgres://"):]
     elif url.startswith("postgresql://") and not url.startswith("postgresql+"):
@@ -34,7 +54,7 @@ def _normalize_async_url(raw_url: str) -> str:
 
 
 def _normalize_sync_url(raw_url: str, fallback_async_url: str = "") -> str:
-    url = (raw_url or "").strip()
+    url = _sanitize_sqlite_url((raw_url or "").strip())
     # If sync url is unconfigured or defaulting to localhost/sqlite while async points to cloud (e.g. Supabase)
     if not url or (("localhost" in url or "sqlite" in url) and ("postgres" in fallback_async_url and "localhost" not in fallback_async_url)):
         url = fallback_async_url.strip()
@@ -56,6 +76,18 @@ SYNC_DB_URL = _normalize_sync_url(settings.sync_database_url, settings.database_
 
 is_sqlite_async = "sqlite" in ASYNC_DB_URL
 is_sqlite_sync = "sqlite" in SYNC_DB_URL
+
+if is_sqlite_async:
+    try:
+        raw_p = ASYNC_DB_URL.split(":///")[-1].split("?")[0]
+        if raw_p and not raw_p.startswith(":memory:"):
+            if not raw_p.startswith("/") and os.name != "nt":
+                raw_p = "/" + raw_p
+            p = Path(raw_p)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.touch(exist_ok=True)
+    except Exception as _e:
+        print(f"[database] notice touching sqlite path: {_e}")
 
 connect_args_async = {"timeout": 60} if is_sqlite_async else {"statement_cache_size": 0}
 

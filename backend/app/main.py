@@ -144,9 +144,14 @@ async def health():
     except Exception as e:
         db_ok = False
         db_err = f"{type(e).__name__}: {str(e)}"
+    import re
+    from app.config import get_settings
+    raw_cfg = get_settings().database_url
+    masked_db = re.sub(r"://([^:]+):([^@]+)@", r"://\1:***@", raw_cfg)
     return {
         "status": "ok" if db_ok else "degraded",
         "database_connected": db_ok,
+        "database_target": masked_db,
         "database_error": db_err,
         "ml_engine_ready": True,
         "disk_space_ok": True,
