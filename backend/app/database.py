@@ -27,13 +27,16 @@ def _normalize_async_url(raw_url: str) -> str:
     # asyncpg expects ssl= rather than sslmode=
     if "sslmode=" in url:
         url = url.replace("sslmode=", "ssl=")
+    if "supabase" in url and "ssl=" not in url:
+        sep = "&" if "?" in url else "?"
+        url = f"{url}{sep}ssl=require"
     return url
 
 
 def _normalize_sync_url(raw_url: str, fallback_async_url: str = "") -> str:
     url = (raw_url or "").strip()
-    # If sync url is unconfigured or defaulting to localhost while async points to cloud (e.g. Supabase)
-    if not url or ("localhost" in url and "localhost" not in fallback_async_url and "sqlite" not in fallback_async_url):
+    # If sync url is unconfigured or defaulting to localhost/sqlite while async points to cloud (e.g. Supabase)
+    if not url or (("localhost" in url or "sqlite" in url) and ("postgres" in fallback_async_url and "localhost" not in fallback_async_url)):
         url = fallback_async_url.strip()
     if url.startswith("postgresql+asyncpg://"):
         url = "postgresql://" + url[len("postgresql+asyncpg://"):]
@@ -42,6 +45,9 @@ def _normalize_sync_url(raw_url: str, fallback_async_url: str = "") -> str:
     # psycopg2 expects sslmode= rather than ssl=
     if "ssl=" in url and "sslmode=" not in url:
         url = url.replace("ssl=", "sslmode=")
+    if "supabase" in url and "sslmode=" not in url:
+        sep = "&" if "?" in url else "?"
+        url = f"{url}{sep}sslmode=require"
     return url
 
 
@@ -51,10 +57,12 @@ SYNC_DB_URL = _normalize_sync_url(settings.sync_database_url, settings.database_
 is_sqlite_async = "sqlite" in ASYNC_DB_URL
 is_sqlite_sync = "sqlite" in SYNC_DB_URL
 
+connect_args_async = {"timeout": 60} if is_sqlite_async else {"statement_cache_size": 0}
+
 async_engine = create_async_engine(
     ASYNC_DB_URL,
     echo=False,
-    connect_args={"timeout": 60} if is_sqlite_async else {},
+    connect_args=connect_args_async,
     **({} if is_sqlite_async else {"pool_size": 10, "pool_pre_ping": True, "pool_recycle": 300})
 )
 AsyncSessionLocal = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
@@ -72,7 +80,7 @@ if is_sqlite_sync:
     def set_sqlite_pragma(dbapi_connection, connection_record):
         try:
             cursor = dbapi_connection.cursor()
-            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA journal_mode=DELETE")
             cursor.execute("PRAGMA synchronous=NORMAL")
             cursor.execute("PRAGMA busy_timeout=60000")
             cursor.close()

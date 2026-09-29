@@ -8,10 +8,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent  # backend/
 
 
 import os
+import sys
 
-_IS_VERCEL = bool(os.getenv("VERCEL"))
-_DEFAULT_DB = "sqlite+aiosqlite:////tmp/mplads.db" if _IS_VERCEL else "postgresql+asyncpg://mplads:mplads_secure_password@localhost:5432/mplads_sentinel"
-_DEFAULT_SYNC_DB = "sqlite:////tmp/mplads.db" if _IS_VERCEL else "postgresql://mplads:mplads_secure_password@localhost:5432/mplads_sentinel"
+_IS_CLOUD = bool(
+    os.getenv("VERCEL")
+    or os.getenv("VERCEL_ENV")
+    or os.getenv("NOW_REGION")
+    or os.getenv("AWS_LAMBDA_FUNCTION_NAME")
+    or os.getenv("LAMBDA_TASK_ROOT")
+    or sys.platform.startswith("linux")
+)
+_DEFAULT_DB = "sqlite+aiosqlite:////tmp/mplads.db" if _IS_CLOUD else "sqlite+aiosqlite:///" + str(BASE_DIR / "data" / "mplads.db").replace("\\", "/")
+_DEFAULT_SYNC_DB = "sqlite:////tmp/mplads.db" if _IS_CLOUD else "sqlite:///" + str(BASE_DIR / "data" / "mplads.db").replace("\\", "/")
 
 
 class Settings(BaseSettings):

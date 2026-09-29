@@ -124,6 +124,7 @@ async def health():
     """Health endpoint (NFR-REL-006)."""
     db_ok = False
     last_run = None
+    db_err = None
     try:
         from app.database import AsyncSessionLocal
         from app.models import DetectionRun
@@ -132,16 +133,21 @@ async def health():
         async with AsyncSessionLocal() as session:
             await session.execute(text("SELECT 1"))
             db_ok = True
-            run = (await session.execute(
-                select(DetectionRun).order_by(DetectionRun.started_at.desc()).limit(1))).scalars().first()
-            if run:
-                last_run = {"id": str(run.id), "status": run.status,
-                            "started_at": run.started_at.isoformat() if run.started_at else None}
-    except Exception:
+            try:
+                run = (await session.execute(
+                    select(DetectionRun).order_by(DetectionRun.started_at.desc()).limit(1))).scalars().first()
+                if run:
+                    last_run = {"id": str(run.id), "status": run.status,
+                                "started_at": run.started_at.isoformat() if run.started_at else None}
+            except Exception:
+                pass
+    except Exception as e:
         db_ok = False
+        db_err = f"{type(e).__name__}: {str(e)}"
     return {
         "status": "ok" if db_ok else "degraded",
         "database_connected": db_ok,
+        "database_error": db_err,
         "ml_engine_ready": True,
         "disk_space_ok": True,
         "last_detection_run": last_run,

@@ -23,85 +23,97 @@ LOCK_MINUTES = 30
 
 @router.post("/login", response_model=LoginResponse)
 async def login(body: LoginRequest, request: Request, response: Response, db: AsyncSession = Depends(get_db)):
-    ip = request.client.host if request.client else "unknown"
-    key = f"{ip}:{body.username}"
-    if not login_limiter.allow(key):
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail={
-            "code": "RATE_LIMITED",
-            "message": "Too many login attempts. Account temporarily locked for 30 minutes."})
-
-    user = (await db.execute(select(User).where(User.username == body.username))).scalar_one_or_none()
-
-    # Self-healing on-demand provisioning & unlock for official demo accounts
-    from app.scripts_helpers import SEED_USERS
-    seed_match = next((u for u in SEED_USERS if u["username"] == body.username), None)
-    if seed_match and body.password == seed_match["password"]:
-        if user is None:
-            user = User(
-                username=seed_match["username"],
-                password_hash=hash_password(seed_match["password"]),
-                full_name=seed_match["full_name"],
-                role=seed_match["role"],
-                scope_type=seed_match["scope_type"],
-                scope_value=seed_match["scope_value"],
-                is_active=True,
-            )
-            db.add(user)
-            await db.commit()
-            await db.refresh(user)
-        else:
-            user.password_hash = hash_password(seed_match["password"])
-            user.is_active = True
-            user.failed_login_attempts = 0
-            user.locked_until = None
-            await db.commit()
-
-    if user and user.locked_until:
-        locked_until = user.locked_until
-        if locked_until.tzinfo is None:
-            locked_until = locked_until.replace(tzinfo=timezone.utc)
-        if locked_until > datetime.now(timezone.utc):
+    try:
+        ip = request.client.host if request.client else "unknown"
+        key = f"{ip}:{body.username}"
+        if not login_limiter.allow(key):
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail={
-                "code": "ACCOUNT_LOCKED", "message": "Account locked. Try again later."})
+                "code": "RATE_LIMITED",
+                "message": "Too many login attempts. Account temporarily locked for 30 minutes."})
+        from app.database import ensure_db_initialized
+        await ensure_db_initialized()
 
-    if user is None or not verify_password(body.password, user.password_hash):
-        if user is not None:
-            user.failed_login_attempts += 1
-            if user.failed_login_attempts >= MAX_FAILED:
-                user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=LOCK_MINUTES)
-            await db.commit()
-        await write_audit(db, user_id=str(user.id) if user else None, action="LOGIN_FAILED",
-                         resource_type="user", resource_id=body.username,
-                         ip_address=ip, user_agent=request.headers.get("user-agent"))
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={
-            "code": "INVALID_CREDENTIALS", "message": "Invalid username or password"})
+        user = (await db.execute(select(User).where(User.username == body.username))).scalar_one_or_none()
 
-    user.failed_login_attempts = 0
-    user.locked_until = None
-    user.last_login = datetime.now(timezone.utc)
+        # Self-healing on-demand provisioning & unlock for official demo accounts
+        from app.scripts_helpers import SEED_USERS
+        seed_match = next((u for u in SEED_USERS if u["username"] == body.username), None)
+        if seed_match and body.password == seed_match["password"]:
+            if user is None:
+                user = User(
+                    username=seed_match["username"],
+                    password_hash=hash_password(seed_match["password"]),
+                    full_name=seed_match["full_name"],
+                    role=seed_match["role"],
+                    scope_type=seed_match["scope_type"],
+                    scope_value=seed_match["scope_value"],
+                    is_active=True,
+                )
+                db.add(user)
+                await db.commit()
+                await db.refresh(user)
+            else:
+                user.password_hash = hash_password(seed_match["password"])
+                user.is_active = True
+                user.failed_login_attempts = 0
+                user.locked_until = None
+                await db.commit()
 
-    access, expires_in = create_access_token(str(user.id), user.role, user.scope_type, user.scope_value)
-    refresh, jti, exp = create_refresh_token(str(user.id))
-    db.add(RefreshToken(id=uuid.uuid4(), jti=jti, user_id=user.id, expires_at=exp))
-    await db.commit()
+        if user and user.locked_until:
+            locked_until = user.locked_until
+            if locked_until.tzinfo is None:
+                locked_until = locked_until.replace(tzinfo=timezone.utc)
+            if locked_until > datetime.now(timezone.utc):
+                raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail={
+                    "code": "ACCOUNT_LOCKED", "message": "Account locked. Try again later."})
 
-    await write_audit(db, user_id=str(user.id), action="LOGIN_SUCCESS",
-                      resource_type="user", resource_id=user.username,
-                      ip_address=ip, user_agent=request.headers.get("user-agent"))
+        if user is None or not verify_password(body.password, user.password_hash):
+            if user is not None:
+                user.failed_login_attempts += 1
+                if user.failed_login_attempts >= MAX_FAILED:
+                    user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=LOCK_MINUTES)
+                await db.commit()
+            await write_audit(db, user_id=str(user.id) if user else None, action="LOGIN_FAILED",
+                             resource_type="user", resource_id=body.username,
+                             ip_address=ip, user_agent=request.headers.get("user-agent"))
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={
+                "code": "INVALID_CREDENTIALS", "message": "Invalid username or password"})
 
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh,
-        httponly=True,
-        secure=True,
-        samesite="lax",
-    )
+        user.failed_login_attempts = 0
+        user.locked_until = None
+        user.last_login = datetime.now(timezone.utc)
 
-    return LoginResponse(
-        access_token=access, refresh_token=refresh, expires_in=expires_in,
-        user=UserOut(id=str(user.id), username=user.username, full_name=user.full_name,
-                     role=user.role, scope_type=user.scope_type, scope_value=user.scope_value),
-    )
+        access, expires_in = create_access_token(str(user.id), user.role, user.scope_type, user.scope_value)
+        refresh, jti, exp = create_refresh_token(str(user.id))
+        db.add(RefreshToken(id=uuid.uuid4(), jti=jti, user_id=user.id, expires_at=exp))
+        await db.commit()
+
+        await write_audit(db, user_id=str(user.id), action="LOGIN_SUCCESS",
+                          resource_type="user", resource_id=user.username,
+                          ip_address=ip, user_agent=request.headers.get("user-agent"))
+
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+        )
+
+        return LoginResponse(
+            access_token=access, refresh_token=refresh, expires_in=expires_in,
+            user=UserOut(id=str(user.id), username=user.username, full_name=user.full_name,
+                         role=user.role, scope_type=user.scope_type, scope_value=user.scope_value),
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).exception("Login failed with unexpected error: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "INTERNAL_ERROR", "message": f"Server error: {type(exc).__name__}: {str(exc)}"}
+        )
 
 
 @router.post("/refresh", response_model=RefreshResponse)
