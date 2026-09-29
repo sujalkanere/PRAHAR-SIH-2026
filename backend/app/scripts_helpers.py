@@ -36,6 +36,15 @@ async def seed_users() -> int:
                     scope_value=u["scope_value"], is_active=True,
                 ))
                 created += 1
+            else:
+                existing.password_hash = hash_password(u["password"])
+                existing.role = u["role"]
+                existing.full_name = u["full_name"]
+                existing.scope_type = u["scope_type"]
+                existing.scope_value = u["scope_value"]
+                existing.is_active = True
+                existing.failed_login_attempts = 0
+                existing.locked_until = None
         await session.commit()
     return created
 

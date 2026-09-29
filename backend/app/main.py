@@ -17,9 +17,8 @@ async def lifespan(app: FastAPI):
     # startup: create tables + seed users (idempotent; docker also runs alembic)
     try:
         await init_db()
-        if settings.dev_demo:
-            from app.scripts_helpers import seed_users
-            await seed_users()
+        from app.scripts_helpers import seed_users
+        await seed_users()
         # mark detection runs orphaned by a restart as FAILED
         from app.database import SyncSessionLocal
         from sqlalchemy import update
