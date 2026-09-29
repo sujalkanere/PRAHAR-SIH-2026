@@ -580,7 +580,7 @@ async def state_summary(db: AsyncSession, user: User | None = None, state: str =
         sanc_f = sum(float(w.sanctioned_amount or 0) for w, _ in wc_list)
         exp_f = sum(float(w.actual_expenditure or 0) for w, _ in wc_list)
         risk_vals = [w.risk_score for w, _ in wc_list if w.risk_score and w.risk_score > 0]
-        avg_risk = int(round(sum(risk_vals) / len(risk_vals))) if risk_vals else (wc_list[0][1].risk_score or 40)
+        avg_risk = int(round(sum(risk_vals) / len(risk_vals))) if risk_vals else int(getattr(wc_list[0][1], "risk_score", 40) or 40)
         tier = "CRITICAL" if avg_risk >= 75 else "HIGH" if avg_risk >= 50 else "MEDIUM" if avg_risk >= 25 else "LOW"
 
         # Inspection Quota
@@ -622,9 +622,9 @@ async def state_summary(db: AsyncSession, user: User | None = None, state: str =
     if not district_breakdown and consts:
         for c in consts:
             d_label = c.district or c.name
-            c_risk = int(c.risk_score or 40)
-            c_util = float(c.fund_utilization_rate or 50.0)
-            c_works = int(c.total_works or 25)
+            c_risk = int(getattr(c, "risk_score", 40) or 40)
+            c_util = float(getattr(c, "fund_utilization_rate", 50.0) or 50.0)
+            c_works = int(getattr(c, "total_works", 25) or 25)
             c_tier = "CRITICAL" if c_risk >= 75 else "HIGH" if c_risk >= 50 else "MEDIUM" if c_risk >= 25 else "LOW"
             cov_pct = 7.0 if c_risk >= 50 else 13.0
             insp_cnt = max(1, int(round(c_works * cov_pct / 100.0)))

@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 
 from app.auth.rbac import (
     ROLE_ADMIN,
@@ -18,12 +17,13 @@ from app.auth.rbac import (
     require_roles,
     scope_constituency_filter,
 )
-from app.database import get_db, get_sync_db
+from app.database import get_db
 from app.models import Constituency, SCSTCompliance, User, Inspection, InspectionCoverage, Work
 from app.schemas import Pagination, InspectionCreate, InspectionOut, InspectionCoverageOut
 from app.services.analytics import normalize_state_name, extract_district_name
 from app.services.compliance_rules_engine import (
     RULEBOOK,
+    async_run_compliance_scan,
     run_compliance_scan,
     simulate_proposed_work_compliance,
 )
@@ -44,16 +44,16 @@ class SimulateWorkRequest(BaseModel):
 
 
 @router.get("/summary", summary="Get Compliance Overview & KPI Metrics")
-def get_compliance_summary(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
+async def get_compliance_summary(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
     """Returns high-level compliance KPI metrics, pass rates, and SC/ST entitlement status."""
-    scan = run_compliance_scan(db)
+    scan = await async_run_compliance_scan(db)
     return scan["summary"]
 
 
 @router.get("/rules", summary="Get MPLADS Guideline Machine-Readable Rulebook")
-def get_rulebook(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
+async def get_rulebook(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
     """Returns the full catalog of machine-readable rules with guideline section references and violation stats."""
-    scan = run_compliance_scan(db)
+    scan = await async_run_compliance_scan(db)
     return {
         "total_rules": len(scan["rulebook"]),
         "rules": scan["rulebook"],
@@ -61,13 +61,13 @@ def get_rulebook(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
 
 
 @router.get("/alerts", summary="Get Active Guideline Violation Alerts")
-def get_compliance_alerts(
+async def get_compliance_alerts(
     severity: str | None = Query(None, description="Filter by severity: CRITICAL, HIGH, MEDIUM, LOW"),
     category: str | None = Query(None, description="Filter by category: Sanction, Allocation, Execution, Payment"),
-    db: Session = Depends(get_sync_db),
+    db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """Returns generated compliance alerts with work details, broken rules, and guideline clause citations."""
-    scan = run_compliance_scan(db)
+    scan = await async_run_compliance_scan(db)
     alerts = scan["alerts"]
 
     if severity:
@@ -82,9 +82,9 @@ def get_compliance_alerts(
 
 
 @router.get("/sc-st-quotas", summary="Get Constituency SC/ST Allocation Quota Compliance")
-def get_sc_st_quotas(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
+async def get_sc_st_quotas(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
     """Returns per-MP constituency breakdown of the 15% SC and 7.5% ST mandatory portfolio fund allocations."""
-    scan = run_compliance_scan(db)
+    scan = await async_run_compliance_scan(db)
     return {
         "sc_mandate_target_pct": 15.0,
         "st_mandate_target_pct": 7.5,
@@ -94,9 +94,9 @@ def get_sc_st_quotas(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
 
 
 @router.post("/rescan", summary="Trigger Full Compliance Scan")
-def rescan_compliance(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
+async def rescan_compliance(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
     """Triggers a fresh full compliance scan across all works and constituencies."""
-    scan = run_compliance_scan(db, force_refresh=True)
+    scan = await async_run_compliance_scan(db, force_refresh=True)
     return {
         "status": "SUCCESS",
         "message": f"Compliance scan complete across {scan['summary']['total_works_scanned']:,} works. Found {scan['summary']['total_active_alerts']:,} active guideline alerts.",

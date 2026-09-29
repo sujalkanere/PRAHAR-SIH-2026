@@ -19,6 +19,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from app.models import (
@@ -236,103 +237,93 @@ _SCAN_LOCK = threading.Lock()
 # ---------------------------------------------------------------------------
 # Core Rules Engine Execution
 # ---------------------------------------------------------------------------
-def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[str, Any]:
-    """Runs an exhaustive, authoritative compliance scan across all works, constituencies, and quotas."""
-    global _COMPLIANCE_SCAN_CACHE
-    if _COMPLIANCE_SCAN_CACHE is not None and not force_refresh:
-        return _COMPLIANCE_SCAN_CACHE
+def _evaluate_compliance(
+    works: List[Any],
+    constituencies: List[Any],
+    sc_st_records: List[Any],
+    inspection_coverages: List[Any],
+) -> Dict[str, Any]:
+    """Pure in-memory compliance rules evaluator."""
+    now = datetime.now(timezone.utc)
+    today = date.today()
 
-    with _SCAN_LOCK:
-        if _COMPLIANCE_SCAN_CACHE is not None and not force_refresh:
-            return _COMPLIANCE_SCAN_CACHE
+    sc_st_by_const = {str(r.constituency_id): r for r in sc_st_records}
+    coverage_by_dist = {getattr(r, "district", "").lower(): r for r in inspection_coverages if getattr(r, "district", None)}
 
-        now = datetime.now(timezone.utc)
-        works = list(session.execute(select(Work)).scalars().all())
-        constituencies = list(session.execute(select(Constituency)).scalars().all())
-        expenditures = list(session.execute(select(Expenditure)).scalars().all())
-        
-        # Load statutory tables
-        sc_st_records = list(session.execute(select(SCSTCompliance)).scalars().all())
-        sc_st_by_const = {str(r.constituency_id): r for r in sc_st_records}
+    const_map = {c.id: c for c in constituencies}
+    alerts: List[Dict[str, Any]] = []
+    rule_violation_counts: Dict[str, int] = {r["id"]: 0 for r in RULEBOOK}
 
-        inspection_coverages = list(session.execute(select(InspectionCoverage)).scalars().all())
-        coverage_by_dist = {r.district.lower(): r for r in inspection_coverages}
+    works_by_const: Dict[Any, List[Any]] = collections.defaultdict(list)
 
-        const_map = {c.id: c for c in constituencies}
-        alerts: List[Dict[str, Any]] = []
-        rule_violation_counts: Dict[str, int] = {r["id"]: 0 for r in RULEBOOK}
+    # 1. Evaluate Works against Sanction, Permissibility & Execution Rules
+    for w in works:
+        works_by_const[w.constituency_id].append(w)
+        c = const_map.get(w.constituency_id)
+        c_name = c.name if c else "Unknown"
+        state = c.state if c else "Unknown"
+        mp_name = c.mp_name if c else "Hon'ble MP"
+        amt = float(w.sanctioned_amount or 0)
+        exp = float(w.actual_expenditure or 0)
+        desc_lower = (w.work_description or "").lower()
+        cat_lower = (w.work_category or "").lower()
 
-        # Pre-group works by constituency in a single pass O(N) instead of O(N*M)
-        works_by_const: Dict[Any, List[Work]] = collections.defaultdict(list)
+        # RULE-ELIG-001: Annexure-II Prohibited Asset Check (single-pass compiled regex)
+        is_exempt = any(ex in desc_lower for ex in PERMISSIBLE_EXEMPTIONS)
+        if not is_exempt:
+            match = PROHIBITED_REGEX.search(desc_lower) or PROHIBITED_REGEX.search(cat_lower)
+            if match:
+                rule_id = "RULE-ELIG-001"
+                rule_violation_counts[rule_id] += 1
+                clean_kw = match.group(0).strip()
+                alerts.append({
+                    "alert_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
+                    "work_id": str(w.id),
+                    "work_code": w.work_id,
+                    "work_title": (w.work_description or "")[:100],
+                    "constituency_id": str(w.constituency_id),
+                    "constituency_name": c_name,
+                    "state": state,
+                    "mp_name": mp_name,
+                    "rule_id": rule_id,
+                    "rule_name": "Annexure-II Prohibited Works & Ineligible Assets",
+                    "pillar": "Eligibility",
+                    "category": "Sanction",
+                    "severity": "CRITICAL",
+                    "guideline_section": "Section 3.2 & Annexure-II",
+                    "violation_details": f"Work description references prohibited asset category matching '{clean_kw}'.",
+                    "amount_involved": amt,
+                    "suggested_action": "Cancel administrative sanction immediately. Refuse fund release under Annexure-II mandate.",
+                    "detected_at": now.isoformat(),
+                })
 
-        # 1. Evaluate Works against Sanction, Permissibility & Execution Rules
-        for w in works:
-            works_by_const[w.constituency_id].append(w)
-            c = const_map.get(w.constituency_id)
-            c_name = c.name if c else "Unknown"
-            state = c.state if c else "Unknown"
-            mp_name = c.mp_name if c else "Hon'ble MP"
-            amt = float(w.sanctioned_amount or 0)
-            exp = float(w.actual_expenditure or 0)
-            desc_lower = (w.work_description or "").lower()
-            cat_lower = (w.work_category or "").lower()
-
-            # RULE-ELIG-001: Annexure-II Prohibited Asset Check (single-pass compiled regex)
-            is_exempt = any(ex in desc_lower for ex in PERMISSIBLE_EXEMPTIONS)
-            if not is_exempt:
-                match = PROHIBITED_REGEX.search(desc_lower) or PROHIBITED_REGEX.search(cat_lower)
-                if match:
-                    rule_id = "RULE-ELIG-001"
-                    rule_violation_counts[rule_id] += 1
-                    clean_kw = match.group(0).strip()
-                    alerts.append({
-                        "alert_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
-                        "work_id": str(w.id),
-                        "work_code": w.work_id,
-                        "work_title": w.work_description[:100],
-                        "constituency_id": str(w.constituency_id),
-                        "constituency_name": c_name,
-                        "state": state,
-                        "mp_name": mp_name,
-                        "rule_id": rule_id,
-                        "rule_name": "Annexure-II Prohibited Works & Ineligible Assets",
-                        "pillar": "Eligibility",
-                        "category": "Sanction",
-                        "severity": "CRITICAL",
-                        "guideline_section": "Section 3.2 & Annexure-II",
-                        "violation_details": f"Work description references prohibited asset category matching '{clean_kw}'.",
-                        "amount_involved": amt,
-                        "suggested_action": "Cancel administrative sanction immediately. Refuse fund release under Annexure-II mandate.",
-                        "detected_at": now.isoformat(),
-                    })
-
-            # RULE-ELIG-002: Vehicle Purchase Restriction under Para 3.33 (Prohibited unless medical/disability exempt)
-            if not is_exempt:
-                v_match = VEHICLE_REGEX.search(desc_lower) or VEHICLE_REGEX.search(cat_lower)
-                if v_match:
-                    rule_id = "RULE-ELIG-002"
-                    rule_violation_counts[rule_id] += 1
-                    clean_v = v_match.group(0).strip()
-                    alerts.append({
-                        "alert_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
-                        "work_id": str(w.id),
-                        "work_code": w.work_id,
-                        "work_title": w.work_description[:100],
-                        "constituency_id": str(w.constituency_id),
-                        "constituency_name": c_name,
-                        "state": state,
-                        "mp_name": mp_name,
-                        "rule_id": rule_id,
-                        "rule_name": "Vehicle Purchase Restriction & Medical Exemption Check",
-                        "pillar": "Eligibility",
-                        "category": "Sanction",
-                        "severity": "HIGH",
-                        "guideline_section": "Section 3.33 & Annexure-IIA",
-                        "violation_details": f"Work description references restricted vehicle purchase matching '{clean_v}' without recognized medical/disability exemption.",
-                        "amount_involved": amt,
-                        "suggested_action": "Cancel administrative sanction. Verify if ambulance/mobile clinic under Annexure-IIA.",
-                        "detected_at": now.isoformat(),
-                    })
+        # RULE-ELIG-002: Vehicle Purchase Restriction under Para 3.33 (Prohibited unless medical/disability exempt)
+        if not is_exempt:
+            v_match = VEHICLE_REGEX.search(desc_lower) or VEHICLE_REGEX.search(cat_lower)
+            if v_match:
+                rule_id = "RULE-ELIG-002"
+                rule_violation_counts[rule_id] += 1
+                clean_v = v_match.group(0).strip()
+                alerts.append({
+                    "alert_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
+                    "work_id": str(w.id),
+                    "work_code": w.work_id,
+                    "work_title": (w.work_description or "")[:100],
+                    "constituency_id": str(w.constituency_id),
+                    "constituency_name": c_name,
+                    "state": state,
+                    "mp_name": mp_name,
+                    "rule_id": rule_id,
+                    "rule_name": "Vehicle Purchase Restriction & Medical Exemption Check",
+                    "pillar": "Eligibility",
+                    "category": "Sanction",
+                    "severity": "HIGH",
+                    "guideline_section": "Section 3.33 & Annexure-IIA",
+                    "violation_details": f"Work description references restricted vehicle purchase matching '{clean_v}' without recognized medical/disability exemption.",
+                    "amount_involved": amt,
+                    "suggested_action": "Cancel administrative sanction. Verify if ambulance/mobile clinic under Annexure-IIA.",
+                    "detected_at": now.isoformat(),
+                })
 
         # RULE-ELIG-003: Single Work Sanction Cap (> ₹1.00 Crore Norm)
         if amt > 10000000:
@@ -342,7 +333,7 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
                 "alert_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
                 "work_id": str(w.id),
                 "work_code": w.work_id,
-                "work_title": w.work_description[:100],
+                "work_title": (w.work_description or "")[:100],
                 "constituency_id": str(w.constituency_id),
                 "constituency_name": c_name,
                 "state": state,
@@ -361,15 +352,15 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
 
         # RULE-EXEC-002: Stalled Work & Non-Commencement (>180 Days)
         sdate = w.sanction_date
-        if sdate and (date.today() - sdate).days > 180 and exp == 0 and w.work_status in ("SANCTIONED", "IN_PROGRESS"):
+        if sdate and (today - sdate).days > 180 and exp == 0 and w.work_status in ("SANCTIONED", "IN_PROGRESS"):
             rule_id = "RULE-EXEC-002"
             rule_violation_counts[rule_id] += 1
-            elapsed_days = (date.today() - sdate).days
+            elapsed_days = (today - sdate).days
             alerts.append({
                 "alert_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
                 "work_id": str(w.id),
                 "work_code": w.work_id,
-                "work_title": w.work_description[:100],
+                "work_title": (w.work_description or "")[:100],
                 "constituency_id": str(w.constituency_id),
                 "constituency_name": c_name,
                 "state": state,
@@ -395,7 +386,7 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
                 "alert_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
                 "work_id": str(w.id),
                 "work_code": w.work_id,
-                "work_title": w.work_description[:100],
+                "work_title": (w.work_description or "")[:100],
                 "constituency_id": str(w.constituency_id),
                 "constituency_name": c_name,
                 "state": state,
@@ -430,8 +421,8 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
             st_passed = st_pct >= 7.5
         else:
             # Fallback calculation if record is pending
-            sc_sanctioned = sum(float(w.sanctioned_amount or 0) for w in c_works if w.is_sc_majority or "sc " in (w.work_description or "").lower())
-            st_sanctioned = sum(float(w.sanctioned_amount or 0) for w in c_works if w.is_st_majority or "st " in (w.work_description or "").lower())
+            sc_sanctioned = sum(float(w.sanctioned_amount or 0) for w in c_works if getattr(w, "is_sc_majority", False) or "sc " in (getattr(w, "work_description", "") or "").lower())
+            st_sanctioned = sum(float(w.sanctioned_amount or 0) for w in c_works if getattr(w, "is_st_majority", False) or "st " in (getattr(w, "work_description", "") or "").lower())
             sc_pct = round((sc_sanctioned / tot_sanctioned * 100), 2) if tot_sanctioned > 0 else 15.2
             st_pct = round((st_sanctioned / tot_sanctioned * 100), 2) if tot_sanctioned > 0 else 7.8
             sc_passed = sc_pct >= 15.0
@@ -449,7 +440,7 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
             alerts.append({
                 "alert_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
                 "work_id": f"CONST-{c_id_str}",
-                "work_code": f"SC-QUOTA-{c.name[:4].upper()}",
+                "work_code": f"SC-QUOTA-{c.name[:4].upper() if c.name else 'NA'}",
                 "work_title": f"Mandatory 15% SC Allocation Shortfall in {c.name} ({c.state})",
                 "constituency_id": c_id_str,
                 "constituency_name": c.name,
@@ -475,7 +466,7 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
             alerts.append({
                 "alert_id": f"ALT-{uuid.uuid4().hex[:8].upper()}",
                 "work_id": f"CONST-{c_id_str}",
-                "work_code": f"ST-QUOTA-{c.name[:4].upper()}",
+                "work_code": f"ST-QUOTA-{c.name[:4].upper() if c.name else 'NA'}",
                 "work_title": f"Mandatory 7.5% ST Allocation Shortfall in {c.name} ({c.state})",
                 "constituency_id": c_id_str,
                 "constituency_name": c.name,
@@ -521,15 +512,12 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
         })
 
     # 3. Evaluate 10% Inspection Quota (RULE-INSP-001)
-    districts_below_inspection_target = 0
     for cov in inspection_coverages:
         if float(cov.coverage_pct or 0) < 10.0:
-            districts_below_inspection_target += 1
             rule_violation_counts["RULE-INSP-001"] += 1
 
     # 4. Summary Metrics & Pillar Health Indices
     total_works_scanned = len(works)
-    total_alerts = len(alerts)
     failed_work_ids = set(a["work_id"] for a in alerts)
     passed_works = max(0, total_works_scanned - len(failed_work_ids))
     pass_rate_pct = round((passed_works / total_works_scanned * 100), 1) if total_works_scanned > 0 else 96.8
@@ -587,8 +575,50 @@ def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[s
         "alerts": alerts[:500],  # Return active alerts in priority order
         "sc_st_quotas": sc_st_summary,  # Full constituency breakdown
     }
+    return result
+
+
+async def async_run_compliance_scan(session: AsyncSession, force_refresh: bool = False) -> Dict[str, Any]:
+    """Runs compliance scan asynchronously using an AsyncSession."""
+    global _COMPLIANCE_SCAN_CACHE
+    if _COMPLIANCE_SCAN_CACHE is not None and not force_refresh:
+        return _COMPLIANCE_SCAN_CACHE
+
+    works_res = await session.execute(select(Work))
+    works = list(works_res.scalars().all())
+
+    const_res = await session.execute(select(Constituency))
+    constituencies = list(const_res.scalars().all())
+
+    sc_st_res = await session.execute(select(SCSTCompliance))
+    sc_st_records = list(sc_st_res.scalars().all())
+
+    insp_res = await session.execute(select(InspectionCoverage))
+    inspection_coverages = list(insp_res.scalars().all())
+
+    result = _evaluate_compliance(works, constituencies, sc_st_records, inspection_coverages)
     _COMPLIANCE_SCAN_CACHE = result
     return result
+
+
+def run_compliance_scan(session: Session, force_refresh: bool = False) -> Dict[str, Any]:
+    """Runs an authoritative compliance scan across all works, constituencies, and quotas (synchronous)."""
+    global _COMPLIANCE_SCAN_CACHE
+    if _COMPLIANCE_SCAN_CACHE is not None and not force_refresh:
+        return _COMPLIANCE_SCAN_CACHE
+
+    with _SCAN_LOCK:
+        if _COMPLIANCE_SCAN_CACHE is not None and not force_refresh:
+            return _COMPLIANCE_SCAN_CACHE
+
+        works = list(session.execute(select(Work)).scalars().all())
+        constituencies = list(session.execute(select(Constituency)).scalars().all())
+        sc_st_records = list(session.execute(select(SCSTCompliance)).scalars().all())
+        inspection_coverages = list(session.execute(select(InspectionCoverage)).scalars().all())
+
+        result = _evaluate_compliance(works, constituencies, sc_st_records, inspection_coverages)
+        _COMPLIANCE_SCAN_CACHE = result
+        return result
 
 
 def simulate_proposed_work_compliance(payload: Dict[str, Any]) -> Dict[str, Any]:
